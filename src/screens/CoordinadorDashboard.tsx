@@ -1,0 +1,1 @@
+export default function CoordinadorDashboard() { return null; }
