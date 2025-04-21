@@ -9,6 +9,7 @@ import CoordinadorDashboard from '../screens/CoordinadorDashboard';
 import DetalleEquipo from '../screens/client/DetalleEquipo';
 import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';  
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
+import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
 
 const Stack = createNativeStackNavigator();
 
@@ -34,6 +35,8 @@ export default function AppNavigator() {
           <Stack.Screen name="Productos" component={LoginScreen} />
           <Stack.Screen name="DetalleEquipo" component={DetalleEquipo} />
           <Stack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
+          <Stack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
+
         </>
       )}
       {user.role === 'tecnico' && <Stack.Screen name="Tecnico" component={TecnicoDashboard} />}

@@ -68,7 +68,7 @@ export default function MantenimientosList() {
   const renderItem = ({ item }: { item: Mantenimiento }) => (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate('CrearMantenimiento')}
+      onPress={() => navigation.navigate('DetalleMantenimiento')}
     >
       <View style={styles.row}>
         <MaterialIcons
@@ -102,7 +102,7 @@ export default function MantenimientosList() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('CrearMantenimiento')}
+        onPress={() => navigation.navigate('DetalleMantenimiento')}
       >
         <MaterialIcons name="add-circle" size={24} color="#fff" />
         <Text style={styles.buttonText}>Agendar mantenimiento</Text>
