@@ -71,9 +71,12 @@ export default function CrearMantenimiento() {
     }
 
     if (tipo === 'correctivo') {
+
+      
       Linking.openURL('tel:3104856772'); // 👉 redirección a llamada
       return;
     }
+
 
     Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
       { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
