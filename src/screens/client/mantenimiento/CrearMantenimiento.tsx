@@ -19,7 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type RootStackParamList = {
-  AgendarMantenimiento: undefined;
+  SolicitarMantenimiento: undefined;
 };
 
 const equiposMock = ['Lavadora 30kg', 'Secadora 20kg Gas', 'Centrifugadora rápida'];
@@ -70,13 +70,13 @@ export default function CrearMantenimiento() {
       return;
     }
 
-    if (tipo === 'preventivo') {
-      Linking.openURL('tel:3114705572'); // 👉 redirección a llamada
+    if (tipo === 'correctivo') {
+      Linking.openURL('tel:3104856772'); // 👉 redirección a llamada
       return;
     }
 
     Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
-      { text: 'OK', onPress: () => navigation.navigate('MantenimientosList') },
+      { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
     ]);
   };
 
