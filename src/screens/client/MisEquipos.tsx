@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,20 +9,28 @@ import {
   Modal,
   SafeAreaView,
   Linking,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import API from '../../services/api'; // Importa tu Axios ya configurado
+import { useAuth } from '../../context/AuthContext'; // Usa el token
 
 type Equipo = {
   id: number;
-  nombre: string;
-  referencia: string;
-  estado: string;
+  device: {
+    id: number;
+    model: string;
+    brand: string;
+    serial: string;
+    type: string;
+    manufactured_at: string;
+  };
+  address: string;
 };
-
 
 type RootStackParamList = {
   MisEquipos: undefined;
@@ -31,20 +39,39 @@ type RootStackParamList = {
   Productos: undefined;
 };
 
-
-
-
-const equiposMock: Equipo[] = [
-  { id: 1, nombre: 'Lavadora Industrial 30kg', referencia: 'LI-30K', estado: 'Operativo' },
-  { id: 2, nombre: 'Secadora 20kg Gas', referencia: 'SD-20G', estado: 'En mantenimiento' },
-];
-
 export default function MisEquipos() {
-  const [equipos, setEquipos] = useState<Equipo[]>(equiposMock);
+  const [equipos, setEquipos] = useState<Equipo[]>([]);
+  const [loading, setLoading] = useState(true);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
+  const { token } = useAuth(); // aquí obtenemos el token
   const router = useRouter();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  useEffect(() => {
+    if (token) {
+      fetchEquipos();
+    }
+  }, [token]);
+
+  const fetchEquipos = async () => {
+    try {
+      const response = await API.get('api/linkDevices', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      console.log('API Response', response.data);
+
+      const equiposFromApi = response.data.data.data; // 👈 Aquí está el array real
+      setEquipos(equiposFromApi);
+    } catch (error) {
+      console.error('Error fetching equipos', error);
+      Alert.alert('Error', 'No se pudieron cargar los equipos.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleOpenScanner = async () => {
     if (permission?.granted) {
@@ -54,33 +81,18 @@ export default function MisEquipos() {
       if (granted) {
         setScannerVisible(true);
       } else {
-        Alert.alert(
-          'Permiso denegado',
-          'Debes permitir el acceso a la cámara para escanear el código QR.',
-          [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Abrir configuración', onPress: () => Linking.openSettings() },
-          ]
-        );
+        Alert.alert('Permiso denegado', 'Debes permitir el acceso a la cámara.', [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Abrir configuración', onPress: () => Linking.openSettings() },
+        ]);
       }
     }
   };
 
   const handleBarcodeScanned = ({ data }: { data: string }) => {
     setScannerVisible(false);
-
-    const nuevoEquipo = {
-      id: Math.random(),
-      nombre: `Equipo ${data}`,
-      referencia: data,
-      estado: 'Nuevo',
-    };
-    setEquipos((prev) => [...prev, nuevoEquipo]);
-
-    Alert.alert('Equipo detectado', `Se agregó el equipo con código: ${data}`);
+    Alert.alert('Código escaneado', `Código: ${data}`);
   };
-
-  
 
   const renderItem = ({ item }: { item: Equipo }) => (
     <TouchableOpacity 
@@ -88,9 +100,10 @@ export default function MisEquipos() {
       onPress={() => navigation.navigate('DetalleEquipo')}
     >
       <MaterialIcons name="settings" size={24} color="#0077b6" />
-      <Text style={styles.cardTitle}>{item.nombre}</Text>
-      <Text style={styles.cardSubtitle}>Ref: {item.referencia}</Text>
-      <Text style={styles.estado}>{item.estado}</Text>
+      <Text style={styles.cardTitle}>{item.device.model}</Text> {/* 👈 Mostrar el modelo */}
+      <Text style={styles.cardSubtitle}>Serial: {item.device.serial}</Text>
+      <Text style={styles.cardSubtitle}>Marca: {item.device.brand}</Text>
+      <Text style={styles.estado}>{item.address}</Text> {/* 👈 Dirección */}
       <View style={styles.verDetalleContainer}>
         <Text style={styles.verDetalleText}>Ver detalle</Text>
         <MaterialIcons name="arrow-forward" size={16} color="#0077b6" />
@@ -98,6 +111,14 @@ export default function MisEquipos() {
     </TouchableOpacity>
   );
   
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ActivityIndicator size="large" color="#0077b6" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -131,6 +152,10 @@ export default function MisEquipos() {
     </SafeAreaView>
   );
 }
+
+// Tus estilos siguen igual 🎯
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },

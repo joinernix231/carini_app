@@ -102,7 +102,7 @@ export default function MantenimientosList() {
 
       <TouchableOpacity
         style={styles.button}
-        onPress={() => navigation.navigate('DetalleMantenimiento')}
+        onPress={() => navigation.navigate('CrearMantenimiento')}
       >
         <MaterialIcons name="add-circle" size={24} color="#fff" />
         <Text style={styles.buttonText}>Agendar mantenimiento</Text>

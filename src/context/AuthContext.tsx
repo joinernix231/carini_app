@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext } from 'react';
 import { login as loginAPI } from '../services/api';
+import API from '../services/api'; // 👈 Importamos tu instancia de Axios configurada
 
 type User = {
   id: number;
@@ -24,11 +25,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const response = await loginAPI(email, password);
     setToken(response.token);
     setUser(response.user);
+
+    // 🛡️ Muy importante: Configurar el token por defecto en Axios
+    API.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
+
+    // Eliminar el Authorization global
+    delete API.defaults.headers.common['Authorization'];
   };
 
   return (
