@@ -3,7 +3,8 @@ import axios from 'axios';
 // Crear instancia principal de Axios
 const API = axios.create({
   baseURL: 'https://cariniservice-production.up.railway.app/', 
-  timeout: 10000, // ⏳ Máximo tiempo de espera para cada request (10s)
+//  baseURL: 'http://127.0.0.1:8500', 
+  timeout: 5000, // ⏳ Máximo tiempo de espera para cada request (10s)
 });
 
 // Interceptor de respuesta para controlar errores automáticamente

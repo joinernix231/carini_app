@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,15 +10,16 @@ import {
   SafeAreaView,
   Linking,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { CameraView, useCameraPermissions } from 'expo-camera';
-import { useRouter } from 'expo-router';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import API from '../../services/api'; // Importa tu Axios ya configurado
-import { useAuth } from '../../context/AuthContext'; // Usa el token
+import { useAuth } from '../../../context/AuthContext';
+import { getEquiposVinculados } from '../../../services/EquipoClienteService'; // 👈 Importamos el servicio
 
+// Tipos
 type Equipo = {
   id: number;
   device: {
@@ -39,39 +40,51 @@ type RootStackParamList = {
   Productos: undefined;
 };
 
+// Componente reutilizable para cada equipo
+const EquipoCard = ({ item, onPress }: { item: Equipo; onPress: () => void }) => (
+  <TouchableOpacity style={styles.card} onPress={onPress}>
+    <MaterialIcons name="settings" size={24} color="#0077b6" />
+    <Text style={styles.cardTitle}>{item.device.model}</Text>
+    <Text style={styles.cardSubtitle}>Serial: {item.device.serial}</Text>
+    <Text style={styles.cardSubtitle}>Marca: {item.device.brand}</Text>
+    <Text style={styles.estado}>{item.address}</Text>
+    <View style={styles.verDetalleContainer}>
+      <Text style={styles.verDetalleText}>Ver detalle</Text>
+      <MaterialIcons name="arrow-forward" size={16} color="#0077b6" />
+    </View>
+  </TouchableOpacity>
+);
+
 export default function MisEquipos() {
   const [equipos, setEquipos] = useState<Equipo[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [scannerVisible, setScannerVisible] = useState(false);
   const [permission, requestPermission] = useCameraPermissions();
-  const { token } = useAuth(); // aquí obtenemos el token
-  const router = useRouter();
+  const { token } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   useEffect(() => {
-    if (token) {
-      fetchEquipos();
-    }
+    if (token) fetchEquipos();
   }, [token]);
 
   const fetchEquipos = async () => {
     try {
-      const response = await API.get('api/linkDevices', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log('API Response', response.data);
-
-      const equiposFromApi = response.data.data.data; // 👈 Aquí está el array real
-      setEquipos(equiposFromApi);
-    } catch (error) {
+      const data = await getEquiposVinculados(token!); // 👈 Usa el servicio
+      setEquipos(data);
+    } catch (error: any) {
       console.error('Error fetching equipos', error);
       Alert.alert('Error', 'No se pudieron cargar los equipos.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchEquipos();
+  }, []);
 
   const handleOpenScanner = async () => {
     if (permission?.granted) {
@@ -94,24 +107,6 @@ export default function MisEquipos() {
     Alert.alert('Código escaneado', `Código: ${data}`);
   };
 
-  const renderItem = ({ item }: { item: Equipo }) => (
-    <TouchableOpacity 
-      style={styles.card} 
-      onPress={() => navigation.navigate('DetalleEquipo')}
-    >
-      <MaterialIcons name="settings" size={24} color="#0077b6" />
-      <Text style={styles.cardTitle}>{item.device.model}</Text> {/* 👈 Mostrar el modelo */}
-      <Text style={styles.cardSubtitle}>Serial: {item.device.serial}</Text>
-      <Text style={styles.cardSubtitle}>Marca: {item.device.brand}</Text>
-      <Text style={styles.estado}>{item.address}</Text> {/* 👈 Dirección */}
-      <View style={styles.verDetalleContainer}>
-        <Text style={styles.verDetalleText}>Ver detalle</Text>
-        <MaterialIcons name="arrow-forward" size={16} color="#0077b6" />
-      </View>
-    </TouchableOpacity>
-  );
-  
-
   if (loading) {
     return (
       <SafeAreaView style={styles.container}>
@@ -124,15 +119,16 @@ export default function MisEquipos() {
     <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Mis Equipos</Text>
 
-      <TouchableOpacity style={styles.qrButton} onPress={handleOpenScanner}>
-        <MaterialIcons name="qr-code-scanner" size={20} color="#fff" />
-        <Text style={styles.qrButtonText}>Agregar equipo con QR</Text>
-      </TouchableOpacity>
-
       <FlatList
         data={equipos}
-        renderItem={renderItem}
+        renderItem={({ item }) => (
+          <EquipoCard
+            item={item}
+            onPress={() => navigation.navigate('DetalleEquipo', { deviceId: item.device.id })}
+          />
+        )}
         keyExtractor={(item) => item.id.toString()}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       />
 
       <Modal visible={scannerVisible} animationType="slide">
@@ -153,26 +149,15 @@ export default function MisEquipos() {
   );
 }
 
-// Tus estilos siguen igual 🎯
-
-
-
+// Estilos
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20, paddingTop:30, textAlign: 'center' },
-  qrButton: {
-    backgroundColor: '#0077b6',
-    padding: 10,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  qrButtonText: {
-    color: '#fff',
+  title: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginLeft: 10,
+    marginBottom: 20,
+    paddingTop: 30,
+    textAlign: 'center',
   },
   card: {
     backgroundColor: '#f1f1f1',

@@ -1,17 +1,18 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useAuth } from '../../context/AuthContext';
 
 type RootStackParamList = {
-  MisEquipos: undefined;
-  SolicitarMantenimiento: undefined;
-  Historial: undefined;
-  Productos: undefined;
-  MiEmpresa: undefined;
+  VerMantenimientos: undefined;
+  AsignarTecnicos: undefined;
+  VerTecnicos: undefined;
+  AsignarEquipos: undefined;
+  VerClientes: undefined;
+  EditarEquipos: undefined;
 };
 
 type MenuOption = {
@@ -21,14 +22,18 @@ type MenuOption = {
 };
 
 const options: MenuOption[] = [
-  { icon: 'inventory', label: 'Mis Equipos', screen: 'MisEquipos' },
-  { icon: 'build', label: 'Solicitar Mantenimiento', screen: 'SolicitarMantenimiento' },
-  { icon: 'history', label: 'Historial', screen: 'Historial' },
-  { icon: 'shopping-cart', label: 'Productos', screen: 'Productos' },
-  { icon: 'business', label: 'Mi Empresa', screen: 'MiEmpresa' },
+  { icon: 'engineering', label: 'Ver Mantenimientos', screen: 'VerMantenimientos' },
+  { icon: 'assignment-ind', label: 'Asignar Técnicos', screen: 'AsignarTecnicos' },
+  { icon: 'people', label: 'Ver Técnicos', screen: 'VerTecnicos' },
+  { icon: 'add-box', label: 'Asignar Equipos', screen: 'AsignarEquipos' },
+  { icon: 'groups', label: 'Ver Clientes', screen: 'VerClientes' },
+  { icon: 'edit', label: 'Editar Equipos', screen: 'EditarEquipos' },
 ];
 
-export default function ClienteDashboard() {
+
+
+export default function CoordinadorDashboard() {
+
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuth();
 
@@ -53,7 +58,8 @@ export default function ClienteDashboard() {
   return (
     <LinearGradient colors={['#00b4d8', '#0077b6']} style={styles.root}>
       <View style={styles.container}>
-        <Text style={styles.title}>Hola, {user?.name ?? 'Usuario'}</Text>
+        <Text style={styles.title}>Panel del Coordinador</Text>
+        <Text style={styles.subtitle}>Hola, {user?.name ?? 'Coordinador'}</Text>
 
         <FlatList
           data={options}
@@ -84,11 +90,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   title: {
-    fontSize: 26,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 30,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#caf0f8',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   grid: {
     justifyContent: 'center',

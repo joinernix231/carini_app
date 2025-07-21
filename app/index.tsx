@@ -1,4 +1,4 @@
-import QRCodeScannerApp from '../src/screens/client/MisEquipos';
+import QRCodeScannerApp from '../src/screens/client/MyDevices/MisEquipos';
 
 export default function Home() {
   return <QRCodeScannerApp />;

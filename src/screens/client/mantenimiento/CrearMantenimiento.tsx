@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -10,38 +10,87 @@ import {
   Modal,
   FlatList,
   Image,
-  Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { getEquiposVinculados } from '../../../services/EquipoClienteService';
+import { createMantenimiento } from '../../../services/MantenimientoService';
+import { useAuth } from '../../../context/AuthContext';
 
 type RootStackParamList = {
   SolicitarMantenimiento: undefined;
 };
 
-const equiposMock = ['Lavadora 30kg', 'Secadora 20kg Gas', 'Centrifugadora rápida'];
-const tiposIntervencionMock = ['Revisión general', 'Cambio de repuesto', 'Ajuste de temperatura', 'Diagnóstico eléctrico'];
-
 export default function CrearMantenimiento() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { token } = useAuth();
 
-  const [tipo, setTipo] = useState<'preventivo' | 'correctivo'>('preventivo');
+  const [equipos, setEquipos] = useState<
+    { id: number; nombre: string; maintenance_type_id: number }[]
+  >([]);
+  const [loadingEquipos, setLoadingEquipos] = useState(true);
+
+  const [tipo, setTipo] = useState<'preventive' | 'corrective'>('preventive');
   const [descripcion, setDescripcion] = useState('');
   const [fecha, setFecha] = useState(new Date());
   const [isDatePickerVisible, setDatePickerVisibility] = useState(false);
 
-  const [equipoSeleccionado, setEquipoSeleccionado] = useState<string | null>(null);
-  const [tipoIntervencion, setTipoIntervencion] = useState<string | null>(null);
+  const [equipoSeleccionado, setEquipoSeleccionado] = useState<{
+    id: number;
+    nombre: string;
+    maintenance_type_id: number;
+  } | null>(null);
+
+  const [tipoIntervencion, setTipoIntervencion] = useState<{
+    id: number;
+    nombre: string;
+  } | null>(null);
+
   const [modalEquipo, setModalEquipo] = useState(false);
   const [modalIntervencion, setModalIntervencion] = useState(false);
   const [foto, setFoto] = useState<string | null>(null);
 
+  const tiposIntervencionReal = [
+    { id: 1, nombre: 'Revisión general' },
+    { id: 2, nombre: 'Ajuste de temperatura' },
+    { id: 3, nombre: 'Cambio de Repuesto' },
+    { id: 4, nombre: 'Diagnóstico eléctrico' },
+  ];
+
+  useEffect(() => {
+    const cargarEquipos = async () => {
+      if (!token) return;
+
+      try {
+        setLoadingEquipos(true);
+        const data = await getEquiposVinculados(token);
+
+        const listaEquipos = data.map((item: any) => {
+          const { device, address, id } = item;
+          return {
+            id,
+            nombre: `${device.model} (${device.serial}) - ${address}`,
+            maintenance_type_id: device.maintenance_type_id || 1,
+          };
+        });
+
+        setEquipos(listaEquipos);
+      } catch (error) {
+        console.error('Error al cargar equipos:', error);
+        Alert.alert('Error', 'No se pudieron cargar los equipos');
+      } finally {
+        setLoadingEquipos(false);
+      }
+    };
+
+    cargarEquipos();
+  }, [token]);
+
   const showDatePicker = () => setDatePickerVisibility(true);
   const hideDatePicker = () => setDatePickerVisibility(false);
-
   const handleConfirm = (selectedDate: Date) => {
     setFecha(selectedDate);
     hideDatePicker();
@@ -64,42 +113,53 @@ export default function CrearMantenimiento() {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!descripcion.trim() || !equipoSeleccionado || !tipoIntervencion) {
       Alert.alert('Campos incompletos', 'Completa todos los campos antes de continuar.');
       return;
     }
 
-    if (tipo === 'correctivo') {
-
-      
-      Linking.openURL('tel:3104856772'); // 👉 redirección a llamada
+    if (tipo === 'corrective') {
+      Alert.alert('Llama al soporte', 'Para mantenimientos correctivos llama al 3104856772');
       return;
     }
 
+    try {
+      const payload = {
+        client_device_id: equipoSeleccionado.id,
+        type: tipo,
+        date_maintenance: fecha.toISOString().split('T')[0],
+        maintenance_type_id: tipoIntervencion.id,
+        description: descripcion.trim(),
+        photo: foto || undefined,
+      };
 
-    Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
-      { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
-    ]);
+      await createMantenimiento(payload);
+
+      Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
+        { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
+      ]);
+    } catch (error) {
+      console.error('Error al crear mantenimiento:', error);
+      Alert.alert('Error', 'Ocurrió un error al registrar el mantenimiento.');
+    }
   };
 
   return (
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Nuevo Mantenimiento</Text>
 
-      {/* Selector de equipo */}
       <Text style={styles.label}>Equipo</Text>
       <TouchableOpacity style={styles.selector} onPress={() => setModalEquipo(true)}>
         <Text style={styles.selectorText}>
-          {equipoSeleccionado || 'Selecciona un equipo'}
+          {equipoSeleccionado?.nombre || 'Selecciona un equipo'}
         </Text>
         <MaterialIcons name="arrow-drop-down" size={24} color="#0077b6" />
       </TouchableOpacity>
-
       <Modal visible={modalEquipo} animationType="slide">
         <FlatList
-          data={equiposMock}
-          keyExtractor={(item) => item}
+          data={equipos}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.optionItem}
@@ -108,36 +168,33 @@ export default function CrearMantenimiento() {
                 setModalEquipo(false);
               }}
             >
-              <Text>{item}</Text>
+              <Text>{item.nombre}</Text>
             </TouchableOpacity>
           )}
         />
       </Modal>
 
-      {/* Tipo de mantenimiento */}
       <Text style={styles.label}>Tipo</Text>
       <View style={styles.buttonGroup}>
         <TouchableOpacity
-          style={[styles.toggleButton, tipo === 'preventivo' && styles.active]}
-          onPress={() => setTipo('preventivo')}
+          style={[styles.toggleButton, tipo === 'preventive' && styles.active]}
+          onPress={() => setTipo('preventive')}
         >
           <Text style={styles.toggleText}>Preventivo</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.toggleButton, tipo === 'correctivo' && styles.active]}
-          onPress={() => setTipo('correctivo')}
+          style={[styles.toggleButton, tipo === 'corrective' && styles.active]}
+          onPress={() => setTipo('corrective')}
         >
           <Text style={styles.toggleText}>Correctivo</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Fecha */}
       <Text style={styles.label}>Fecha programada</Text>
       <TouchableOpacity style={styles.datePicker} onPress={showDatePicker}>
         <MaterialIcons name="calendar-today" size={20} color="#0077b6" />
         <Text style={{ marginLeft: 10 }}>{fecha.toLocaleDateString()}</Text>
       </TouchableOpacity>
-
       <DateTimePickerModal
         isVisible={isDatePickerVisible}
         mode="date"
@@ -145,19 +202,17 @@ export default function CrearMantenimiento() {
         onCancel={hideDatePicker}
       />
 
-      {/* Selector de tipo de intervención */}
       <Text style={styles.label}>Tipo de intervención</Text>
       <TouchableOpacity style={styles.selector} onPress={() => setModalIntervencion(true)}>
         <Text style={styles.selectorText}>
-          {tipoIntervencion || 'Selecciona tipo de intervención'}
+          {tipoIntervencion?.nombre || 'Selecciona tipo de intervención'}
         </Text>
         <MaterialIcons name="arrow-drop-down" size={24} color="#0077b6" />
       </TouchableOpacity>
-
       <Modal visible={modalIntervencion} animationType="slide">
         <FlatList
-          data={tiposIntervencionMock}
-          keyExtractor={(item) => item}
+          data={tiposIntervencionReal}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.optionItem}
@@ -166,13 +221,12 @@ export default function CrearMantenimiento() {
                 setModalIntervencion(false);
               }}
             >
-              <Text>{item}</Text>
+              <Text>{item.nombre}</Text>
             </TouchableOpacity>
           )}
         />
       </Modal>
 
-      {/* Foto del equipo */}
       <Text style={styles.label}>Foto del equipo (opcional)</Text>
       <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
         <MaterialIcons name="add-a-photo" size={20} color="#0077b6" />
@@ -180,7 +234,6 @@ export default function CrearMantenimiento() {
       </TouchableOpacity>
       {foto && <Image source={{ uri: foto }} style={styles.preview} />}
 
-      {/* Descripción */}
       <Text style={styles.label}>Descripción</Text>
       <TextInput
         placeholder="Describe el problema o solicitud"
@@ -191,7 +244,6 @@ export default function CrearMantenimiento() {
         onChangeText={setDescripcion}
       />
 
-      {/* Botón */}
       <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
         <Text style={styles.submitText}>Registrar mantenimiento</Text>
       </TouchableOpacity>
@@ -201,7 +253,7 @@ export default function CrearMantenimiento() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 22, fontWeight: 'bold', color: '#0077b6', textAlign: 'center', marginBottom: 20 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#0077b6', textAlign: 'center', marginBottom: 20, marginTop: 30 },
   label: { fontSize: 14, color: '#555', marginTop: 10, marginBottom: 4 },
   buttonGroup: { flexDirection: 'row', gap: 10, marginBottom: 10 },
   toggleButton: {
@@ -213,7 +265,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   active: { backgroundColor: '#0077b6' },
-  toggleText: { color: '#fff', fontWeight: 'bold' },
+  toggleText: { color: '#023047', fontWeight: 'bold' },
   datePicker: {
     flexDirection: 'row',
     alignItems: 'center',

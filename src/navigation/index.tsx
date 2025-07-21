@@ -3,13 +3,15 @@ import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
 import ClienteDashboard from '../screens/client/ClienteDashboard';
-import MisEquipos from '../screens/client/MisEquipos';
+import MisEquipos from '../screens/client/MyDevices/MisEquipos';
 import TecnicoDashboard from '../screens/TecnicoDashboard';
-import CoordinadorDashboard from '../screens/CoordinadorDashboard';
-import DetalleEquipo from '../screens/client/DetalleEquipo';
+import CoordinadorDashboard from '../screens/Coordinator/CoordinadorDashboard';
+import AsignarEquipos from '../screens/Coordinator/AsignarEquipos';
+import DetalleEquipo from '../screens/client/MyDevices/DetalleEquipo';
 import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';  
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
 import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
+import MiEmpresa from '../screens/client/empresa/MiEmpresa';
 
 const Stack = createNativeStackNavigator();
 
@@ -36,11 +38,17 @@ export default function AppNavigator() {
           <Stack.Screen name="DetalleEquipo" component={DetalleEquipo} />
           <Stack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
           <Stack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
+          <Stack.Screen name="MiEmpresa" component={MiEmpresa} />
 
         </>
       )}
       {user.role === 'tecnico' && <Stack.Screen name="Tecnico" component={TecnicoDashboard} />}
-      {user.role === 'coordinador' && <Stack.Screen name="Coordinador" component={CoordinadorDashboard} />}
+      {user.role === 'coordinador' && (
+        <>
+          <Stack.Screen name="Coordinador" component={CoordinadorDashboard} />
+          <Stack.Screen name="AsignarEquipos" component={AsignarEquipos} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
