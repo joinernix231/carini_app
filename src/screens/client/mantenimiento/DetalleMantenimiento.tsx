@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,72 +6,121 @@ import {
   Image,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getMantenimientoById } from '../../../services/MantenimientoService';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function DetalleMantenimiento() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { token } = useAuth();
+  const { id } = route.params as { id: number };
 
-  // 🔹 Datos de prueba
-  const mantenimiento = {
-    tipo: 'Correctivo',
-    estado: 'Pendiente',
-    tipoIntervencion: 'Cambio de repuesto',
-    fecha: '2024-05-12',
-    equipo: 'Lavadora 30kg',
-    tecnico: 'Joiner Davila',
-    descripcion: 'La lavadora tiene problemas con el motor y hace ruidos extraños.',
-    imagen:
-      'https://media.licdn.com/dms/image/v2/C561BAQFfGtP_pZF_Vw/company-background_10000/company-background_10000/0/1619554213481/carini_sas_lavadoras_industriales_cover?e=2147483647&v=beta&t=Bu7j14R93AlCh1oO5M61qJpC64mcd6MV75Dw6EZuMuM',
+  const [loading, setLoading] = useState(true);
+  const [mantenimiento, setMantenimiento] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchMantenimiento = async () => {
+      try {
+        const data = await getMantenimientoById(id, token);
+        setMantenimiento(data);
+      } catch (error) {
+        console.error('Error al obtener mantenimiento:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token && id) fetchMantenimiento();
+  }, [id, token]);
+
+  const traducirEstado = (estadoIngles: string): string => {
+    const traducciones: Record<string, string> = {
+      pending: 'Pendiente',
+      assigned: 'Asignado',
+      in_progress: 'En progreso',
+      completed: 'Completado',
+      canceled: 'Cancelado',
+    };
+    return traducciones[estadoIngles] || estadoIngles;
   };
 
+  if (loading) {
+    return (
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#0077b6" />
+        </View>
+    );
+  }
+
+  if (!mantenimiento) {
+    return (
+        <View style={styles.loaderContainer}>
+          <Text style={{ color: '#999' }}>No se encontró el mantenimiento.</Text>
+        </View>
+    );
+  }
+
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Detalle del Mantenimiento</Text>
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>Detalle del Mantenimiento</Text>
 
-      <View style={styles.infoCard}>
-        <Text style={styles.label}>Tipo:</Text>
-        <Text style={styles.value}>{mantenimiento.tipo}</Text>
+        <View style={styles.infoCard}>
+          <Text style={styles.label}>Tipo:</Text>
+          <Text style={styles.value}>
+            {mantenimiento.type === 'preventivo' ? 'Preventivo' : 'Correctivo'}
+          </Text>
 
-        <Text style={styles.label}>Estado:</Text>
-        <Text style={styles.value}>{mantenimiento.estado}</Text>
+          <Text style={styles.label}>Estado:</Text>
+          <Text style={styles.value}>{traducirEstado(mantenimiento.status)}</Text>
 
-        <Text style={styles.label}>Intervención:</Text>
-        <Text style={styles.value}>{mantenimiento.tipoIntervencion}</Text>
+          <Text style={styles.label}>Intervención:</Text>
+          <Text style={styles.value}>{mantenimiento.intervention_type || 'No especificada'}</Text>
 
-        <Text style={styles.label}>Fecha:</Text>
-        <Text style={styles.value}>{mantenimiento.fecha}</Text>
+          <Text style={styles.label}>Fecha:</Text>
+          <Text style={styles.value}>{mantenimiento.date_maintenance}</Text>
 
-        <Text style={styles.label}>Equipo:</Text>
-        <Text style={styles.value}>{mantenimiento.equipo}</Text>
+          <Text style={styles.label}>Equipo:</Text>
+          <Text style={styles.value}>{mantenimiento.device?.model || 'Sin modelo'}</Text>
 
-        <Text style={styles.label}>Tecnico Asignado:</Text>
-        <Text style={styles.value}>{mantenimiento.tecnico}</Text>
+          <Text style={styles.label}>Técnico Asignado:</Text>
+          <Text style={styles.value}>
+            {mantenimiento.technician?.full_name || 'No asignado'}
+          </Text>
 
-        <Text style={styles.label}>Descripción:</Text>
-        <Text style={styles.value}>{mantenimiento.descripcion}</Text>
+          <Text style={styles.label}>Descripción:</Text>
+          <Text style={styles.value}>{mantenimiento.description || 'Sin descripción'}</Text>
 
-        {mantenimiento.imagen && (
-          <>
-            <Text style={styles.label}>Foto:</Text>
-            <Image source={{ uri: mantenimiento.imagen }} style={styles.image} />
-          </>
-        )}
-      </View>
+          {mantenimiento.image && (
+              <>
+                <Text style={styles.label}>Foto:</Text>
+                <Image source={{ uri: mantenimiento.image }} style={styles.image} />
+              </>
+          )}
+        </View>
 
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-        <MaterialIcons name="arrow-back" size={20} color="#fff" />
-        <Text style={styles.backButtonText}>Volver</Text>
-      </TouchableOpacity>
-    </ScrollView>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+          <MaterialIcons name="arrow-back" size={20} color="#fff" />
+          <Text style={styles.backButtonText}>Volver</Text>
+        </TouchableOpacity>
+      </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+    backgroundColor: '#fff',
+  },
   title: {
-    marginTop:30,
+    marginTop: 30,
     fontSize: 22,
     fontWeight: 'bold',
     color: '#0077b6',

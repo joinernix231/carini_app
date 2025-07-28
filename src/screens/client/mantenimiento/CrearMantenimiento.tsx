@@ -17,6 +17,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
+import { getTiposMantenimiento } from '../../../services/MantenimientoTypeService';
 import { createMantenimiento } from '../../../services/MantenimientoService';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -28,9 +29,15 @@ export default function CrearMantenimiento() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { token } = useAuth();
 
+
   const [equipos, setEquipos] = useState<
     { id: number; nombre: string; maintenance_type_id: number }[]
   >([]);
+
+  const [tiposIntervencionReal, setTiposIntervencionReal] = useState<
+  { id: number; nombre: string }[]
+>([]);
+
   const [loadingEquipos, setLoadingEquipos] = useState(true);
 
   const [tipo, setTipo] = useState<'preventive' | 'corrective'>('preventive');
@@ -40,54 +47,55 @@ export default function CrearMantenimiento() {
 
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<{
     id: number;
-    nombre: string;
+    name: string;
     maintenance_type_id: number;
   } | null>(null);
 
   const [tipoIntervencion, setTipoIntervencion] = useState<{
     id: number;
-    nombre: string;
+    name: string;
   } | null>(null);
 
   const [modalEquipo, setModalEquipo] = useState(false);
   const [modalIntervencion, setModalIntervencion] = useState(false);
   const [foto, setFoto] = useState<string | null>(null);
 
-  const tiposIntervencionReal = [
-    { id: 1, nombre: 'Revisión general' },
-    { id: 2, nombre: 'Ajuste de temperatura' },
-    { id: 3, nombre: 'Cambio de Repuesto' },
-    { id: 4, nombre: 'Diagnóstico eléctrico' },
-  ];
+
 
   useEffect(() => {
-    const cargarEquipos = async () => {
+    const cargarDatos = async () => {
       if (!token) return;
-
+  
       try {
         setLoadingEquipos(true);
-        const data = await getEquiposVinculados(token);
-
-        const listaEquipos = data.map((item: any) => {
+  
+        const [equiposData, intervencionData] = await Promise.all([
+          getEquiposVinculados(token),
+          getTiposMantenimiento(token),
+        ]);
+  
+        const listaEquipos = equiposData.map((item: any) => {
           const { device, address, id } = item;
           return {
             id,
-            nombre: `${device.model} (${device.serial}) - ${address}`,
+            name: `${device.model} (${device.serial}) - ${address}`,
             maintenance_type_id: device.maintenance_type_id || 1,
           };
         });
-
+  
         setEquipos(listaEquipos);
+        setTiposIntervencionReal(intervencionData);
       } catch (error) {
-        console.error('Error al cargar equipos:', error);
-        Alert.alert('Error', 'No se pudieron cargar los equipos');
+        console.error('Error al cargar datos:', error);
+        Alert.alert('Error', 'No se pudieron cargar los datos');
       } finally {
         setLoadingEquipos(false);
       }
     };
-
-    cargarEquipos();
+  
+    cargarDatos();
   }, [token]);
+  
 
   const showDatePicker = () => setDatePickerVisibility(true);
   const hideDatePicker = () => setDatePickerVisibility(false);
@@ -133,8 +141,10 @@ export default function CrearMantenimiento() {
         description: descripcion.trim(),
         photo: foto || undefined,
       };
+      alert(payload)
 
-      await createMantenimiento(payload);
+      await createMantenimiento(payload,token);
+    
 
       Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
         { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
@@ -152,7 +162,7 @@ export default function CrearMantenimiento() {
       <Text style={styles.label}>Equipo</Text>
       <TouchableOpacity style={styles.selector} onPress={() => setModalEquipo(true)}>
         <Text style={styles.selectorText}>
-          {equipoSeleccionado?.nombre || 'Selecciona un equipo'}
+          {equipoSeleccionado?.name || 'Selecciona un equipo'}
         </Text>
         <MaterialIcons name="arrow-drop-down" size={24} color="#0077b6" />
       </TouchableOpacity>
@@ -205,26 +215,27 @@ export default function CrearMantenimiento() {
       <Text style={styles.label}>Tipo de intervención</Text>
       <TouchableOpacity style={styles.selector} onPress={() => setModalIntervencion(true)}>
         <Text style={styles.selectorText}>
-          {tipoIntervencion?.nombre || 'Selecciona tipo de intervención'}
+          {tipoIntervencion?.name || 'Selecciona tipo de intervención'}
         </Text>
         <MaterialIcons name="arrow-drop-down" size={24} color="#0077b6" />
       </TouchableOpacity>
       <Modal visible={modalIntervencion} animationType="slide">
-        <FlatList
-          data={tiposIntervencionReal}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.optionItem}
-              onPress={() => {
-                setTipoIntervencion(item);
-                setModalIntervencion(false);
-              }}
-            >
-              <Text>{item.nombre}</Text>
-            </TouchableOpacity>
-          )}
-        />
+      <FlatList
+  data={tiposIntervencionReal}
+  keyExtractor={(item) => item.id.toString()}
+  renderItem={({ item }) => (
+    <TouchableOpacity
+      style={styles.optionItem}
+      onPress={() => {
+        setTipoIntervencion(item);
+        setModalIntervencion(false);
+      }}
+    >
+      <Text>{item.nombre}</Text>
+    </TouchableOpacity>
+  )}
+/>
+
       </Modal>
 
       <Text style={styles.label}>Foto del equipo (opcional)</Text>
