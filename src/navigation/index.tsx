@@ -2,13 +2,14 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 
 import LoginScreen from '../screens/LoginScreen';
+import AcceptPolicyScreen from "../screens/AcceptPolicyScreen";
 import ClienteDashboard from '../screens/client/ClienteDashboard';
 import MisEquipos from '../screens/client/MyDevices/MisEquipos';
 import TecnicoDashboard from '../screens/TecnicoDashboard';
 import CoordinadorDashboard from '../screens/Coordinator/CoordinadorDashboard';
 import AsignarEquipos from '../screens/Coordinator/AsignarEquipos';
 import DetalleEquipo from '../screens/client/MyDevices/DetalleEquipo';
-import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';  
+import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
 import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
 import MiEmpresa from '../screens/client/empresa/MiEmpresa';
@@ -23,6 +24,14 @@ export default function AppNavigator() {
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Login" component={LoginScreen} />
       </Stack.Navigator>
+    );
+  }
+
+  if (user && !user.policy_accepted) {
+    return (
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="AcceptPolicy" component={AcceptPolicyScreen} />
+        </Stack.Navigator>
     );
   }
 

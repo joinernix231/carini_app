@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "carini-app",
-    "slug": "carini-app",
+    "slug": "carini",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -25,9 +25,6 @@
       "permissions": [
         "CAMERA",
         "android.permission.CAMERA",
-        "android.permission.RECORD_AUDIO",
-        "CAMERA",
-        "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
       "package": "com.anonymous.cariniapp"
@@ -46,6 +43,13 @@
       "expo-barcode-scanner",
       "expo-font"
     ],
-    "newArchEnabled": true
+    "newArchEnabled": true,
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1f589531-42a1-4b68-90c0-6ef5c6a52c96"
+      }
+    },
+    "owner": "joinernix2"
   }
 }

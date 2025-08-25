@@ -7,12 +7,18 @@ import {
   TouchableOpacity,
   SafeAreaView,
   RefreshControl,
+  Alert,
+  StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../../context/AuthContext';
-import { getMantenimientos } from '../../../services/MantenimientoService';
+import {
+  getMantenimientos,
+  deleteMantenimiento,
+} from '../../../services/MantenimientoService';
 
 type RootStackParamList = {
   CrearMantenimiento: undefined;
@@ -21,9 +27,9 @@ type RootStackParamList = {
 
 type Mantenimiento = {
   id: number;
-  tipo: 'preventivo' | 'correctivo';
+  tipo: 'preventive' | 'corrective';
   equipo: string;
-  estado: string; // Ahora es string, no Text
+  estado: string;
   fecha: string;
 };
 
@@ -31,6 +37,7 @@ export default function MantenimientosList() {
   const { token } = useAuth();
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const traducirEstado = (estadoIngles: string): string => {
@@ -39,174 +46,577 @@ export default function MantenimientosList() {
       assigned: 'Asignado',
       in_progress: 'En progreso',
       completed: 'Completado',
+      cancelled: 'Cancelado',
     };
     return traducciones[estadoIngles] || estadoIngles;
   };
 
-  const getEstadoColor = (estado: string) => {
+  const getEstadoConfig = (estado: string) => {
     switch (estado) {
       case 'Pendiente':
-        return '#f39c12';
+        return {
+          color: '#FF9500',
+          bgColor: '#FFF5E6',
+          icon: 'time-outline' as const,
+        };
       case 'Asignado':
+        return {
+          color: '#007AFF',
+          bgColor: '#E6F3FF',
+          icon: 'document-text-outline' as const,
+        };
       case 'En progreso':
-        return '#3498db';
+        return {
+          color: '#5856D6',
+          bgColor: '#EEEEFC',
+          icon: 'trending-up' as const,
+        };
       case 'Completado':
-        return '#2ecc71';
+        return {
+          color: '#34C759',
+          bgColor: '#E8F5E8',
+          icon: 'checkmark-circle' as const,
+        };
       case 'Cancelado':
-        return '#e74c3c';
+        return {
+          color: '#FF3B30',
+          bgColor: '#FFE6E6',
+          icon: 'close-circle' as const,
+        };
       default:
-        return '#555';
+        return {
+          color: '#666',
+          bgColor: '#F0F0F0',
+          icon: 'help' as const,
+        };
     }
   };
 
-  const fetchMantenimientos = async () => {
+  const getTipoConfig = (tipo: string) => {
+    return tipo === 'preventive'
+        ? {
+          color: '#00C7BE',
+          bgColor: '#E6FFFE',
+          icon: 'shield-checkmark' as const,
+          label: 'Preventivo'
+        }
+        : {
+          color: '#FF6B47',
+          bgColor: '#FFF0ED',
+          icon: 'warning' as const,
+          label: 'Correctivo'
+        };
+  };
+
+  const fetchMantenimientos = async (showLoading = true) => {
     try {
-      if (!token) return;
+      if (!token) {
+        setLoading(false);
+        return;
+      }
+
+      if (showLoading) setLoading(true);
 
       const data = await getMantenimientos(token);
 
-      const formattedData: Mantenimiento[] = data.map((item: any) => ({
-        id: item.id,
-        tipo: item.type,
-        equipo: item.device?.model || 'Equipo sin nombre',
-        estado: item.status, // aquí dejamos el valor en inglés
-        fecha: item.date_maintenance,
-      }));
+      if (Array.isArray(data)) {
+        const formattedData: Mantenimiento[] = data.map((item: any) => ({
+          id: item.id,
+          tipo: item.type || 'preventive',
+          equipo: item.device?.model || item.client_device?.device?.model || 'Equipo sin nombre',
+          estado: item.status || 'pending',
+          fecha: item.date_maintenance || item.created_at || new Date().toISOString(),
+        }));
 
-      setMantenimientos(formattedData);
+        setMantenimientos(formattedData);
+      } else {
+        console.warn('Datos no válidos recibidos:', data);
+        setMantenimientos([]);
+      }
     } catch (error) {
       console.error('Error al cargar mantenimientos:', error);
+      Alert.alert('Error', 'No se pudieron cargar los mantenimientos');
+      setMantenimientos([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchMantenimientos();
-  }, []);
+  const eliminarMantenimiento = (id: number) => {
+    Alert.alert(
+        'Confirmar eliminación',
+        '¿Estás seguro de que deseas eliminar este mantenimiento?',
+        [
+          {
+            text: 'Cancelar',
+            style: 'cancel'
+          },
+          {
+            text: 'Eliminar',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                if (!token) return;
+                await deleteMantenimiento(id, token);
 
-  const onRefresh = useCallback(() => {
+                // Actualizar la lista localmente
+                setMantenimientos(prev => prev.filter(m => m.id !== id));
+
+                Alert.alert('Éxito', 'Mantenimiento eliminado correctamente');
+              } catch (error) {
+                console.error('Error al eliminar:', error);
+                Alert.alert('Error', 'No se pudo eliminar el mantenimiento');
+              }
+            },
+          },
+        ]
+    );
+  };
+
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    fetchMantenimientos().then(() => setRefreshing(false));
-  }, []);
+    try {
+      await fetchMantenimientos(false);
+    } catch (error) {
+      console.error('Error al actualizar:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [token]);
+
+  // Recargar cuando la pantalla recibe foco
+  useFocusEffect(
+      useCallback(() => {
+        fetchMantenimientos();
+      }, [token])
+  );
+
+  const formatearFecha = (fechaStr: string) => {
+    try {
+      const fecha = new Date(fechaStr);
+      return fecha.toLocaleDateString('es-CO', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return 'Fecha no válida';
+    }
+  };
 
   const renderItem = ({ item }: { item: Mantenimiento }) => {
     const estadoTraducido = traducirEstado(item.estado);
+    const estadoConfig = getEstadoConfig(estadoTraducido);
+    const tipoConfig = getTipoConfig(item.tipo);
+
     return (
         <TouchableOpacity
             style={styles.card}
             onPress={() => navigation.navigate('DetalleMantenimiento', { id: item.id })}
+            activeOpacity={0.8}
         >
-          <View style={styles.row}>
-            <MaterialIcons
-                name={item.tipo === 'preventivo' ? 'build-circle' : 'report-problem'}
-                size={28}
-                color={item.tipo === 'preventivo' ? '#0077b6' : '#e67e22'}
-            />
-            <View style={{ marginLeft: 10 }}>
-              <Text style={styles.cardTitle}>{item.equipo}</Text>
-              <Text style={styles.cardSubtitle}>
-                {item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1)} · {item.fecha}
-              </Text>
+          {/* Indicador de estado lateral */}
+          <View style={[styles.statusIndicator, { backgroundColor: estadoConfig.color }]} />
+
+          {/* Contenido de la tarjeta */}
+          <View style={styles.cardContent}>
+            {/* Header */}
+            <View style={styles.cardHeader}>
+              <View style={styles.equipoSection}>
+                <View style={[styles.tipoIcon, { backgroundColor: tipoConfig.bgColor }]}>
+                  <Ionicons
+                      name={tipoConfig.icon}
+                      size={24}
+                      color={tipoConfig.color}
+                  />
+                </View>
+                <View style={styles.equipoInfo}>
+                  <Text style={styles.equipoNombre} numberOfLines={1}>
+                    {item.equipo}
+                  </Text>
+                  <View style={[styles.tipoBadge, { backgroundColor: tipoConfig.bgColor }]}>
+                    <Text style={[styles.tipoText, { color: tipoConfig.color }]}>
+                      {tipoConfig.label}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Info section */}
+            <View style={styles.infoSection}>
+              <View style={styles.fechaContainer}>
+                <Ionicons name="calendar-outline" size={18} color="#666" />
+                <Text style={styles.fechaText}>{formatearFecha(item.fecha)}</Text>
+              </View>
+
+              <View style={[styles.estadoBadge, { backgroundColor: estadoConfig.bgColor }]}>
+                <Ionicons name={estadoConfig.icon} size={16} color={estadoConfig.color} />
+                <Text style={[styles.estadoText, { color: estadoConfig.color }]}>
+                  {estadoTraducido}
+                </Text>
+              </View>
+            </View>
+
+            {/* Footer con acciones */}
+            <View style={styles.cardFooter}>
+              <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() => eliminarMantenimiento(item.id)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
+                <Text style={styles.deleteText}>Eliminar</Text>
+              </TouchableOpacity>
+
+              <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
             </View>
           </View>
-          <Text style={[styles.estado, { color: getEstadoColor(estadoTraducido) }]}>
-            {estadoTraducido.toUpperCase()}
-          </Text>
         </TouchableOpacity>
     );
   };
 
-  return (
-      <SafeAreaView style={styles.container}>
-        <Text style={styles.title}>Mis Mantenimientos</Text>
+  const renderHeader = () => (
+      <View style={styles.header}>
+        <View style={styles.titleSection}>
+          <Text style={styles.title}>Mantenimientos</Text>
+          <Text style={styles.subtitle}>Gestiona tus equipos industriales</Text>
+        </View>
 
-        {mantenimientos.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="construct-outline" size={80} color="#ccc" />
-              <Text style={styles.emptyText}>Aún no tienes mantenimientos registrados</Text>
-            </View>
-        ) : (
-            <FlatList
-                data={mantenimientos}
-                renderItem={renderItem}
-                keyExtractor={(item) => item.id.toString()}
-                contentContainerStyle={{ paddingBottom: 100 }}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-            />
-        )}
+        <View style={styles.statsCard}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{mantenimientos.length}</Text>
+            <Text style={styles.statLabel}>Total</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {mantenimientos.filter(m => traducirEstado(m.estado) === 'Pendiente').length}
+            </Text>
+            <Text style={styles.statLabel}>Pendiente</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {mantenimientos.filter(m => traducirEstado(m.estado) === 'Completado').length}
+            </Text>
+            <Text style={styles.statLabel}>Completado</Text>
+          </View>
+        </View>
+      </View>
+  );
 
+  const renderEmptyState = () => (
+      <View style={styles.emptyContainer}>
+        <View style={styles.emptyIconContainer}>
+          <Ionicons name="construct-outline" size={64} color="#C0C0C0" />
+        </View>
+        <Text style={styles.emptyTitle}>No hay mantenimientos</Text>
+        <Text style={styles.emptySubtitle}>
+          Crea tu primer mantenimiento para comenzar a gestionar tus equipos
+        </Text>
         <TouchableOpacity
-            style={styles.button}
+            style={styles.emptyButton}
             onPress={() => navigation.navigate('CrearMantenimiento')}
         >
-          <MaterialIcons name="add-circle" size={24} color="#fff" />
-          <Text style={styles.buttonText}>Agendar mantenimiento</Text>
+          <Ionicons name="add" size={20} color="#FFFFFF" />
+          <Text style={styles.emptyButtonText}>Crear mantenimiento</Text>
         </TouchableOpacity>
+      </View>
+  );
+
+  const renderLoadingState = () => (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Cargando mantenimientos...</Text>
+      </View>
+  );
+
+  if (loading) {
+    return (
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+          {renderHeader()}
+          {renderLoadingState()}
+        </SafeAreaView>
+    );
+  }
+
+  return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+
+        {mantenimientos.length === 0 ? (
+            <View style={styles.container}>
+              {renderHeader()}
+              {renderEmptyState()}
+            </View>
+        ) : (
+            <>
+              <FlatList
+                  ListHeaderComponent={renderHeader}
+                  data={mantenimientos}
+                  renderItem={renderItem}
+                  keyExtractor={(item) => `mantenimiento_${item.id}`}
+                  contentContainerStyle={styles.listContent}
+                  showsVerticalScrollIndicator={false}
+                  refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        tintColor="#007AFF"
+                        colors={['#007AFF']}
+                    />
+                  }
+                  removeClippedSubviews={true}
+                  maxToRenderPerBatch={10}
+                  windowSize={10}
+                  initialNumToRender={8}
+              />
+
+              {/* Botón flotante para crear nuevo mantenimiento */}
+              <TouchableOpacity
+                  style={styles.fab}
+                  onPress={() => navigation.navigate('CrearMantenimiento')}
+                  activeOpacity={0.9}
+              >
+                <Ionicons name="add" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+            </>
+        )}
       </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', padding: 20 },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  container: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+    backgroundColor: '#F8F9FA',
+  },
+  titleSection: {
     marginBottom: 20,
-    paddingTop: 30,
-    textAlign: 'center',
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#000',
+    marginTop: 20,
+  },
+  subtitle: {
+    fontSize: 17,
+    color: '#666',
+    fontWeight: '500',
+  },
+  statsCard: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: '#007AFF',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 15,
+    color: '#666',
+    fontWeight: '600',
+  },
+  statDivider: {
+    width: 1,
+    backgroundColor: '#E0E0E0',
+    marginHorizontal: 20,
+  },
+  listContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 100,
   },
   card: {
-    backgroundColor: '#f6f6f6',
-    borderRadius: 10,
-    padding: 16,
-    marginBottom: 12,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    overflow: 'hidden',
   },
-  row: {
+  statusIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 5,
+  },
+  cardContent: {
+    padding: 20,
+  },
+  cardHeader: {
+    marginBottom: 16,
+  },
+  equipoSection: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: '#666',
-  },
-  estado: {
-    marginTop: 10,
-    fontWeight: 'bold',
-    textAlign: 'right',
-  },
-  button: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: '#0077b6',
-    padding: 16,
-    borderRadius: 10,
-    flexDirection: 'row',
+  tipoIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    gap: 10,
-    elevation: 5,
+    marginRight: 16,
   },
-  buttonText: {
-    color: '#fff',
+  equipoInfo: {
+    flex: 1,
+  },
+  equipoNombre: {
+    fontSize: 19,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 8,
+  },
+  tipoBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  tipoText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  infoSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  fechaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fechaText: {
+    marginLeft: 8,
     fontSize: 16,
-    fontWeight: 'bold',
+    color: '#666',
+    fontWeight: '600',
+  },
+  estadoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  estadoText: {
+    marginLeft: 6,
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F0F0F0',
+  },
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    backgroundColor: '#FFF5F5',
+  },
+  deleteText: {
+    marginLeft: 6,
+    fontSize: 15,
+    color: '#FF3B30',
+    fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 100,
+    paddingHorizontal: 40,
+    paddingBottom: 80,
   },
-  emptyText: {
-    marginTop: 20,
-    fontSize: 16,
-    color: '#888',
+  emptyIconContainer: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  emptyTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#000',
+    marginBottom: 8,
     textAlign: 'center',
+  },
+  emptySubtitle: {
+    fontSize: 17,
+    color: '#666',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 32,
+  },
+  emptyButton: {
+    backgroundColor: '#007AFF',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+  },
+  emptyButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingBottom: 100,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 17,
+    color: '#666',
+    fontWeight: '500',
   },
 });

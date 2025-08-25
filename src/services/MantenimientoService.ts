@@ -59,3 +59,11 @@ export const deleteMantenimiento = async (id: number, token: string) => {
   });
   return response.data;
 };
+ // Obtener lista de fechas disponibles
+export const getFechasDisponiblesTecnicos = async (token: string) => {
+    const response = await API.get('/api/availableDates', {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log(response.data);
+    return response.data;
+};

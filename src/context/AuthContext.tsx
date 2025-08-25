@@ -1,18 +1,20 @@
+// context/AuthContext.tsx
 import React, { createContext, useState, useContext } from 'react';
-import { login as loginAPI } from '../services/api';
-import API from '../services/api'; // 👈 Importamos tu instancia de Axios configurada
+import API, { login as loginAPI } from '../services/api';
 
 type User = {
   id: number;
   name: string;
   role: 'cliente' | 'tecnico' | 'coordinador';
+  policy_accepted?: boolean;
 };
 
 type AuthContextType = {
   user: User | null;
   token: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   logout: () => void;
+  acceptPolicy: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -21,27 +23,35 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
-  const login = async (email: string, password: string) => {
-    const response = await loginAPI(email, password);
-    setToken(response.token);
-    setUser(response.user);
+  const login = async (email: string, password: string): Promise<User> => {
+    const { token: newToken, user: userData } = await loginAPI(email, password);
 
-    // 🛡️ Muy importante: Configurar el token por defecto en Axios
-    API.defaults.headers.common['Authorization'] = `Bearer ${response.token}`;
+    setToken(newToken);
+    setUser(userData);
+
+    // Configurar token en todas las peticiones de Axios
+    API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+    return userData;
   };
 
   const logout = () => {
     setUser(null);
     setToken(null);
-
-    // Eliminar el Authorization global
     delete API.defaults.headers.common['Authorization'];
   };
 
+  const acceptPolicy = async () => {
+    if (!token) throw new Error('No hay token de autenticación');
+
+    await API.post('api/acceptPolicy');
+    setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider value={{ user, token, login, logout, acceptPolicy }}>
+        {children}
+      </AuthContext.Provider>
   );
 };
 

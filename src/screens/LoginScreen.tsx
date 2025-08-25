@@ -31,7 +31,6 @@ export default function LoginScreen() {
     };
   }, []);
 
-  // Ajuste del padding: más espacio por defecto, se reduce cuando el teclado aparece
   const dynamicPadding = isKeyboardVisible ? screenHeight * 0.00001 : screenHeight * 0.10;
 
   return (
