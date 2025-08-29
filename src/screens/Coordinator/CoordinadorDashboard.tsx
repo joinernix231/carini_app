@@ -22,11 +22,9 @@ type MenuOption = {
 };
 
 const options: MenuOption[] = [
-  { icon: 'engineering', label: 'Ver Mantenimientos', screen: 'VerMantenimientos' },
-  { icon: 'assignment-ind', label: 'Asignar Técnicos', screen: 'AsignarTecnicos' },
-  { icon: 'people', label: 'Ver Técnicos', screen: 'VerTecnicos' },
-  { icon: 'add-box', label: 'Asignar Equipos', screen: 'AsignarEquipos' },
-  { icon: 'groups', label: 'Ver Clientes', screen: 'VerClientes' },
+  { icon: 'engineering', label: 'Mantenimientos Programados', screen: 'VerMantenimientos' },
+  { icon: 'assignment-ind', label: 'Mantenimietos por programar', screen: 'AsignarTecnicos' },
+  { icon: 'people', label: 'Listado Tecnicos', screen: 'VerTecnicos' },
   { icon: 'edit', label: 'Editar Equipos', screen: 'EditarEquipos' },
 ];
 
