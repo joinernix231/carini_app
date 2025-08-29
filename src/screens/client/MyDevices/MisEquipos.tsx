@@ -14,6 +14,7 @@ import {
   TextInput,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import BackButton from '../../../components/BackButton';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../../context/AuthContext';
@@ -41,6 +42,7 @@ type RootStackParamList = {
   Historial: undefined;
   Productos: undefined;
   DetalleEquipo: { deviceId: number };
+  AgregarEquipo: undefined;
 };
 
 // Función para obtener el icono según el tipo de equipo
@@ -186,6 +188,7 @@ export default function MisEquipos() {
 
         {/* Header */}
         <View style={styles.header}>
+          <BackButton style={{ marginTop: 8 }} color="#000" size={24} />
           <Text style={styles.title}>Mis Equipos</Text>
           <Text style={styles.subtitle}>
             {equipos.length} {equipos.length === 1 ? 'equipo registrado' : 'equipos registrados'}
@@ -227,6 +230,15 @@ export default function MisEquipos() {
                 contentContainerStyle={styles.listContainer}
             />
         )}
+
+        {/* FAB to add new device */}
+        <TouchableOpacity
+          style={styles.fab}
+          onPress={() => navigation.navigate('AgregarEquipo')}
+          activeOpacity={0.9}
+        >
+          <MaterialIcons name="add" size={28} color="#fff" />
+        </TouchableOpacity>
       </SafeAreaView>
   );
 }
@@ -258,7 +270,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 5,
-    marginTop: 40,
+    marginTop: 12,
   },
   subtitle: {
     fontSize: 16,
@@ -397,5 +409,21 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 30,
     lineHeight: 22,
+  },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 20,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#007AFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
   },
 });

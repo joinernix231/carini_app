@@ -19,3 +19,4 @@ export const asignarEquipo = async (payload: {
   });
   return response.data;
 };
+

@@ -22,6 +22,7 @@ import { getEquiposVinculados } from '../../../services/EquipoClienteService';
 import { createMantenimiento, getFechasDisponiblesTecnicos } from '../../../services/MantenimientoService';
 import { uploadImage } from '../../../services/UploadImage';
 import { useAuth } from '../../../context/AuthContext';
+import BackButton from '../../../components/BackButton';
 
 type RootStackParamList = {
   SolicitarMantenimiento: undefined;
@@ -461,12 +462,11 @@ export default function CrearMantenimiento() {
         <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
 
         <View style={styles.header}>
-          <TouchableOpacity
+          <BackButton
               style={styles.backButton}
-              onPress={() => navigation.goBack()}
-          >
-            <Ionicons name="arrow-back" size={28} color="#000" />
-          </TouchableOpacity>
+              color="#000"
+              size={28}
+          />
           <Text style={styles.title}>Nuevo Mantenimiento</Text>
           <View style={styles.headerSpacer} />
         </View>

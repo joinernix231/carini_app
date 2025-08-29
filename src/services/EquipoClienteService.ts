@@ -82,7 +82,7 @@ export const getEquipoVinculado = async (token: string, deviceId: number ) => {
 export const asignarEquipo = async (payload: {
   serial: string;
   address: string;
-  client_id: number;
+  device_id: number;
 }, token: string) => {
   const response = await API.post('/api/linkDevices', payload, {
     headers: { Authorization: `Bearer ${token}` },

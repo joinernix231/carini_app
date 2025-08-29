@@ -12,6 +12,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import BackButton from '../../../components/BackButton';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAuth } from '../../../context/AuthContext';
@@ -278,6 +279,7 @@ export default function MantenimientosList() {
 
   const renderHeader = () => (
       <View style={styles.header}>
+        <BackButton style={{ marginBottom: 10 }} color="#000" size={24} />
         <View style={styles.titleSection}>
           <Text style={styles.title}>Mantenimientos</Text>
           <Text style={styles.subtitle}>Gestiona tus equipos industriales</Text>

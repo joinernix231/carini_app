@@ -9,10 +9,17 @@ import TecnicoDashboard from '../screens/TecnicoDashboard';
 import CoordinadorDashboard from '../screens/Coordinator/CoordinadorDashboard';
 import AsignarEquipos from '../screens/Coordinator/AsignarEquipos';
 import DetalleEquipo from '../screens/client/MyDevices/DetalleEquipo';
+import AgregarEquipo from '../screens/client/MyDevices/AgregarEquipo';
 import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
 import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
 import MiEmpresa from '../screens/client/empresa/MiEmpresa';
+
+// 👇 importa el nuevo dashboard y la pantalla de crear cliente
+import AdminDashboard from '../screens/Administrador/AdministradorDashboard';
+import ClienteList from '../screens/Administrador/Cliente/ClienteList';
+import DetalleCliente from '../screens/Administrador/Cliente/DetalleCliente';
+import CrearCliente from '../screens/Administrador/Cliente/CrearCliente';
 
 const Stack = createNativeStackNavigator();
 
@@ -21,9 +28,9 @@ export default function AppNavigator() {
 
   if (!user) {
     return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Login" component={LoginScreen} />
-      </Stack.Navigator>
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="Login" component={LoginScreen} />
+        </Stack.Navigator>
     );
   }
 
@@ -36,28 +43,41 @@ export default function AppNavigator() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {user.role === 'cliente' && (
-        <>
-          <Stack.Screen name="Cliente" component={ClienteDashboard} />
-          <Stack.Screen name="MisEquipos" component={MisEquipos} />
-          <Stack.Screen name="SolicitarMantenimiento" component={MantenimientosList} />
-          <Stack.Screen name="Historial" component={LoginScreen} />
-          <Stack.Screen name="Productos" component={LoginScreen} />
-          <Stack.Screen name="DetalleEquipo" component={DetalleEquipo} />
-          <Stack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
-          <Stack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
-          <Stack.Screen name="MiEmpresa" component={MiEmpresa} />
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {user.role === 'cliente' && (
+            <>
+              <Stack.Screen name="Cliente" component={ClienteDashboard} />
+              <Stack.Screen name="MisEquipos" component={MisEquipos} />
+              <Stack.Screen name="SolicitarMantenimiento" component={MantenimientosList} />
+              <Stack.Screen name="Historial" component={LoginScreen} />
+              <Stack.Screen name="Productos" component={LoginScreen} />
+              <Stack.Screen name="DetalleEquipo" component={DetalleEquipo} />
+              <Stack.Screen name="AgregarEquipo" component={AgregarEquipo} />
+              <Stack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
+              <Stack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
+              <Stack.Screen name="MiEmpresa" component={MiEmpresa} />
+            </>
+        )}
 
-        </>
-      )}
-      {user.role === 'tecnico' && <Stack.Screen name="Tecnico" component={TecnicoDashboard} />}
-      {user.role === 'coordinador' && (
-        <>
-          <Stack.Screen name="Coordinador" component={CoordinadorDashboard} />
-          <Stack.Screen name="AsignarEquipos" component={AsignarEquipos} />
-        </>
-      )}
-    </Stack.Navigator>
+        {user.role === 'tecnico' && (
+            <Stack.Screen name="Tecnico" component={TecnicoDashboard} />
+        )}
+
+        {user.role === 'coordinador' && (
+            <>
+              <Stack.Screen name="Coordinador" component={CoordinadorDashboard} />
+              <Stack.Screen name="AsignarEquipos" component={AsignarEquipos} />
+            </>
+        )}
+
+        {user.role === 'administrador' && (
+            <>
+              <Stack.Screen name="Admin" component={AdminDashboard} />
+              <Stack.Screen name="ClienteList" component={ClienteList} />
+              <Stack.Screen name="CrearCliente" component={CrearCliente} />
+              <Stack.Screen name="DetalleCliente" component={DetalleCliente} />
+            </>
+        )}
+      </Stack.Navigator>
   );
 }

@@ -12,9 +12,11 @@ import {
   Alert,
   Share,
   Linking,
+  RefreshControl,
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import BackButton from '../../../components/BackButton';
 import { getMantenimientoById } from '../../../services/MantenimientoService';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -155,7 +157,7 @@ export default function DetalleMantenimiento() {
           style={styles.container}
           showsVerticalScrollIndicator={false}
           refreshControl={
-            <ScrollView
+            <RefreshControl
                 refreshing={refreshing}
                 onRefresh={handleRefresh}
                 colors={['#0077b6']}
@@ -165,6 +167,7 @@ export default function DetalleMantenimiento() {
       >
         {/* Header con gradiente */}
         <View style={styles.header}>
+          <BackButton color="#fff" size={24} style={{ marginRight: 10 }} />
           <View style={styles.headerContent}>
             <Text style={styles.headerTitle}>Mantenimiento {mantenimiento.device.model}</Text>
             <Text style={styles.headerSubtitle}>{traducirTipo(mantenimiento.type)}</Text>
@@ -332,13 +335,13 @@ export default function DetalleMantenimiento() {
 
         {/* Botones de acción */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity
+          <BackButton
               style={styles.secondaryButton}
-              onPress={() => navigation.goBack()}
-          >
-            <MaterialIcons name="arrow-back" size={20} color="#0077b6" />
-            <Text style={styles.secondaryButtonText}>Volver</Text>
-          </TouchableOpacity>
+              color="#0077b6"
+              size={20}
+              label="Volver"
+              labelStyle={styles.secondaryButtonText}
+          />
 
           {mantenimiento.status === 'pending' && (
               <TouchableOpacity style={styles.primaryButton}>

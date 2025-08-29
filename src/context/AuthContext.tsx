@@ -5,7 +5,14 @@ import API, { login as loginAPI } from '../services/api';
 type User = {
   id: number;
   name: string;
-  role: 'cliente' | 'tecnico' | 'coordinador';
+  role: 'cliente' | 'tecnico' | 'coordinador' | 'administrador';
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  identifier: string;
+  legal_representative: string;
+  client_type: 'persona' | 'empresa';
   policy_accepted?: boolean;
 };
 
