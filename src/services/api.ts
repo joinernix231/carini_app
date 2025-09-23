@@ -1,5 +1,6 @@
 import axios from 'axios';
-
+import { ErrorService } from './ErrorService';
+import { ApiError } from '../types/ErrorTypes';
 
 const API = axios.create({
      baseURL: 'https://cariniservice-production.up.railway.app/',
@@ -9,7 +10,22 @@ const API = axios.create({
 API.interceptors.response.use(
     (response) => response,
     (error) => {
-        console.error('Error en la API:', error?.response?.data || error.message);
+        const apiError = ErrorService.parseApiError(error);
+        const errorType = ErrorService.getErrorType(apiError.status, error);
+        const config = ErrorService.getErrorConfig(errorType);
+        
+        console.error('Error en la API:', {
+            status: apiError.status,
+            message: apiError.message,
+            type: errorType,
+            originalError: error
+        });
+
+        // Agregar información adicional al error para el manejo posterior
+        error.apiError = apiError;
+        error.errorType = errorType;
+        error.errorConfig = config;
+        
         return Promise.reject(error);
     }
 );

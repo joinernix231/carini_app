@@ -9,7 +9,6 @@ import {
   ActivityIndicator,
   Alert,
   Linking,
-  SafeAreaView,
   StatusBar,
   Dimensions,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import { getEquipoVinculado } from '../../../services/EquipoClienteService';
 import { useAuth } from '../../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 

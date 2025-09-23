@@ -1,6 +1,7 @@
 // context/AuthContext.tsx
 import React, { createContext, useState, useContext } from 'react';
 import API, { login as loginAPI } from '../services/api';
+import { useError } from './ErrorContext';
 
 type User = {
   id: number;
@@ -29,17 +30,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+  const { showError } = useError();
 
   const login = async (email: string, password: string): Promise<User> => {
-    const { token: newToken, user: userData } = await loginAPI(email, password);
+    try {
+      const { token: newToken, user: userData } = await loginAPI(email, password);
 
-    setToken(newToken);
-    setUser(userData);
+      setToken(newToken);
+      setUser(userData);
 
-    // Configurar token en todas las peticiones de Axios
-    API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+      // Configurar token en todas las peticiones de Axios
+      API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-    return userData;
+      return userData;
+    } catch (error) {
+      showError(error);
+      throw error;
+    }
   };
 
   const logout = () => {

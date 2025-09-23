@@ -66,7 +66,8 @@ export default function LoginForm() {
     try {
       await login(email, password);
     } catch (error) {
-      Alert.alert('Error', 'Credenciales inválidas o servidor no responde.');
+      // El error se maneja automáticamente en el AuthContext
+      // usando el sistema de errores global
     } finally {
       setLoading(false);
     }

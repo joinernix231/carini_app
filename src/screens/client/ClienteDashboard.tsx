@@ -8,13 +8,13 @@ import {
   Alert,
   StatusBar,
   Dimensions,
-  SafeAreaView
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
@@ -23,7 +23,7 @@ type RootStackParamList = {
   SolicitarMantenimiento: undefined;
   Historial: undefined;
   Productos: undefined;
-  MiEmpresa: undefined;
+  MiPerfil: undefined;
 };
 
 type MenuOption = {
@@ -62,8 +62,8 @@ const options: MenuOption[] = [
   },
   {
     icon: 'business',
-    label: 'Mi Empresa',
-    screen: 'MiEmpresa',
+    label: 'Mi Perfil',
+    screen: 'Miperfil',
     color: '#26A69A',
     bgColor: '#E0F2F1',
     description: 'Información empresarial'

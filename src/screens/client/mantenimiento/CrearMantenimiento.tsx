@@ -19,7 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
-import { createMantenimiento, getFechasDisponiblesTecnicos } from '../../../services/MantenimientoService';
+import { createMantenimiento } from '../../../services/MantenimientoService';
 import { uploadImage } from '../../../services/UploadImage';
 import { useAuth } from '../../../context/AuthContext';
 import BackButton from '../../../components/BackButton';
@@ -67,22 +67,14 @@ export default function CrearMantenimiento() {
 
   const [tipo, setTipo] = useState<'preventive' | 'corrective'>('preventive');
   const [descripcion, setDescripcion] = useState('');
-  const [fecha, setFecha] = useState<Date | null>(null);
-  const [fechasDisponibles, setFechasDisponibles] = useState<string[]>([]);
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [loading, setLoading] = useState(false);
 
   const [modalEquipo, setModalEquipo] = useState(false);
-  const [modalFechas, setModalFechas] = useState(false);
 
-  // Función helper para crear fecha local desde string YYYY-MM-DD
-  const createLocalDate = (dateString: string): Date => {
-    const [year, month, day] = dateString.split('-').map(Number);
-    return new Date(year, month - 1, day); // month - 1 porque Date() usa 0-11 para meses
-  };
 
   useEffect(() => {
-    const cargarEquiposYFechas = async () => {
+    const cargarEquipos = async () => {
       if (!token) return;
 
       try {
@@ -98,43 +90,59 @@ export default function CrearMantenimiento() {
         });
         setEquipos(listaEquipos);
 
-        const response = await getFechasDisponiblesTecnicos(token);
-        if (response.success && Array.isArray(response.data)) {
-          setFechasDisponibles(response.data);
-        }
       } catch (error) {
         console.error('Error al cargar datos:', error);
         Alert.alert('Error', 'Hubo un problema cargando los datos.');
       }
     };
 
-    cargarEquiposYFechas();
+    cargarEquipos();
   }, [token]);
 
-  const pickImage = async () => {
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const pickImage = async () => {
+        try {
+            const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      if (permissionResult.granted === false) {
-        Alert.alert('Permisos necesarios', 'Se necesitan permisos para acceder a la galería de fotos.');
-        return;
-      }
+            if (status !== 'granted') {
+                if (canAskAgain) {
+                    // El usuario negó, pero aún podemos volver a preguntar
+                    Alert.alert(
+                        'Permisos requeridos',
+                        'Necesitamos acceso a tu galería para seleccionar imágenes.',
+                        [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Intentar de nuevo', onPress: () => pickImage() }
+                        ]
+                    );
+                } else {
+                    // El usuario negó permanentemente
+                    Alert.alert(
+                        'Permiso denegado',
+                        'Debes habilitar el acceso a la galería desde los ajustes de tu dispositivo.',
+                        [
+                            { text: 'Cancelar', style: 'cancel' },
+                            { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }
+                        ]
+                    );
+                }
+                return;
+            }
 
-      const resultado = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
+            const resultado = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [4, 3],
+                quality: 0.8,
+            });
 
-      if (!resultado.canceled && resultado.assets.length > 0) {
-        setFoto(resultado.assets[0]);
-      }
-    } catch (error) {
-      console.error('Error al seleccionar imagen:', error);
-      Alert.alert('Error', 'Hubo un problema al seleccionar la imagen.');
-    }
-  };
+            if (!resultado.canceled && resultado.assets.length > 0) {
+                setFoto(resultado.assets[0]);
+            }
+        } catch (error) {
+            console.error('Error al seleccionar imagen:', error);
+            Alert.alert('Error', 'Hubo un problema al seleccionar la imagen.');
+        }
+    };
 
   const handleSubmit = async () => {
     if (loading) return;
@@ -187,10 +195,6 @@ export default function CrearMantenimiento() {
         return;
       }
 
-      if (tipo === 'preventive' && !fecha) {
-        Alert.alert('Error', 'Selecciona una fecha disponible.');
-        return;
-      }
 
       if (tipo === 'corrective' && descripcion.trim() === '') {
         Alert.alert('Error', 'La descripción es obligatoria para mantenimientos correctivos.');
@@ -204,16 +208,11 @@ export default function CrearMantenimiento() {
         photo: nombreImagen,
       };
 
-      if (tipo === 'preventive') {
-        payload.date_maintenance = fecha?.toISOString().split('T')[0];
-      }
-
       console.log('Enviando payload:', payload);
       await createMantenimiento(payload, token);
 
       setEquipoSeleccionado(null);
       setDescripcion('');
-      setFecha(null);
       setFoto(null);
 
       if (tipo === 'corrective') {
@@ -256,14 +255,19 @@ export default function CrearMantenimiento() {
     );
   };
 
-  const isFormValid = () => {
-    if (!equipoSeleccionado) return false;
-    if (tipo === 'preventive' && !fecha) return false;
-    if (tipo === 'corrective' && !descripcion.trim()) return false;
-    return true;
-  };
+    const isFormValid = () => {
+        if (!equipoSeleccionado) return false;
+        if (tipo === 'preventive') {
+            return true;
+        }
+        if (tipo === 'corrective') {
+            return descripcion.trim().length > 0;
+        }
+        return false;
+    };
 
-  const renderEquipoSelector = () => (
+
+    const renderEquipoSelector = () => (
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Equipo a mantener</Text>
         <TouchableOpacity
@@ -362,43 +366,6 @@ export default function CrearMantenimiento() {
     );
   };
 
-  const renderFechaSelector = () => {
-    if (tipo !== 'preventive') return null;
-
-    return (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Fecha programada</Text>
-          <TouchableOpacity
-              style={[styles.selector, fecha && styles.selectorFilled]}
-              onPress={() => setModalFechas(true)}
-          >
-            <View style={styles.selectorContent}>
-              <View style={styles.selectorIcon}>
-                <Ionicons
-                    name="calendar"
-                    size={24}
-                    color={fecha ? "#007AFF" : "#666"}
-                />
-              </View>
-              <View style={styles.selectorTextContainer}>
-                <Text style={[
-                  styles.selectorText,
-                  fecha && styles.selectorTextFilled
-                ]}>
-                  {fecha ? fecha.toLocaleDateString('es-CO', {
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  }) : 'Selecciona una fecha'}
-                </Text>
-              </View>
-            </View>
-            <Ionicons name="chevron-down" size={24} color="#666" />
-          </TouchableOpacity>
-        </View>
-    );
-  };
 
   const renderImagePicker = () => (
       <View style={styles.section}>
@@ -479,7 +446,6 @@ export default function CrearMantenimiento() {
           {renderEquipoSelector()}
           {renderTipoSelector()}
           {renderChecklist()}
-          {renderFechaSelector()}
           {renderImagePicker()}
           {renderDescripcion()}
 
@@ -536,45 +502,7 @@ export default function CrearMantenimiento() {
           </SafeAreaView>
         </Modal>
 
-        {/* Modal Fechas */}
-        <Modal visible={modalFechas} animationType="slide" presentationStyle="pageSheet">
-          <SafeAreaView style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setModalFechas(false)}>
-                <Text style={styles.modalCancelButton}>Cancelar</Text>
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Fechas Disponibles</Text>
-              <View style={styles.modalSpacer} />
-            </View>
-            <FlatList
-                data={fechasDisponibles}
-                keyExtractor={(item, index) => index.toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.modalItem}
-                        onPress={() => {
-                          setFecha(createLocalDate(item));
-                          setModalFechas(false);
-                        }}
-                    >
-                      <Ionicons name="calendar" size={24} color="#007AFF" />
-                      <Text style={styles.modalItemText}>
-                        {createLocalDate(item).toLocaleDateString('es-CO', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </Text>
-                      {fecha && fecha.toDateString() === createLocalDate(item).toDateString() && (
-                          <Ionicons name="checkmark" size={24} color="#007AFF" />
-                      )}
-                    </TouchableOpacity>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
-            />
-          </SafeAreaView>
-        </Modal>
+
       </SafeAreaView>
   );
 }
@@ -596,6 +524,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    top: 10,
   },
   title: {
     flex: 1,

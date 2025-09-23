@@ -1,230 +1,229 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-  StatusBar,
-  ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import BackButton from '../../../components/BackButton';
+import { View, StyleSheet, Alert, Text, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useAuth } from '../../../context/AuthContext';
-import { createCliente } from '../../../services/ClienteService';
+import { Ionicons } from '@expo/vector-icons';
+import { useClientes } from '../../../hooks/cliente/useClientes';
+import ClienteForm from '../../../components/Cliente/ClienteForm';
+import BackButton from '../../../components/BackButton';
+import { ClienteFormValues } from '../../../types/cliente/cliente';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-// Local stack typing
- type RootStackParamList = {
-  ClienteList: undefined;
-  DetalleCliente: { id: number };
- };
+
+type RootStackParamList = {
+    CrearCliente: undefined;
+    DetalleCliente: { id: number };
+    ClienteList: undefined;
+};
+
+const initialValues: ClienteFormValues = {
+    name: '',
+    identifier: '',
+    email: '',
+    client_type: 'Natural',
+    document_type: 'CC',
+    city: '',
+    department: '',
+    address: '',
+    phone: '',
+    legal_representative: '',
+    contacts: [],
+};
+
+const showError = (error: any, defaultMessage: string) => {
+    const message = error?.response?.data?.message || error?.message || defaultMessage;
+    Alert.alert('Error', message);
+};
 
 export default function CrearCliente() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { token } = useAuth();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { addCliente } = useClientes();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const [name, setName] = useState('');
-  const [identifier, setIdentifier] = useState('');
-  const [email, setEmail] = useState('');
-  const [legalRepresentative, setLegalRepresentative] = useState('');
-  const [address, setAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [phone, setPhone] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+    const handleSubmit = async (values: ClienteFormValues) => {
+        if (isSubmitting) return;
+        
+        setIsSubmitting(true);
+        
+        try {
+            const payload = {
+                name: values.name.trim(),
+                identifier: values.identifier.trim(),
+                email: values.email && values.email.trim() ? values.email.trim() : null,
+                client_type: values.client_type,
+                document_type: values.document_type,
+                city: values.city.trim(),
+                department: values.department.trim(),
+                address: values.address.trim(),
+                phone: values.phone.trim(),
+                legal_representative: values.legal_representative && values.legal_representative.trim() 
+                    ? values.legal_representative.trim() 
+                    : null,
+                contacts: values.contacts.map((c) => ({
+                    nombre_contacto: c.nombre_contacto.trim(),
+                    correo: c.correo.trim(),
+                    telefono: c.telefono.trim(),
+                    direccion: c.direccion.trim(),
+                    cargo: c.cargo.trim(),
+                })),
+            };
 
-  const validate = () => {
-    if (!name.trim()) {
-      Alert.alert('Validación', 'El nombre es requerido');
-      return false;
-    }
-    if (!identifier.trim()) {
-      Alert.alert('Validación', 'La identificación es requerida');
-      return false;
-    }
-    // Email opcional, pero si lo ingresan, validamos formato básico
-    if (email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      Alert.alert('Validación', 'El email no es válido');
-      return false;
-    }
-    return true;
-  };
+            const created = await addCliente(payload);
 
-  const onSubmit = async () => {
-    if (!token) {
-      Alert.alert('Error', 'No hay sesión activa');
-      return;
-    }
-    if (!validate()) return;
+            // Mostrar mensaje de éxito con opciones
+            Alert.alert(
+                '¡Cliente Creado!', 
+                `${values.name} ha sido registrado exitosamente.`,
+                [
+                    {
+                        text: 'Ver Detalle',
+                        style: 'default',
+                        onPress: () => {
+                            navigation.replace('DetalleCliente', { id: created.id });
+                        },
+                    },
+                    {
+                        text: 'Ir a Lista',
+                        style: 'default',
+                        onPress: () => {
+                            navigation.navigate('ClienteList');
+                        },
+                    },
+                    {
+                        text: 'Crear Otro',
+                        style: 'cancel',
+                        onPress: () => {
+                            // Se queda en la misma pantalla para crear otro cliente
+                        },
+                    },
+                ],
+                { cancelable: false }
+            );
+        } catch (error: any) {
+            console.error('Error creando cliente:', error);
+            showError(error, 'No se pudo crear el cliente. Inténtalo nuevamente.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
-    try {
-      setSubmitting(true);
-      const payload = {
-        name: name.trim(),
-        identifier: identifier.trim(),
-        email: email.trim() || null,
-        legal_representative: legalRepresentative.trim() || null,
-        address: address.trim() || null,
-        city: city.trim() || null,
-        phone: phone.trim() || null,
-      } as const;
+    return (
+        <SafeAreaView style={styles.safeArea}>
+            <StatusBar backgroundColor="#667eea" barStyle="light-content" />
+            
+            {/* Header con gradiente y back button */}
+            <View style={styles.header}>
+                <View style={styles.headerTop}>
+                    <BackButton 
+                        color="#fff" 
+                        size={26}
+                        style={styles.backButton}
+                        label="Atrás"
+                        accessibilityLabel="Regresar a la pantalla anterior"
+                    />
+                </View>
+                
+                <View style={styles.headerContent}>
+                    <View style={styles.headerIconContainer}>
+                        <Ionicons name="person-add" size={32} color="#fff" />
+                    </View>
+                    <Text style={styles.headerTitle}>Nuevo Cliente</Text>
+                    <Text style={styles.headerSubtitle}>
+                        Complete la información para registrar un nuevo cliente
+                    </Text>
+                </View>
+            </View>
 
-      const res: any = await createCliente(payload as any, token);
+            {/* Formulario */}
+            <View style={styles.formContainer}>
+                <ClienteForm
+                    initialValues={initialValues}
+                    onSubmit={handleSubmit}
+                    submitLabel="Crear Cliente"
+                />
+            </View>
 
-      const created = res?.data ?? res; // handle { success, data } or plain object
-      const newId = created?.id ?? res?.id;
-
-      Alert.alert('Éxito', 'Cliente creado correctamente', [
-        {
-          text: 'Ver detalle',
-          onPress: () => {
-            if (newId) {
-              navigation.replace('DetalleCliente', { id: Number(newId) });
-            } else {
-              navigation.navigate('ClienteList');
-            }
-          },
-        },
-      ]);
-    } catch (error: any) {
-      console.error('Error creando cliente:', error?.response?.data ?? error);
-      const msg = error?.response?.data?.message || 'No se pudo crear el cliente';
-      Alert.alert('Error', msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <BackButton style={{ marginBottom: 10 }} color="#000" size={24} />
-
-        <Text style={styles.title}>Crear cliente</Text>
-        <Text style={styles.subtitle}>Completa la información para registrar un nuevo cliente</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.label}>Nombre*</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: Tech Solutions S.A."
-            placeholderTextColor="#999"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.label}>Identificación*</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: 1141515074 / NIT"
-            placeholderTextColor="#999"
-            value={identifier}
-            onChangeText={setIdentifier}
-            autoCapitalize="none"
-            keyboardType="default"
-          />
-
-          <Text style={styles.label}>Email</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: contacto@empresa.com"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-
-
-          <Text style={styles.label}>Dirección</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: Carrera 15 #45-60"
-            placeholderTextColor="#999"
-            value={address}
-            onChangeText={setAddress}
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.label}>Ciudad</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: Bogotá"
-            placeholderTextColor="#999"
-            value={city}
-            onChangeText={setCity}
-            autoCapitalize="words"
-          />
-
-          <Text style={styles.label}>Teléfono</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: +57 3001234567"
-            placeholderTextColor="#999"
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-        </View>
-
-        <TouchableOpacity
-          style={[styles.submitButton, submitting && { opacity: 0.8 }]}
-          onPress={onSubmit}
-          disabled={submitting}
-          activeOpacity={0.9}
-        >
-          {submitting ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <>
-              <Ionicons name="checkmark" size={20} color="#fff" />
-              <Text style={styles.submitText}>Crear cliente</Text>
-            </>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </SafeAreaView>
-  );
+            {/* Indicador de progreso sutil */}
+            <View style={styles.progressContainer}>
+                <View style={styles.progressDot} />
+                <View style={[styles.progressDot, styles.progressDotInactive]} />
+                <View style={[styles.progressDot, styles.progressDotInactive]} />
+            </View>
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F8F9FA' },
-  content: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 40 },
-  title: { fontSize: 28, fontWeight: '800', color: '#000', marginTop: 10 },
-  subtitle: { fontSize: 16, color: '#666', marginBottom: 16, fontWeight: '500' },
-  card: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  label: { fontSize: 13, color: '#666', marginTop: 12, marginBottom: 6, fontWeight: '700' },
-  input: {
-    backgroundColor: '#F7F7F7',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    color: '#000',
-    borderWidth: 1,
-    borderColor: '#E6E6E6',
-  },
-  submitButton: {
-    marginTop: 20,
-    backgroundColor: '#007AFF',
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  submitText: { color: '#fff', fontSize: 16, fontWeight: '800' },
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#667eea',
+    },
+    header: {
+        backgroundColor: '#667eea',
+        paddingHorizontal: 20,
+        paddingBottom: 25,
+    },
+    headerTop: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingTop: 10,
+        paddingBottom: 15,
+    },
+    backButton: {
+        paddingTop: 0,
+    },
+    headerContent: {
+        alignItems: 'center',
+        paddingBottom: 10,
+    },
+    headerIconContainer: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: 'rgba(255,255,255,0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+        borderWidth: 2,
+        borderColor: 'rgba(255,255,255,0.3)',
+    },
+    headerTitle: {
+        fontSize: 28,
+        fontWeight: '800',
+        color: '#fff',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.9)',
+        textAlign: 'center',
+        lineHeight: 22,
+        paddingHorizontal: 20,
+    },
+    formContainer: {
+        flex: 1,
+        backgroundColor: '#F8FAFC',
+        borderTopLeftRadius: 25,
+        borderTopRightRadius: 25,
+        marginTop: -15,
+        paddingTop: 5,
+    },
+    progressContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 15,
+        backgroundColor: '#F8FAFC',
+        gap: 8,
+    },
+    progressDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#667eea',
+    },
+    progressDotInactive: {
+        backgroundColor: '#E5E7EB',
+    },
 });

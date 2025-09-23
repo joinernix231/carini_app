@@ -6,17 +6,26 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
-  StatusBar,
-  SafeAreaView
+  StatusBar
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import CoordinadorList from "./Coordinador/CoordinadorList";
 
 type RootStackParamList = {
   ClienteList: undefined;
+  TecnicoList: undefined;
+  VerMantenimientos: undefined;
+  AsignarTecnicos: undefined;
+  VerTecnicos: undefined;
+  AsignarEquipos: undefined;
+  VerClientes: undefined;
+  EquipoList: undefined;
+  CoordinadorList: undefined;
 };
 
 type MenuOption = {
@@ -37,6 +46,39 @@ const options: MenuOption[] = [
     bgColor: '#E3F2FD',
     description: 'Gestiona clientes',
   },
+    {
+        icon: 'people',
+        label: 'Técnicos',
+        screen: 'TecnicoList',
+        color: '#26A69A',
+        bgColor: '#E0F2F1',
+        description: 'Gestionar personal'
+    },
+    {
+        icon: 'people',
+        label: 'Coordinadores',
+        screen: 'CoordinadorList',
+        color: '#3c1642',
+        bgColor: '#F3E5F5',
+        description: 'Gestionar personal'
+    },
+
+    {
+        icon: 'edit',
+        label: 'Equipos',
+        screen: 'EquipoList',
+        color: '#AB47BC',
+        bgColor: '#F3E5F5',
+        description: 'Editar información'
+    },
+    {
+        icon: 'engineering',
+        label: 'Mantenimientos',
+        screen: 'VerMantenimientos',
+        color: '#1E88E5',
+        bgColor: '#E3F2FD',
+        description: 'Ver programados'
+    },
 ];
 
 export default function AdminDashboard() {
@@ -96,7 +138,7 @@ export default function AdminDashboard() {
                   data={options}
                   renderItem={renderItem}
                   keyExtractor={(item) => item.label}
-                  numColumns={1} // 👈 Solo una columna porque es un item
+                  numColumns={2} // 👈 Solo una columna porque es un item
                   contentContainerStyle={styles.grid}
                   showsVerticalScrollIndicator={false}
               />
@@ -160,7 +202,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contentContainer: {
-    flex: 1,
+    flex: 2,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -199,7 +241,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   label: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#2c3e50',
     textAlign: 'center',

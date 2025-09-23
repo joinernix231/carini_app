@@ -1,273 +1,334 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-  Alert,
-  SafeAreaView,
-  StatusBar,
-  Dimensions,
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    ActivityIndicator,
+    Alert,
+    StatusBar,
+    Dimensions,
+    RefreshControl,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { useAuth } from '../../../context/AuthContext';
-import { getCliente } from '../../../services/ClienteService';
-import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../../components/BackButton';
+import { useCliente } from '../../../hooks/cliente/useCliente';
+import { Cliente } from '../../../types/cliente/cliente';
+import { useError } from '../../../context/ErrorContext';
 
 const { width } = Dimensions.get('window');
 
-type RouteParams = {
-  id: number;
+type RootStackParamList = {
+    DetalleCliente: { id: number };
+    EditarCliente: { id: number } | undefined;
+    ClienteList: undefined;
 };
 
-type ClienteDetalle = {
-  id: number;
-  identifier: string | null;
-  name: string;
-  email?: string | null;
-  legal_representative: string | null;
-  address: string | null;
-  city: string | null;
-  phone: string | null;
-  user_id: number;
-  created_at: string | null;
-  updated_at: string | null;
-  user?: {
-    name?: string | null;
-    email?: string | null;
-    role?: string | null;
-  } | null;
+type RouteParams = {
+    id: number;
 };
 
 export default function DetalleCliente() {
-  const route = useRoute();
-  const navigation = useNavigation();
-  const { token } = useAuth();
-  const { id } = route.params as RouteParams;
+    const route = useRoute();
+    const navigation = useNavigation<any>();
+    const { id } = route.params as RouteParams;
 
-  const [cliente, setCliente] = useState<ClienteDetalle | null>(null);
-  const [loading, setLoading] = useState(true);
+    const {
+        cliente,
+        loading,
+        error,
+        fetchCliente,
+        updateCliente,
+        changeStatus,
+        removeCliente,
+    } = useCliente(id);
+    const { showError } = useError();
 
-  useEffect(() => {
-    if (token && id) fetchDetalle();
-  }, [token, id]);
+    const displayName = cliente?.name ?? 'Cliente';
+    const displayEmail = cliente?.user?.email ?? '-';
 
-  const fetchDetalle = async () => {
-    try {
-      const data: any = await getCliente(id, token!);
-      const normalized: ClienteDetalle = {
-        ...(data || {}),
-        email: (data?.email ?? data?.user?.email ?? null),
-      };
-      setCliente(normalized);
-    } catch (error) {
-      console.error('Error cargando cliente', error);
-      Alert.alert('Error', 'No se pudo cargar el detalle del cliente.');
-    } finally {
-      setLoading(false);
+    const handleEdit = useCallback(() => {
+        navigation.navigate('EditarCliente', { id });
+    }, [navigation, id]);
+
+    const confirmDelete = useCallback(() => {
+        Alert.alert(
+            'Eliminar cliente',
+            `¿Estás seguro que deseas eliminar a ${displayName}? Esta acción no se puede deshacer.`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Eliminar',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await removeCliente();
+                            Alert.alert('Éxito', 'Cliente eliminado', [{ text: 'OK', onPress: () => navigation.navigate('ClienteList') }]);
+                        } catch (err) {
+                            // El error se maneja automáticamente por el sistema global
+                            console.error('Error eliminando cliente:', err);
+                        }
+                    },
+                },
+            ]
+        );
+    }, [displayName, removeCliente, navigation]);
+
+    const toggleStatus = useCallback(() => {
+        if (!cliente) return;
+        const next = cliente.status === 'active' ? 'inactive' : 'active';
+        console.log(next)
+        Alert.alert(
+            `${next === 'active' ? 'Activar' : 'Desactivar'} cliente`,
+            `¿Deseas cambiar el estado a "${next === 'active' ? 'Activo' : 'Inactivo'}"?`,
+            [
+                { text: 'Cancelar', style: 'cancel' },
+                {
+                    text: 'Confirmar',
+                    onPress: async () => {
+                        try {
+                            await changeStatus(next);
+                            Alert.alert('Éxito', `Estado cambiado a ${next === 'active' ? 'Activo' : 'Inactivo'}`);
+                        } catch (err) {
+                            // El error se maneja automáticamente por el sistema global
+                            console.error('Error cambiando estado:', err);
+                        }
+                    },
+                },
+            ]
+        );
+    }, [cliente, changeStatus]);
+
+    const formatDate = (value?: string | null) => {
+        if (!value) return '-';
+        const normalized = value.replace(' ', 'T');
+        const d = new Date(normalized);
+        if (isNaN(d.getTime())) return value;
+        return d.toLocaleString();
+    };
+
+    const getDocumentTypeLabel = (type?: string) => {
+        switch (type) {
+            case 'CC': return 'CC - Cédula de Ciudadanía';
+            case 'CE': return 'CE - Cédula de Extranjería';
+            case 'CI': return 'CI - Cédula de Identidad';
+            case 'PASS': return 'PASS - Pasaporte';
+            case 'NIT': return 'NIT - Número de Identificación Tributaria';
+            default: return type || '-';
+        }
+    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="light-content" backgroundColor="#0EA5E9" />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0EA5E9" />
+                    <Text style={styles.loadingText}>Cargando cliente...</Text>
+                </View>
+            </SafeAreaView>
+        );
     }
-  };
 
-  if (loading) {
+    if (!cliente && !loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.errorContainer}>
+                    <MaterialIcons name="error-outline" size={64} color="#EF4444" />
+                    <Text style={styles.errorTitle}>Cliente no encontrado</Text>
+                    <Text style={styles.errorText}>{error ?? 'No se pudo cargar la información.'}</Text>
+                    <TouchableOpacity style={styles.retryButton} onPress={() => fetchCliente()}>
+                        <Text style={styles.retryButtonText}>Reintentar</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="light-content" backgroundColor="#007AFF" />
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Cargando cliente...</Text>
-          </View>
+            <StatusBar barStyle="light-content" backgroundColor="#0EA5E9" />
+
+            <View style={styles.header}>
+                <BackButton color="#fff" />
+                <View style={styles.headerCenter}>
+                    <View style={styles.avatar}>
+                        <Ionicons name="business-outline" size={44} color="#fff" />
+                    </View>
+
+                    <Text style={styles.title}>{displayName}</Text>
+
+                    <View style={[styles.statusBadge, { backgroundColor: cliente?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.15)' }]}>
+                        <Text style={[styles.statusText, { color: cliente?.status === 'active' ? '#9ef01a' : '#EF4444' }]}>
+                            {cliente?.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </Text>
+                    </View>
+                </View>
+
+                <View style={styles.headerActions}>
+                    <TouchableOpacity onPress={() => {
+                        Alert.alert('Compartir', `Cliente: ${displayName}\nEmail: ${displayEmail}`);
+                    }} accessibilityLabel="Compartir cliente">
+                        <MaterialIcons name="share" size={22} color="#ffffff" />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            <ScrollView
+                style={styles.scrollContainer}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                refreshControl={<RefreshControl refreshing={false} onRefresh={() => fetchCliente()} />}
+                showsVerticalScrollIndicator={false}
+            >
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Información general</Text>
+                    <View style={styles.card}>
+                        <Row label="Identificador" value={cliente?.identifier ?? '-'} icon="fingerprint" color="#7C3AED" />
+                        <Row label="Email" value={cliente?.user?.email ?? '-'} icon="email" color="#7C3AED" />
+                        <Row label="Teléfono" value={cliente?.phone ?? '-'} icon="phone" color="#06B6D4" />
+                        <Row label="Dirección" value={cliente?.address ?? '-'} icon="place" color="#F59E0B" />
+                        <Row label="Ciudad" value={cliente?.city ?? '-'} icon="location-city" color="#10B981" />
+                        <Row label="Departamento" value={cliente?.department ?? '-'} icon="map" color="#8B5CF6" />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Información legal</Text>
+                    <View style={styles.card}>
+                        <Row label="Tipo de Cliente" value={cliente?.client_type ?? '-'} icon="person" color="#3B82F6" />
+                        <Row label="Tipo de Documento" value={getDocumentTypeLabel(cliente?.document_type)} icon="card-membership" color="#EF4444" />
+                        <Row label="Representante Legal" value={cliente?.legal_representative ?? '-'} icon="account-balance" color="#F59E0B" />
+                    </View>
+                </View>
+
+                {cliente?.contacts && cliente.contacts.length > 0 && (
+                    <View style={styles.section}>
+                        <Text style={styles.sectionTitle}>Contactos ({cliente.contacts.length})</Text>
+                        <View style={styles.card}>
+                            {cliente.contacts.map((contact, index) => (
+                                <View key={contact.id || index} style={styles.contactItem}>
+                                    <View style={styles.contactHeader}>
+                                        <Text style={styles.contactName}>{contact.nombre_contacto}</Text>
+                                        <Text style={styles.contactRole}>{contact.cargo}</Text>
+                                    </View>
+                                    <Row label="Email" value={contact.correo} icon="email" color="#7C3AED" />
+                                    <Row label="Teléfono" value={contact.telefono} icon="phone" color="#06B6D4" />
+                                    <Row label="Dirección" value={contact.direccion} icon="place" color="#F59E0B" />
+                                </View>
+                            ))}
+                        </View>
+                    </View>
+                )}
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Información del sistema</Text>
+                    <View style={styles.card}>
+                        <Row label="Creado" value={formatDate(cliente?.created_at)} icon="event" color="#34D399" />
+                        <Row label="Actualizado" value={formatDate(cliente?.updated_at)} icon="update" color="#60A5FA" />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Acciones</Text>
+                    <View style={styles.actionRow}>
+                        <ActionButton label="Editar" icon="edit" color="#F59E0B" onPress={handleEdit} disabled={!cliente} />
+                        <ActionButton
+                            label={cliente?.status === 'active' ? 'Desactivar' : 'Activar'}
+                            icon={cliente?.status === 'active' ? 'pause-circle-outline' : 'play-circle-outline'}
+                            color={cliente?.status === 'active' ? '#F97316' : '#10B981'}
+                            onPress={toggleStatus}
+                            disabled={!cliente}
+                        />
+                        <ActionButton label="Eliminar" icon="delete" color="#EF4444" onPress={confirmDelete} disabled={!cliente} />
+                    </View>
+                </View>
+            </ScrollView>
         </SafeAreaView>
     );
-  }
-
-  if (!cliente) {
-    return (
-        <SafeAreaView style={styles.container}>
-          <View style={styles.errorContainer}>
-            <MaterialIcons name="error-outline" size={60} color="#e74c3c" />
-            <Text style={styles.errorTitle}>Cliente no encontrado</Text>
-            <Text style={styles.errorText}>
-              No se pudo cargar la información de este cliente.
-            </Text>
-            <TouchableOpacity style={styles.retryButton} onPress={fetchDetalle}>
-              <Text style={styles.retryButtonText}>Reintentar</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
-    );
-  }
-
-  const formatDate = (value?: string | null) => {
-    if (!value) return '-';
-    // If backend sends 'YYYY-MM-DD HH:mm:ss', show localized date & time
-    const normalized = value.replace(' ', 'T');
-    const d = new Date(normalized);
-    if (isNaN(d.getTime())) return value;
-    return d.toLocaleString();
-  };
-
-  return (
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#007AFF" />
-
-        {/* Header con gradiente */}
-        <LinearGradient colors={['#007AFF', '#005BBB']} style={styles.header}>
-          <BackButton style={styles.backButton} />
-
-          <View style={styles.headerContent}>
-            <View style={styles.iconContainer}>
-              <Ionicons name="person-circle-outline" size={60} color="#fff" />
-            </View>
-            <Text style={styles.title}>{cliente.name}</Text>
-            <Text style={styles.subTitle}>{cliente.email || cliente.identifier || cliente.phone || ''}</Text>
-          </View>
-
-          <TouchableOpacity
-              style={styles.shareButton}
-              onPress={() =>
-                  Alert.alert(
-                      'Compartir',
-                      `Cliente: ${cliente.name}\nEmail: ${cliente.email ?? '-'}\nIdentificador: ${cliente.identifier ?? '-'}\nTeléfono: ${cliente.phone ?? '-'}`
-                  )
-              }
-          >
-            <MaterialIcons name="share" size={24} color="#fff" />
-          </TouchableOpacity>
-        </LinearGradient>
-
-        <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          {/* Información detallada */}
-          <View style={styles.infoContainer}>
-            <Text style={styles.sectionTitle}>Información del Cliente</Text>
-
-            <InfoCard>
-              <InfoRow label="Nombre" value={cliente.name} icon="person" color="#007AFF" />
-              <InfoRow label="Email" value={cliente.email} icon="email" color="#007AFF" />
-              <InfoRow label="Identificación" value={cliente.identifier} icon="fingerprint" color="#007AFF" />
-              <InfoRow label="Dirección" value={cliente.address} icon="place" color="#007AFF" />
-              <InfoRow label="Ciudad" value={cliente.city} icon="location-city" color="#007AFF" />
-              <InfoRow label="Teléfono" value={cliente.phone} icon="phone" color="#007AFF" />
-              <InfoRow label="Creado" value={formatDate(cliente.created_at)} icon="event" color="#007AFF" />
-            </InfoCard>
-          </View>
-
-          {/* Acciones */}
-          <View style={styles.actionSection}>
-            <Text style={styles.sectionTitle}>Acciones</Text>
-
-            <View style={styles.actionGrid}>
-              <ActionButton
-                  icon="edit"
-                  label="Editar Cliente"
-                  subtitle="Modificar datos"
-                  color="#FF9800"
-                  onPress={() => navigation.navigate('EditarCliente', { id: cliente.id })}
-              />
-              <ActionButton
-                  icon="delete"
-                  label="Eliminar Cliente"
-                  subtitle="Borrar registro"
-                  color="#FF3B30"
-                  onPress={() =>
-                      Alert.alert(
-                          'Eliminar',
-                          '¿Seguro deseas eliminar este cliente?',
-                          [
-                            { text: 'Cancelar', style: 'cancel' },
-                            { text: 'Eliminar', style: 'destructive', onPress: () => {} },
-                          ]
-                      )
-                  }
-              />
-            </View>
-          </View>
-        </ScrollView>
-      </SafeAreaView>
-  );
 }
 
-// Componentes auxiliares
-const InfoCard = ({ children }: { children: React.ReactNode }) => (
-    <View style={styles.infoCard}>{children}</View>
-);
-
-const InfoRow = ({
-                   label,
-                   value,
-                   icon,
-                   color,
-                 }: {
-  label: string;
-  value?: string | number | null;
-  icon: string;
-  color: string;
-}) => (
-    <View style={styles.infoRow}>
-      <View style={[styles.infoIconContainer, { backgroundColor: `${color}15` }]}>
-        <MaterialIcons name={icon as any} size={20} color={color} />
-      </View>
-      <View style={styles.infoContent}>
-        <Text style={styles.infoLabel}>{label}</Text>
-        <Text style={styles.infoValue}>{value === null || value === undefined || value === '' ? '-' : String(value)}</Text>
-      </View>
+/* Small presentational components */
+const Row = ({ label, value, icon, color }: { label: string; value?: string; icon: string; color: string }) => (
+    <View style={styles.row}>
+        <View style={[styles.rowIcon, { backgroundColor: `${color}22` }]}>
+            <MaterialIcons name={icon as any} size={18} color={color} />
+        </View>
+        <View style={styles.rowContent}>
+            <Text style={styles.rowLabel}>{label}</Text>
+            <Text style={styles.rowValue}>{value ?? '-'}</Text>
+        </View>
     </View>
 );
 
-const ActionButton = ({
-                        icon,
-                        label,
-                        subtitle,
-                        color,
-                        onPress,
-                      }: {
-  icon: string;
-  label: string;
-  subtitle: string;
-  color: string;
-  onPress: () => void;
-}) => (
-    <TouchableOpacity style={styles.actionButton} onPress={onPress} activeOpacity={0.8}>
-      <View style={[styles.actionIconContainer, { backgroundColor: color }]}>
-        <MaterialIcons name={icon as any} size={24} color="#fff" />
-      </View>
-      <Text style={styles.actionLabel}>{label}</Text>
-      <Text style={styles.actionSubtitle}>{subtitle}</Text>
+const ActionButton = ({ icon, label, color, onPress, disabled }: { icon: string; label: string; color: string; onPress: () => void; disabled?: boolean }) => (
+    <TouchableOpacity style={[styles.actionBtn, disabled && { opacity: 0.6 }]} onPress={onPress} disabled={disabled}>
+        <View style={[styles.actionIcon, { backgroundColor: color }]}>
+            <MaterialIcons name={icon as any} size={20} color="#fff" />
+        </View>
+        <Text style={styles.actionLabel}>{label}</Text>
     </TouchableOpacity>
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f8f9fa' },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  loadingText: { marginTop: 10, fontSize: 16, color: '#666' },
-  errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
-  errorTitle: { fontSize: 20, fontWeight: 'bold', color: '#2c3e50', marginTop: 15, marginBottom: 8 },
-  errorText: { fontSize: 16, color: '#7f8c8d', textAlign: 'center', marginBottom: 20 },
-  retryButton: { backgroundColor: '#007AFF', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
-  retryButtonText: { color: '#fff', fontWeight: 'bold' },
-  header: { paddingTop: 10, paddingBottom: 20, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  backButton: { padding: 8 },
-  shareButton: { padding: 8 },
-  headerContent: { flex: 1, alignItems: 'center' },
-  iconContainer: { width: 70, height: 70, borderRadius: 35, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  title: { fontSize: 22, color: '#fff', fontWeight: 'bold', textAlign: 'center', marginBottom: 4 },
-  subTitle: { fontSize: 16, color: 'rgba(255,255,255,0.9)', textAlign: 'center' },
-  scrollContainer: { flex: 1 },
-  infoContainer: { paddingHorizontal: 20, marginTop: 20 },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold', color: '#2c3e50', marginBottom: 15 },
-  infoCard: { backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  infoIconContainer: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', marginRight: 15 },
-  infoContent: { flex: 1 },
-  infoLabel: { fontSize: 14, color: '#7f8c8d', marginBottom: 2 },
-  infoValue: { fontSize: 16, fontWeight: '600', color: '#2c3e50' },
-  actionSection: { paddingHorizontal: 20, paddingBottom: 30 },
-  actionGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-  actionButton: { width: (width - 50) / 2, backgroundColor: '#fff', borderRadius: 16, padding: 20, alignItems: 'center', marginBottom: 15, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 4 },
-  actionIconContainer: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-  actionLabel: { fontSize: 14, fontWeight: 'bold', color: '#2c3e50', textAlign: 'center', marginBottom: 4 },
-  actionSubtitle: { fontSize: 12, color: '#7f8c8d', textAlign: 'center' },
+    container: { flex: 1, backgroundColor: '#F8FAFB' },
+    header: { paddingTop: 12, paddingBottom: 18, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0EA5E9' },
+    headerCenter: { flex: 1, alignItems: 'center' },
+    headerActions: { width: 44, alignItems: 'flex-end' },
+    avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+    title: { color: '#fff', fontSize: 20, fontWeight: '700' },
+    subtitle: { color: 'rgba(255,255,255,0.95)', marginTop: 4 },
+    statusBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+    statusText: { fontWeight: '700' },
+
+    scrollContainer: { flex: 1 },
+
+    section: { paddingHorizontal: 16, marginTop: 16 },
+    sectionTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 12 },
+
+    card: { backgroundColor: '#fff', borderRadius: 12, padding: 14, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+    row: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+    rowIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+    rowContent: { flex: 1 },
+    rowLabel: { fontSize: 13, color: '#6B7280' },
+    rowValue: { fontSize: 16, fontWeight: '600', color: '#0F172A' },
+
+    contactItem: {
+        backgroundColor: '#F8FAFB',
+        borderRadius: 8,
+        padding: 12,
+        marginBottom: 12,
+        borderLeftWidth: 3,
+        borderLeftColor: '#3B82F6',
+    },
+    contactHeader: {
+        marginBottom: 8,
+    },
+    contactName: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1F2937',
+        marginBottom: 2,
+    },
+    contactRole: {
+        fontSize: 14,
+        color: '#3B82F6',
+        fontWeight: '600',
+    },
+
+    actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, flexWrap: 'wrap' },
+    actionBtn: { width: (width - 56) / 3, paddingVertical: 12, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
+    actionIcon: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    loadingText: { marginTop: 8, color: '#6B7280' },
+
+    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
+    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700' },
+    errorText: { color: '#6B7280', marginTop: 8, textAlign: 'center' },
+    retryButton: { marginTop: 16, backgroundColor: '#0EA5E9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
+    retryButtonText: { color: '#fff', fontWeight: '700' },
 });
