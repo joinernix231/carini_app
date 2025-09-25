@@ -137,17 +137,7 @@ function ClienteCardComponent({ cliente, onPress, onEdit, onDelete }: Props) {
 
             {/* Botones de acción */}
             <View style={styles.actionsSection}>
-                {onEdit && (
-                    <TouchableOpacity
-                        onPress={() => onEdit(cliente)}
-                        style={styles.actionButton}
-                        accessibilityLabel={`Editar Cliente ${cliente.name}`}
-                        accessibilityRole="button"
-                    >
-                        <Ionicons name="pencil" size={20} color="#3B82F6" />
-                        <Text style={styles.actionButtonText}>Editar</Text>
-                    </TouchableOpacity>
-                )}
+            
 
                 <TouchableOpacity
                     onPress={() => onDelete(cliente.id, cliente.name || 'Cliente')}

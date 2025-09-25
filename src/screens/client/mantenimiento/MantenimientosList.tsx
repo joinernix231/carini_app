@@ -13,18 +13,14 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import BackButton from '../../../components/BackButton';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect } from '@react-navigation/native';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useAuth } from '../../../context/AuthContext';
+import { useError } from '../../../context/ErrorContext';
 import {
   getMantenimientos,
   deleteMantenimiento,
 } from '../../../services/MantenimientoService';
-
-type RootStackParamList = {
-  CrearMantenimiento: undefined;
-  DetalleMantenimiento: { id: number };
-};
 
 type Mantenimiento = {
   id: number;
@@ -36,10 +32,11 @@ type Mantenimiento = {
 
 export default function MantenimientosList() {
   const { token } = useAuth();
+  const { showError } = useError();
+  const { navigate } = useSmartNavigation();
   const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const traducirEstado = (estadoIngles: string): string => {
     const traducciones: Record<string, string> = {
@@ -136,7 +133,7 @@ export default function MantenimientosList() {
       }
     } catch (error) {
       console.error('Error al cargar mantenimientos:', error);
-      Alert.alert('Error', 'No se pudieron cargar los mantenimientos');
+      showError(error, 'Error al cargar los mantenimientos');
       setMantenimientos([]);
     } finally {
       setLoading(false);
@@ -160,13 +157,12 @@ export default function MantenimientosList() {
                 if (!token) return;
                 await deleteMantenimiento(id, token);
 
-                // Actualizar la lista localmente
                 setMantenimientos(prev => prev.filter(m => m.id !== id));
 
                 Alert.alert('Éxito', 'Mantenimiento eliminado correctamente');
               } catch (error) {
                 console.error('Error al eliminar:', error);
-                Alert.alert('Error', 'No se pudo eliminar el mantenimiento');
+                showError(error, 'Error al eliminar el mantenimiento');
               }
             },
           },
@@ -213,7 +209,7 @@ export default function MantenimientosList() {
     return (
         <TouchableOpacity
             style={styles.card}
-            onPress={() => navigation.navigate('DetalleMantenimiento', { id: item.id })}
+            onPress={() => navigate('DetalleMantenimiento', { id: item.id })}
             activeOpacity={0.8}
         >
           {/* Indicador de estado lateral */}
@@ -319,7 +315,7 @@ export default function MantenimientosList() {
         </Text>
         <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => navigation.navigate('CrearMantenimiento')}
+            onPress={() => navigate('CrearMantenimiento')}
         >
           <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={styles.emptyButtonText}>Crear mantenimiento</Text>
@@ -379,7 +375,7 @@ export default function MantenimientosList() {
               {/* Botón flotante para crear nuevo mantenimiento */}
               <TouchableOpacity
                   style={styles.fab}
-                  onPress={() => navigation.navigate('CrearMantenimiento')}
+                  onPress={() => navigate('CrearMantenimiento')}
                   activeOpacity={0.9}
               >
                 <Ionicons name="add" size={28} color="#FFFFFF" />

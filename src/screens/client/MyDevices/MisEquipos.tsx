@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import BackButton from '../../../components/BackButton';
-import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useAuth } from '../../../context/AuthContext';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
 
@@ -136,7 +136,7 @@ export default function MisEquipos() {
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const { token } = useAuth();
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { navigate } = useSmartNavigation();
     const route = useRoute<MisEquiposRouteProp>();
 
     // Fetch equipos function
@@ -171,12 +171,10 @@ export default function MisEquipos() {
     // useEffect para detectar el parámetro refresh
     useEffect(() => {
         if (route.params?.refresh) {
-            // Limpiar el parámetro para evitar refrescos infinitos
-            navigation.setParams({ refresh: undefined });
             // Refrescar la lista
             fetchEquipos();
         }
-    }, [route.params?.refresh, navigation, fetchEquipos]);
+    }, [route.params?.refresh, fetchEquipos]);
 
     // Filter equipos based on search query
     useEffect(() => {
@@ -199,12 +197,12 @@ export default function MisEquipos() {
     }, [fetchEquipos]);
 
     const goToAddEquipment = useCallback(() => {
-        navigation.navigate('AgregarEquipo');
-    }, [navigation]);
+        navigate('AgregarEquipo');
+    }, [navigate]);
 
     const goToEquipmentDetail = useCallback((deviceId: number) => {
-        navigation.navigate('DetalleEquipo', { deviceId });
-    }, [navigation]);
+        navigate('DetalleEquipo', { deviceId });
+    }, [navigate]);
 
     if (loading) {
         return (

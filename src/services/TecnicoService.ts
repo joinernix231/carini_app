@@ -1,4 +1,3 @@
-// src/services/TecnicoService.ts
 import API from './api';
 import { Tecnico } from '../types/tecnico/tecnico';
 import { PaginationData } from '../components/PaginationControls';
@@ -17,7 +16,7 @@ export interface CreateTecnicoPayload {
 }
 
 const authHeaders = (token: string) => ({
-    headers: { Authorization: `Bearer ${token}` },
+  headers: { Authorization: `Bearer ${token}` },
 });
 
 // ✅ TecnicoService.ts
@@ -78,6 +77,51 @@ async function changeStatus(id: number, status: 'active' | 'inactive', token: st
     return res.data.data ?? res.data;
 }
 
+export interface AvailableTechnician {
+    id: number;
+    user_id: number;
+    document: string;
+    phone: string;
+    address: string;
+    status: string;
+    user: {
+        id: number;
+        name: string;
+        email: string;
+        role: string;
+    };
+}
+
+export interface AvailableTechniciansResponse {
+    success: boolean;
+    message: string;
+    data: AvailableTechnician[];
+}
+
+async function getAvailableTechnicians(
+    token: string,
+    date?: string,
+    shift?: 'AM' | 'PM'
+): Promise<AvailableTechnician[]> {
+    try {
+        let url = '/api/availableTechnicians';
+        const params = new URLSearchParams();
+        
+        if (date) params.append('date', date);
+        if (shift) params.append('shift', shift);
+        
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        const response = await API.get(url, authHeaders(token));
+        return response.data.data || [];
+    } catch (error: any) {
+        console.error('Error fetching available technicians:', error);
+        throw error;
+    }
+}
+
 export const TecnicoService = {
     getAll,
     mapToPaginationData,
@@ -86,4 +130,6 @@ export const TecnicoService = {
     update,
     remove,
     changeStatus,
+    getAvailableTechnicians,
 };
+

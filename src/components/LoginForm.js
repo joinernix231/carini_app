@@ -9,6 +9,7 @@ import {
   Animated,
   Easing,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
@@ -89,7 +90,9 @@ export default function LoginForm() {
           }}
           keyboardType="email-address"
           autoCapitalize="none"
-          cursorColor="#ffffff"
+          // Removemos cursorColor y usamos selectionColor para iOS
+          selectionColor={Platform.OS === 'ios' ? '#ffffff' : undefined}
+          cursorColor={Platform.OS === 'android' ? '#ffffff' : undefined}
         />
         {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
       </View>
@@ -105,7 +108,9 @@ export default function LoginForm() {
             if (passwordError) validateForm();
           }}
           secureTextEntry={!showPassword}
-          cursorColor="#ffffff"
+          // Removemos cursorColor y usamos selectionColor para iOS
+          selectionColor={Platform.OS === 'ios' ? '#ffffff' : undefined}
+          cursorColor={Platform.OS === 'android' ? '#ffffff' : undefined}
         />
         <TouchableOpacity
           style={styles.eyeButton}
@@ -166,6 +171,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderWidth: 1,
     borderColor: 'transparent',
+    // Agregamos propiedades específicas para iOS
+    ...Platform.select({
+      ios: {
+        // Asegurar que el tintColor sea visible en iOS
+        tintColor: '#ffffff',
+      },
+    }),
   },
   inputError: {
     borderColor: '#ff4d6d',

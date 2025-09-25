@@ -18,8 +18,7 @@ import {
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import BackButton from '../../../components/BackButton';
 import { useAuth } from '../../../context/AuthContext';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { asignarEquipo as asignarEquipoCliente } from '../../../services/EquipoClienteService';
 import { getEquiposVinculados as getEquiposEmpresa } from '../../../services/EquiposService';
 
@@ -42,7 +41,7 @@ type RootStackParamList = {
 };
 
 export default function AgregarEquipo() {
-    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { navigate, navigateReplace } = useSmartNavigation();
     const { token } = useAuth();
 
     const [devices, setDevices] = useState<Device[]>([]);
@@ -142,7 +141,7 @@ export default function AgregarEquipo() {
                     text: 'OK',
                     onPress: () => {
                         // Notificar que el equipo fue agregado para refrescar la pantalla anterior
-                        navigation.navigate('MisEquipos', { refresh: true });
+                        navigateReplace('MisEquipos');
                     },
                 },
             ]);
@@ -238,7 +237,7 @@ export default function AgregarEquipo() {
                         </View>
                     ) : filteredDevices.length === 0 ? (
                         <View style={styles.modalEmptyContainer}>
-                            <MaterialIcons name="devices-off" size={48} color="#CCC" />
+                            <MaterialIcons name="devices" size={48} color="#CCC" />
                             <Text style={styles.modalEmptyTitle}>
                                 {searchQuery ? 'Sin resultados' : 'Sin dispositivos'}
                             </Text>
@@ -252,8 +251,9 @@ export default function AgregarEquipo() {
                     ) : (
                         <ScrollView
                             style={styles.deviceScrollContainer}
-                            showsVerticalScrollIndicator={false}
+                            showsVerticalScrollIndicator={true}
                             contentContainerStyle={styles.deviceScrollContent}
+                            nestedScrollEnabled={true}
                         >
                             <View style={styles.deviceGrid}>
                                 {filteredDevices.map((device) => (
@@ -621,6 +621,7 @@ const styles = StyleSheet.create({
     modalContent: {
         flex: 1,
         padding: 20,
+        minHeight: screenHeight * 0.7, // Altura mínima para el contenido
     },
     searchContainer: {
         flexDirection: 'row',
@@ -674,9 +675,11 @@ const styles = StyleSheet.create({
     },
     deviceScrollContainer: {
         flex: 1,
+        maxHeight: screenHeight * 0.6, // Limitar altura máxima
     },
     deviceScrollContent: {
         paddingBottom: 20,
+        flexGrow: 1,
     },
     deviceGrid: {
         flexDirection: 'row',

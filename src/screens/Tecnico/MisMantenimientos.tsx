@@ -17,7 +17,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
+import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 
 type MaintenanceStatus = 'pending' | 'in_progress' | 'completed';
 type MaintenanceType = 'preventivo' | 'correctivo';
@@ -112,7 +112,7 @@ const mockMaintenances: Maintenance[] = [
 ];
 
 export default function MisMantenimientos() {
-  const navigation = useNavigation();
+  const { goBack } = useSmartNavigation();
   const [maintenances, setMaintenances] = useState<Maintenance[]>(mockMaintenances);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
@@ -317,7 +317,7 @@ export default function MisMantenimientos() {
           <View style={styles.header}>
             <TouchableOpacity 
               style={styles.backButton} 
-              onPress={() => navigation.goBack()}
+              onPress={goBack}
             >
               <MaterialIcons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>

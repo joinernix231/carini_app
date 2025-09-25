@@ -6,7 +6,8 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
-  StatusBar
+  StatusBar,
+  Dimensions
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -14,7 +15,6 @@ import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import CoordinadorList from "./Coordinador/CoordinadorList";
 
 type RootStackParamList = {
   ClienteList: undefined;
@@ -37,48 +37,50 @@ type MenuOption = {
   description: string;
 };
 
+const { width } = Dimensions.get('window');
+const ITEM_WIDTH = (width - 60) / 2; // Ancho fijo para cada item
+
 const options: MenuOption[] = [
   {
-    icon: 'groups', // 👈 buen ícono para clientes
+    icon: 'groups',
     label: 'Clientes',
     screen: 'ClienteList',
     color: '#1565C0',
     bgColor: '#E3F2FD',
     description: 'Gestiona clientes',
   },
-    {
-        icon: 'people',
-        label: 'Técnicos',
-        screen: 'TecnicoList',
-        color: '#26A69A',
-        bgColor: '#E0F2F1',
-        description: 'Gestionar personal'
-    },
-    {
-        icon: 'people',
-        label: 'Coordinadores',
-        screen: 'CoordinadorList',
-        color: '#3c1642',
-        bgColor: '#F3E5F5',
-        description: 'Gestionar personal'
-    },
-
-    {
-        icon: 'edit',
-        label: 'Equipos',
-        screen: 'EquipoList',
-        color: '#AB47BC',
-        bgColor: '#F3E5F5',
-        description: 'Editar información'
-    },
-    {
-        icon: 'engineering',
-        label: 'Mantenimientos',
-        screen: 'VerMantenimientos',
-        color: '#1E88E5',
-        bgColor: '#E3F2FD',
-        description: 'Ver programados'
-    },
+  {
+    icon: 'people',
+    label: 'Técnicos',
+    screen: 'TecnicoList',
+    color: '#26A69A',
+    bgColor: '#E0F2F1',
+    description: 'Gestionar personal'
+  },
+  {
+    icon: 'people',
+    label: 'Coordinadores',
+    screen: 'CoordinadorList',
+    color: '#3c1642',
+    bgColor: '#F3E5F5',
+    description: 'Gestionar personal'
+  },
+  {
+    icon: 'edit',
+    label: 'Equipos',
+    screen: 'EquipoList',
+    color: '#AB47BC',
+    bgColor: '#F3E5F5',
+    description: 'Editar información'
+  },
+  {
+    icon: 'engineering',
+    label: 'Mantenimientos',
+    screen: 'VerMantenimientos',
+    color: '#1E88E5',
+    bgColor: '#E3F2FD',
+    description: 'Ver programados'
+  },
 ];
 
 export default function AdminDashboard() {
@@ -86,27 +88,31 @@ export default function AdminDashboard() {
   const { user, logout } = useAuth();
 
   const renderItem = ({ item }: { item: MenuOption }) => (
-      <TouchableOpacity
-          style={[styles.item, { backgroundColor: item.bgColor }]}
-          onPress={() => navigation.navigate(item.screen)}
-          activeOpacity={0.8}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
-          <MaterialIcons name={item.icon} size={28} color="#fff" />
-        </View>
-        <Text style={styles.label}>{item.label}</Text>
-        <Text style={styles.description}>{item.description}</Text>
-      </TouchableOpacity>
+    <TouchableOpacity
+      style={[styles.item, { backgroundColor: item.bgColor }]}
+      onPress={() => navigation.navigate(item.screen)}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: item.color }]}>
+        <MaterialIcons name={item.icon} size={28} color="#fff" />
+      </View>
+      <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>
+        {item.label}
+      </Text>
+      <Text style={styles.description} numberOfLines={2}>
+        {item.description}
+      </Text>
+    </TouchableOpacity>
   );
 
   const handleLogout = () => {
     Alert.alert(
-        'Cerrar sesión',
-        '¿Estás seguro de que deseas cerrar sesión?',
-        [
-          { text: 'Cancelar', style: 'cancel' },
-          { text: 'Sí, salir', style: 'destructive', onPress: logout },
-        ]
+      'Cerrar sesión',
+      '¿Estás seguro de que deseas cerrar sesión?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sí, salir', style: 'destructive', onPress: logout },
+      ]
     );
   };
 
@@ -118,42 +124,46 @@ export default function AdminDashboard() {
   };
 
   return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
-        <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
-          <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-              <View style={styles.avatarContainer}>
-                <MaterialIcons name="admin-panel-settings" size={60} color="rgba(255,255,255,0.9)" />
-              </View>
-              <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.title}>{user?.name ?? 'Administrador'}</Text>
-              <Text style={styles.subtitle}>Gestión administrativa</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
+      <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
+        <View style={styles.container}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.avatarContainer}>
+              <MaterialIcons name="admin-panel-settings" size={60} color="rgba(255,255,255,0.9)" />
             </View>
-
-            {/* Menu Grid */}
-            <View style={styles.contentContainer}>
-              <FlatList
-                  data={options}
-                  renderItem={renderItem}
-                  keyExtractor={(item) => item.label}
-                  numColumns={2} // 👈 Solo una columna porque es un item
-                  contentContainerStyle={styles.grid}
-                  showsVerticalScrollIndicator={false}
-              />
-            </View>
-
-            {/* Footer */}
-            <View style={styles.footer}>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-                <MaterialIcons name="logout" size={22} color="#fff" />
-                <Text style={styles.logoutText}>Cerrar sesión</Text>
-              </TouchableOpacity>
-            </View>
+            <Text style={styles.greeting}>{getGreeting()}</Text>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+              {user?.name ?? 'Administrador'}
+            </Text>
+            <Text style={styles.subtitle}>Gestión administrativa</Text>
           </View>
-        </LinearGradient>
-      </SafeAreaView>
+
+          {/* Menu Grid */}
+          <View style={styles.contentContainer}>
+            <FlatList
+              data={options}
+              renderItem={renderItem}
+              keyExtractor={(item) => item.label}
+              numColumns={2}
+              contentContainerStyle={styles.grid}
+              showsVerticalScrollIndicator={false}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              columnWrapperStyle={styles.row}
+            />
+          </View>
+
+          {/* Footer */}
+          <View style={styles.footer}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+              <MaterialIcons name="logout" size={22} color="#fff" />
+              <Text style={styles.logoutText}>Cerrar sesión</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    </SafeAreaView>
   );
 }
 
@@ -202,7 +212,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   contentContainer: {
-    flex: 2,
+    flex: 1,
     backgroundColor: 'rgba(255,255,255,0.1)',
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
@@ -210,22 +220,26 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   grid: {
-    paddingHorizontal: 5,
+    paddingHorizontal: 10,
     paddingBottom: 20,
   },
+  row: {
+    justifyContent: 'space-between',
+  },
   item: {
-    flex: 1,
-    margin: 10,
+    width: ITEM_WIDTH,
     borderRadius: 20,
-    padding: 25,
+    padding: 20,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 150,
+    minHeight: 140,
+    maxHeight: 160,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 8,
+    marginHorizontal: 5,
   },
   iconContainer: {
     width: 56,
@@ -241,17 +255,19 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   label: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: 'bold',
     color: '#2c3e50',
     textAlign: 'center',
     marginBottom: 6,
+    minHeight: 18,
   },
   description: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#7f8c8d',
     textAlign: 'center',
     fontWeight: '500',
+    lineHeight: 16,
   },
   footer: {
     paddingVertical: 20,

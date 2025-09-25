@@ -13,7 +13,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { getEquipoVinculado } from '../../../services/EquipoClienteService';
 import { useAuth } from '../../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,7 +54,7 @@ const getEquipmentColor = (type: string) => {
 
 export default function DetalleEquipo() {
   const route = useRoute();
-  const navigation = useNavigation();
+  const { navigate, goBack } = useSmartNavigation();
   const { token } = useAuth();
   const { deviceId } = route.params as RouteParams;
 
@@ -105,8 +106,8 @@ export default function DetalleEquipo() {
             text: 'Solicitar',
             style: 'default',
             onPress: () => {
-              // Navegar a pantalla de solicitud de mantenimiento
-              navigation.navigate('SolicitarMantenimiento', { equipoId: equipo.id });
+              // Navegar a pantalla de crear mantenimiento
+              navigate('CrearMantenimiento', { equipoId: equipo.id });
             }
           },
         ]
@@ -156,17 +157,17 @@ export default function DetalleEquipo() {
         <StatusBar barStyle="light-content" backgroundColor={equipmentColors[0]} />
 
         {/* Header con gradiente */}
-        <LinearGradient colors={equipmentColors} style={styles.header}>
+        <LinearGradient colors={equipmentColors as [string, string]} style={styles.header}>
           <TouchableOpacity
               style={styles.backButton}
-              onPress={() => navigation.goBack()}
+              onPress={goBack}
           >
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
             <View style={styles.iconContainer}>
-              <MaterialIcons name={equipmentIcon} size={40} color="#fff" />
+              <MaterialIcons name={equipmentIcon as any} size={40} color="#fff" />
             </View>
             <Text style={styles.title}>{equipo.device.model}</Text>
             <Text style={styles.brandText}>{equipo.device.brand}</Text>
@@ -197,29 +198,13 @@ export default function DetalleEquipo() {
                 </View>
             ) : (
                 <View style={styles.placeholderImage}>
-                  <MaterialIcons name={equipmentIcon} size={60} color="#ccc" />
+                  <MaterialIcons name={equipmentIcon as any} size={60} color="#ccc" />
                   <Text style={styles.placeholderText}>Sin imagen disponible</Text>
                 </View>
             )}
           </View>
 
-          {/* Estado del equipo */}
-          <View style={styles.statusContainer}>
-            <View style={[
-              styles.statusBadge,
-              { backgroundColor: equipo.status ? '#27ae60' : '#e74c3c' }
-            ]}>
-              <MaterialIcons
-                  name={equipo.status ? "check-circle" : "cancel"}
-                  size={16}
-                  color="#fff"
-              />
-              <Text style={styles.statusText}>
-                {equipo.status ? 'Operativo' : 'Inactivo'}
-              </Text>
-            </View>
-          </View>
-
+         
           {/* Información detallada */}
           <View style={styles.infoContainer}>
             <Text style={styles.sectionTitle}>Información del Equipo</Text>
@@ -256,12 +241,6 @@ export default function DetalleEquipo() {
                   label="Ubicación"
                   value={equipo.address}
                   icon="location-on"
-                  color="#e74c3c"
-              />
-              <InfoRow
-                  label="Fecha de Fabricación"
-                  value={new Date(equipo.device.manufactured_at).toLocaleDateString('es-ES')}
-                  icon="event"
                   color="#e74c3c"
               />
               <InfoRow
@@ -498,6 +477,7 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     paddingHorizontal: 20,
+    marginTop: 20,
   },
   sectionTitle: {
     fontSize: 20,

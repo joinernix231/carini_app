@@ -14,11 +14,14 @@ import {
   Linking,
   RefreshControl,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useRoute } from '@react-navigation/native';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { MaterialIcons } from '@expo/vector-icons';
 import BackButton from '../../../components/BackButton';
-import { getMantenimientoById } from '../../../services/MantenimientoService';
+import { getMantenimientoById, uploadPaymentSupport } from '../../../services/MantenimientoService';
 import { useAuth } from '../../../context/AuthContext';
+import { useError } from '../../../context/ErrorContext';
+import DocumentUploader from '../../../components/DocumentUploader';
 
 const { width } = Dimensions.get('window');
 
@@ -37,15 +40,17 @@ const STATUS_CONFIG: Record<string, MaintenanceStatus> = {
 };
 
 export default function DetalleMantenimiento() {
-  const navigation = useNavigation();
+  const { goBack } = useSmartNavigation();
   const route = useRoute();
   const { token } = useAuth();
+  const { showError } = useError();
   const { id } = route.params as { id: number };
 
   const [loading, setLoading] = useState(true);
   const [mantenimiento, setMantenimiento] = useState<any>(null);
   const [imageModalVisible, setImageModalVisible] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [uploadingPaymentSupport, setUploadingPaymentSupport] = useState(false);
 
   useEffect(() => {
     fetchMantenimiento();
@@ -54,7 +59,12 @@ export default function DetalleMantenimiento() {
   const fetchMantenimiento = async () => {
     try {
       setLoading(true);
-      const data = await getMantenimientoById(id, token);
+      if (!token) {
+        throw new Error('No hay token de autenticación');
+      }
+      const data = await getMantenimientoById(id, token as string);
+      console.log('🔧 Datos del mantenimiento:', data);
+      console.log('🔧 Spare parts:', data.spare_parts);
       setMantenimiento(data);
     } catch (error) {
       console.error('Error al obtener mantenimiento:', error);
@@ -123,6 +133,33 @@ export default function DetalleMantenimiento() {
     }
   };
 
+  const handlePaymentSupportUpload = async (documentUrl: string | null) => {
+    if (!token || !documentUrl) return;
+    
+    try {
+      setUploadingPaymentSupport(true);
+      
+      const response = await uploadPaymentSupport(id, documentUrl, token);
+      
+      // Actualizar el mantenimiento localmente
+      setMantenimiento((prev: any) => ({
+        ...prev,
+        payment_support: documentUrl
+      }));
+      
+      Alert.alert(
+        'Soporte de Pago Subido',
+        'El soporte de pago ha sido subido exitosamente.',
+        [{ text: 'OK' }]
+      );
+    } catch (error: any) {
+      console.error('Error al subir soporte de pago:', error);
+      showError(error, 'Error al subir el soporte de pago');
+    } finally {
+      setUploadingPaymentSupport(false);
+    }
+  };
+
   if (loading) {
     return (
         <View style={styles.loaderContainer}>
@@ -141,7 +178,7 @@ export default function DetalleMantenimiento() {
             <MaterialIcons name="error-outline" size={48} color="#dc3545" />
             <Text style={styles.errorTitle}>No encontrado</Text>
             <Text style={styles.errorMessage}>No se encontró el mantenimiento solicitado.</Text>
-            <TouchableOpacity style={styles.retryButton} onPress={() => navigation.goBack()}>
+            <TouchableOpacity style={styles.retryButton} onPress={goBack}>
               <MaterialIcons name="arrow-back" size={20} color="#fff" />
               <Text style={styles.retryButtonText}>Volver</Text>
             </TouchableOpacity>
@@ -229,6 +266,38 @@ export default function DetalleMantenimiento() {
               </View>
           )}
 
+          {/* Turno */}
+          {mantenimiento.shift && (
+              <View style={styles.infoRow}>
+                <View style={styles.iconContainer}>
+                  <MaterialIcons name="schedule" size={20} color="#0077b6" />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Turno</Text>
+                  <Text style={styles.infoValue}>
+                    {mantenimiento.shift === 'AM' ? 'Mañana: 8:30 AM - 12:30 PM' : 
+                     mantenimiento.shift === 'PM' ? 'Tarde: 1:30 PM - 5:30 PM' : mantenimiento.shift}
+                  
+                  </Text>
+                </View>
+              </View>
+          )}
+
+          {/* Valor */}
+          {mantenimiento.value && (
+              <View style={styles.infoRow}>
+                <View style={styles.iconContainer}>
+                  <MaterialIcons name="attach-money" size={20} color="#0077b6" />
+                </View>
+                <View style={styles.infoContent}>
+                  <Text style={styles.infoLabel}>Valor del mantenimiento</Text>
+                  <Text style={styles.infoValue}>
+                    ${mantenimiento.value.toLocaleString('es-CO')} COP
+                  </Text>
+                </View>
+              </View>
+          )}
+
           {/* Equipo */}
           <View style={styles.infoRow}>
             <View style={styles.iconContainer}>
@@ -254,15 +323,15 @@ export default function DetalleMantenimiento() {
                 {mantenimiento.technician?.user?.name || 'No asignado'}
               </Text>
               <Text style={styles.infoValue}>
-                {'Cedula: ' + mantenimiento.technician?.document || 'No asignado'}
+              {'Cedula: ' + (mantenimiento.technician?.document || 'No asignado')}
               </Text>
               {mantenimiento.technician?.phone && (
                   <TouchableOpacity
                       style={styles.phoneButton}
-                      onPress={() => handleCallTechnician(mantenimiento.technician.user.phone)}
-                  >
+                      onPress={() => handleCallTechnician(mantenimiento.technician.phone)}
+                  > 
                     <MaterialIcons name="phone" size={16} color="#0077b6" />
-                    <Text style={styles.phoneText}>{mantenimiento.technician.user.phone} Llamar Tecnico</Text>
+                    <Text style={styles.phoneText}>{mantenimiento.technician.phone} Llamar Tecnico</Text>
                   </TouchableOpacity>
               )}
             </View>
@@ -277,6 +346,82 @@ export default function DetalleMantenimiento() {
                 </View>
                 <Text style={styles.descriptionText}>{mantenimiento.description}</Text>
               </View>
+          )}
+
+          {/* Repuestos - Solo mostrar si hay repuestos */}
+          {mantenimiento.spare_parts && mantenimiento.spare_parts.length > 0 && (
+            <View style={styles.sparePartsContainer}>
+              <View style={styles.sparePartsHeader}>
+                <MaterialIcons name="build" size={20} color="#0077b6" />
+                <Text style={styles.sparePartsTitle}>Repuestos requeridos</Text>
+              </View>
+
+              <View style={styles.sparePartsList}>
+                {mantenimiento.spare_parts.map((repuesto: any, index: number) => {
+                  console.log('🔧 Repuesto:', repuesto);
+
+                  // Si el repuesto es un string simple
+                  if (typeof repuesto === 'string') {
+                    return (
+                      <View key={index} style={styles.sparePartItem}>
+                        <View style={styles.sparePartInfo}>
+                          <Text style={styles.sparePartName}>{repuesto}</Text>
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  // Si es un objeto con más información (ejemplo)
+                  if (typeof repuesto === 'object' && repuesto !== null) {
+                    return (
+                      <View key={index} style={styles.sparePartItem}>
+                        <View style={styles.sparePartInfo}>
+                          <Text style={styles.sparePartName}>{repuesto.name || 'Repuesto sin nombre'}</Text>
+                          {repuesto.quantity && (
+                            <Text style={styles.sparePartQuantity}>Cantidad: {repuesto.quantity}</Text>
+                          )}
+                        </View>
+                      </View>
+                    );
+                  }
+
+                  return null; // en caso de que no sea string ni objeto
+                })}
+              </View>
+            </View>
+          )}
+
+          {/* Soporte de Pago - Solo mostrar si is_paid es false */}
+          {mantenimiento.is_paid === false && (
+            <View style={styles.paymentSupportContainer}>
+              <View style={styles.paymentSupportHeader}>
+                <MaterialIcons name="payment" size={20} color="#0077b6" />
+                <Text style={styles.paymentSupportTitle}>Soporte de Pago</Text>
+              </View>
+              
+              <Text style={styles.paymentSupportDescription}>
+                Sube el comprobante de pago (PDF) para que podamos verificar tu pago.
+              </Text>
+              
+              <DocumentUploader
+                title="Comprobante de Pago"
+                initialDocumentUri={mantenimiento.payment_support || null}
+                onDocumentUploaded={handlePaymentSupportUpload}
+                customDocumentName={`payment_support_${mantenimiento.id}`}
+                disabled={uploadingPaymentSupport}
+                options={{
+                  type: 'application/pdf',
+                  copyToCacheDirectory: true,
+                }}
+              />
+              
+              {uploadingPaymentSupport && (
+                <View style={styles.uploadingContainer}>
+                  <ActivityIndicator size="small" color="#0077b6" />
+                  <Text style={styles.uploadingText}>Subiendo comprobante...</Text>
+                </View>
+              )}
+            </View>
           )}
 
           {/* Imagen */}
@@ -343,12 +488,7 @@ export default function DetalleMantenimiento() {
               labelStyle={styles.secondaryButtonText}
           />
 
-          {mantenimiento.status === 'pending' && (
-              <TouchableOpacity style={styles.primaryButton}>
-                <MaterialIcons name="edit" size={20} color="#fff" />
-                <Text style={styles.primaryButtonText}>Editar</Text>
-              </TouchableOpacity>
-          )}
+        
         </View>
 
         {/* Espaciado inferior */}
@@ -688,5 +828,123 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 30,
+  },
+  sparePartsContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  sparePartsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  sparePartsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  sparePartsList: {
+    gap: 8,
+  },
+  sparePartItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0077b6',
+  },
+  sparePartInfo: {
+    flex: 1,
+  },
+  sparePartName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  sparePartQuantity: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  sparePartDescription: {
+    fontSize: 14,
+    color: '#888',
+    fontStyle: 'italic',
+  },
+  sparePartPrice: {
+    alignItems: 'flex-end',
+  },
+  sparePartPriceText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#28a745',
+  },
+  noSparePartsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    gap: 8,
+  },
+  noSparePartsText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+  },
+  paymentSupportContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF9800',
+  },
+  paymentSupportHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  paymentSupportTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  paymentSupportDescription: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  uploadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  uploadingText: {
+    fontSize: 14,
+    color: '#0077b6',
+    fontWeight: '500',
   },
 });

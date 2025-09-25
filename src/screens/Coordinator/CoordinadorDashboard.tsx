@@ -8,23 +8,24 @@ import {
   Alert,
   StatusBar,
   Dimensions,
-  SafeAreaView
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 type RootStackParamList = {
   VerMantenimientos: undefined;
   AsignarTecnicos: undefined;
-  VerTecnicos: undefined;
+  TecnicoList: undefined;
+  EquipoList: undefined;
   AsignarEquipos: undefined;
-  VerClientes: undefined;
-  EditarEquipos: undefined;
+  MantenimientosSinAsignar: undefined;
+  MantenimientosAsignados: undefined;
 };
 
 type MenuOption = {
@@ -40,15 +41,15 @@ const options: MenuOption[] = [
   {
     icon: 'engineering',
     label: 'Mantenimientos',
-    screen: 'VerMantenimientos',
+    screen: 'MantenimientosAsignados',
     color: '#1E88E5',
     bgColor: '#E3F2FD',
-    description: 'Ver programados'
+    description: 'Ver asignados'
   },
   {
     icon: 'assignment-ind',
     label: 'Por Programar',
-    screen: 'AsignarTecnicos',
+    screen: 'MantenimientosSinAsignar',
     color: '#FF7043',
     bgColor: '#FFF3E0',
     description: 'Asignar técnicos'
@@ -56,7 +57,7 @@ const options: MenuOption[] = [
   {
     icon: 'people',
     label: 'Técnicos',
-    screen: 'VerTecnicos',
+    screen: 'TecnicoList',
     color: '#26A69A',
     bgColor: '#E0F2F1',
     description: 'Gestionar personal'
@@ -64,7 +65,7 @@ const options: MenuOption[] = [
   {
     icon: 'edit',
     label: 'Equipos',
-    screen: 'EditarEquipos',
+    screen: 'EquipoList',
     color: '#AB47BC',
     bgColor: '#F3E5F5',
     description: 'Editar información'

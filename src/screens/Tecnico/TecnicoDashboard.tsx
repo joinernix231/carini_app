@@ -11,9 +11,8 @@ import {
   SafeAreaView
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
@@ -52,13 +51,13 @@ const options: MenuOption[] = [
 ];
 
 export default function TecnicoDashboard() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { navigate } = useSmartNavigation();
   const { user, logout } = useAuth();
 
   const renderItem = ({ item }: { item: MenuOption }) => (
       <TouchableOpacity
           style={[styles.item, { backgroundColor: item.bgColor }]}
-          onPress={() => navigation.navigate(item.screen)}
+          onPress={() => navigate(item.screen)}
           activeOpacity={0.8}
       >
         <View style={[styles.iconContainer, { backgroundColor: item.color }]}>

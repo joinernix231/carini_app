@@ -16,8 +16,7 @@ import {
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
 import { createMantenimiento } from '../../../services/MantenimientoService';
 import { uploadImage } from '../../../services/UploadImage';
@@ -52,7 +51,7 @@ const CHECKLIST_MANTENIMIENTO: Record<string, string[]> = {
 };
 
 export default function CrearMantenimiento() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { navigate, navigateReplace } = useSmartNavigation();
   const { token } = useAuth();
 
   const [equipos, setEquipos] = useState<
@@ -162,7 +161,7 @@ export default function CrearMantenimiento() {
           }
 
           console.log('Subiendo imagen:', nombreImagen);
-          const uploadResult = await uploadImage(uri, nombreImagen, token);
+          const uploadResult = await uploadImage(uri, nombreImagen!, token!);
 
           if (uploadResult) {
             console.log('Imagen subida exitosamente:', uploadResult);
@@ -209,7 +208,7 @@ export default function CrearMantenimiento() {
       };
 
       console.log('Enviando payload:', payload);
-      await createMantenimiento(payload, token);
+      await createMantenimiento(payload, token!);
 
       setEquipoSeleccionado(null);
       setDescripcion('');
@@ -222,13 +221,13 @@ export default function CrearMantenimiento() {
             text: 'Llamar',
             onPress: () => {
               Linking.openURL('tel:3104856772');
-              navigation.navigate('SolicitarMantenimiento');
+              navigate('SolicitarMantenimiento');
             },
           },
         ]);
       } else {
         Alert.alert('✅ Mantenimiento registrado', 'Tu solicitud ha sido creada correctamente.', [
-          { text: 'OK', onPress: () => navigation.navigate('SolicitarMantenimiento') },
+          { text: 'OK', onPress: () => navigateReplace('SolicitarMantenimiento') },
         ]);
       }
     } catch (error: any) {
