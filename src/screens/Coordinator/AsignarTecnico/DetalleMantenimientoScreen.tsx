@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Image,
   Dimensions,
+  Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -104,26 +105,42 @@ export default function DetalleMantenimientoScreen() {
     }
   };
 
-  const handleViewPaymentSupport = () => {
+  const handleViewPaymentSupport = async () => {
     if (!mantenimiento?.payment_support) {
       Alert.alert('Sin Soporte', 'No hay soporte de pago disponible para este mantenimiento.');
       return;
     }
     
-    Alert.alert(
-      'Soporte de Pago',
-      '¿Deseas ver el soporte de pago?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Ver PDF', 
-          onPress: () => {
-            console.log('Opening PDF:', mantenimiento.payment_support);
-            Alert.alert('PDF', `Abriendo soporte de pago: ${mantenimiento.payment_support}`);
-          }
-        }
-      ]
-    );
+    try {
+      // Construir la URL completa del PDF
+      const pdfUrl = mantenimiento.payment_support.startsWith('http') 
+        ? mantenimiento.payment_support 
+        : `https://cariniservice-production.up.railway.app/storage/${mantenimiento.payment_support}`;
+      
+      console.log('🔍 Abriendo PDF:', pdfUrl);
+      
+      // Verificar si se puede abrir la URL
+      const canOpen = await Linking.canOpenURL(pdfUrl);
+      
+      if (canOpen) {
+        // Abrir el PDF
+        await Linking.openURL(pdfUrl);
+        console.log('✅ PDF abierto exitosamente');
+      } else {
+        Alert.alert(
+          'Error',
+          'No se puede abrir el PDF. Verifica que tengas una aplicación de PDF instalada.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error al abrir PDF:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo abrir el soporte de pago. Inténtalo de nuevo.',
+        [{ text: 'OK' }]
+      );
+    }
   };
 
   const getTipoText = (type: MaintenanceType) => {
@@ -310,7 +327,7 @@ export default function DetalleMantenimientoScreen() {
                   </TouchableOpacity>
                 )}
                 
-                {mantenimiento.is_paid === false && mantenimiento.payment_support && (
+                {mantenimiento.payment_support && (
                   <TouchableOpacity 
                     style={styles.supportButton}
                     onPress={handleViewPaymentSupport}
