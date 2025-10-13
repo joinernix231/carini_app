@@ -55,11 +55,7 @@ export default function TecnicoListScreen() {
     } = useTecnicos();
     const { showError } = useError();
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchTecnicos();
-        }, [fetchTecnicos])
-    );
+   
 
     const goToCreate = useCallback(() => navigation.navigate('CrearTecnico'), [navigation]);
     const goToDetail = useCallback((id: number) => navigation.navigate('DetalleTecnico', { id }), [navigation]);

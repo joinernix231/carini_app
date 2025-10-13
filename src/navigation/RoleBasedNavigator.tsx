@@ -32,6 +32,7 @@ import AsignarTecnicoScreen from '../screens/Coordinator/AsignarTecnico/AsignarT
 import AdminDashboard from '../screens/Administrador/AdministradorDashboard';
 import ClienteList from '../screens/Administrador/Cliente/ClienteList';
 import DetalleCliente from '../screens/Administrador/Cliente/DetalleCliente';
+import ClienteDevicesScreen from '../screens/Administrador/Cliente/ClienteDevicesScreen';
 import CrearCliente from '../screens/Administrador/Cliente/CrearCliente';
 import EditarCliente from '../screens/Administrador/Cliente/EditarCliente';
 import EquipoList from '../screens/Administrador/Equipo/EquipoList';
@@ -143,6 +144,7 @@ export function AdministradorNavigator() {
       <AdministradorStack.Screen name="ClienteList" component={ClienteList} />
       <AdministradorStack.Screen name="CrearCliente" component={CrearCliente} />
       <AdministradorStack.Screen name="DetalleCliente" component={DetalleCliente} />
+      <AdministradorStack.Screen name="ClienteDevices" component={ClienteDevicesScreen} />
       <AdministradorStack.Screen name="EditarCliente" component={EditarCliente} />
       
       {/* Equipos */}

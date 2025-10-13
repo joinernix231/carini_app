@@ -23,16 +23,13 @@ const authHeaders = (token: string) => ({
 async function getAll(
     token: string,
     page = 1,
-    filters?: string,
-    perPage = 20
+    filters?: string
 ): Promise<TecnicosResponse> {
-    let url = `/api/technical?page=${page}&per_page=${perPage}`;
+    let url = `/api/technical?page=${page}`;
     if (filters) url += `&filters=${encodeURIComponent(filters)}`;
 
     const res = await API.get(url, authHeaders(token));
-
-    // El backend devuelve: { success: true, data: { current_page, data: [...], ... }, message }
-    // res.data.data es el objeto paginado => lo devolvemos como TecnicosResponse
+    
     return res.data.data as TecnicosResponse;
 }
 

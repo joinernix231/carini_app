@@ -11,17 +11,18 @@ import {
   FlatList,
   Image,
   Linking,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
+import { useError } from '../../../context/ErrorContext';
 import { createMantenimiento } from '../../../services/MantenimientoService';
 import { uploadImage } from '../../../services/UploadImage';
 import { useAuth } from '../../../context/AuthContext';
 import BackButton from '../../../components/BackButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RootStackParamList = {
   SolicitarMantenimiento: undefined;
@@ -53,14 +54,14 @@ const CHECKLIST_MANTENIMIENTO: Record<string, string[]> = {
 export default function CrearMantenimiento() {
   const { navigate, navigateReplace } = useSmartNavigation();
   const { token } = useAuth();
+  const { showError } = useError();
 
   const [equipos, setEquipos] = useState<
-      { id: number; name: string; maintenance_type_id: number; tipo_equipo?: string }[]
+      { id: number; name: string; tipo_equipo?: string }[]
   >([]);
   const [equipoSeleccionado, setEquipoSeleccionado] = useState<{
     id: number;
     name: string;
-    maintenance_type_id: number;
     tipo_equipo?: string;
   } | null>(null);
 
@@ -78,12 +79,13 @@ export default function CrearMantenimiento() {
 
       try {
         const equiposData = await getEquiposVinculados(token);
+        
         const listaEquipos = equiposData.map((item: any) => {
           const { device, address, id } = item;
+          console.log('🔍 device', device);
           return {
             id,
-            name: `${device.model} (${device.serial}) - ${address}`,
-            maintenance_type_id: device.maintenance_type_id || 1,
+            name: `${device.model} - ${address}`,
             tipo_equipo: device.type,
           };
         });
@@ -232,12 +234,7 @@ export default function CrearMantenimiento() {
       }
     } catch (error: any) {
       console.error('Error al crear mantenimiento:', error);
-      if (error.response?.data?.data) {
-        const mensajes = Object.values(error.response.data.data).flat().join('\n');
-        Alert.alert('Error de validación', mensajes);
-      } else {
-        Alert.alert('Error', 'Ocurrió un error al registrar el mantenimiento.');
-      }
+      showError(error, 'Ocurrió un error al registrar el mantenimiento.');
     } finally {
       setLoading(false);
     }
@@ -523,7 +520,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
-    top: 10,
+    marginTop: 8,
+    marginBottom: 8,
   },
   title: {
     flex: 1,

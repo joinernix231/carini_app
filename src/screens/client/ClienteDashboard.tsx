@@ -15,6 +15,9 @@ import { useAuth } from '../../context/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useClienteDashboard } from '../../hooks/cliente/useClienteDashboard';
+import { useFocusEffect } from '@react-navigation/native';
+
 
 const { width } = Dimensions.get('window');
 
@@ -63,7 +66,7 @@ const options: MenuOption[] = [
   {
     icon: 'business',
     label: 'Mi Perfil',
-    screen: 'Miperfil',
+    screen: 'MiPerfil',
     color: '#26A69A',
     bgColor: '#E0F2F1',
     description: 'Información empresarial'
@@ -73,6 +76,14 @@ const options: MenuOption[] = [
 export default function ClienteDashboard() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuth();
+  const { data: dashboardData, loading, refresh } = useClienteDashboard();
+
+  // Recargar datos cuando la pantalla reciba foco (por ejemplo, al regresar del perfil)
+  useFocusEffect(
+    React.useCallback(() => {
+      refresh();
+    }, [refresh])
+  );
 
   const renderItem = ({ item }: { item: MenuOption }) => (
       <TouchableOpacity

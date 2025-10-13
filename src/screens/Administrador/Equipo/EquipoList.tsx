@@ -58,11 +58,8 @@ export default function EquipoList() {
     
     const { showError } = useError();
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchEquipos();
-        }, [fetchEquipos])
-    );
+    // Removido useFocusEffect para evitar llamadas duplicadas
+    // Los datos se cargan automáticamente en useEquipos hook
 
     const goToCreate = useCallback(() => navigation.navigate('CrearEquipo'), [navigation]);
     const goToDetail = useCallback((id: number) => navigation.navigate('DetalleEquipoAdmin', { id }), [navigation]);
@@ -108,8 +105,9 @@ export default function EquipoList() {
 
     const statsData = useMemo(() => {
         const total = pagination?.total ?? equipos.length ?? 0;
-        const active = equipos.filter(e => e.serial && e.status === 'active').length;
-        const inactive = equipos.filter(e => e.serial && e.status === 'inactive').length;
+        // Los equipos no tienen status, todos se consideran activos
+        const active = equipos.filter(e => e.serial).length;
+        const inactive = 0; // No hay equipos inactivos en este modelo
 
         return { total, active, inactive };
     }, [pagination, equipos]);

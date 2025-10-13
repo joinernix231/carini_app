@@ -15,10 +15,9 @@ const authHeaders = (token: string) => ({
 async function getAll(
     token: string,
     page = 1,
-    filters?: string,
-    perPage = 20
+    filters?: string
 ): Promise<EquiposResponse> {
-    let url = `/api/devices?page=${page}&per_page=${perPage}`;
+    let url = `/api/devices?page=${page}`;
     if (filters) url += `&filters=${encodeURIComponent(filters)}`;
 
     const res = await API.get(url, authHeaders(token));
@@ -28,7 +27,7 @@ async function getAll(
     if (response.data) {
         response.data = response.data.map(equipo => ({
             ...equipo,
-            PDF: equipo.pdf_url,
+            PDF: (equipo as any).pdf_url,
         }));
     }
     

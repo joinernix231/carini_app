@@ -21,7 +21,8 @@ type Props = {
     submitLabel?: string;
 };
 
-const phoneRegex = /^\d{10,}$/;
+const phoneRegex = /^(?=(?:\D*\d){7,10})\+?[0-9\s-]+$/;
+
 const identifierRegex = /^[\d-]+$/;
 
 const validationSchema = Yup.object().shape({
@@ -37,7 +38,7 @@ const validationSchema = Yup.object().shape({
     address: Yup.string().trim().required('Dirección es requerida'),
     phone: Yup.string()
         .trim()
-        .matches(phoneRegex, 'Teléfono debe tener mínimo 10 dígitos')
+        .matches(phoneRegex, 'Teléfono debe tener entre 7 y 10 dígitos')
         .required('Teléfono es requerido'),
     legal_representative: Yup.string().trim().notRequired(),
     contacts: Yup.array()
@@ -45,7 +46,7 @@ const validationSchema = Yup.object().shape({
             Yup.object({
                 nombre_contacto: Yup.string().trim().required('Nombre del contacto es requerido'),
                 correo: Yup.string().trim().email('Correo inválido').required('Correo es requerido'),
-                telefono: Yup.string().trim().matches(phoneRegex, 'Teléfono debe tener mínimo 10 dígitos').required('Teléfono es requerido'),
+                telefono: Yup.string().trim().matches(phoneRegex, 'Teléfono debe tener entre 7 y 10 dígitos').required('Teléfono es requerido'),
                 direccion: Yup.string().trim().required('Dirección es requerida'),
                 cargo: Yup.string().trim().required('Cargo es requerido'),
             })
@@ -112,6 +113,13 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
 
     const getSelectedDocument = (type: string) => {
         return documentTypes.find(doc => doc.key === type);
+    };
+
+    const getAvailableDocumentTypes = (clientType: 'Natural' | 'Jurídico') => {
+        if (clientType === 'Jurídico') {
+            return documentTypes.filter(doc => doc.key === 'NIT');
+        }
+        return documentTypes.filter(doc => doc.key !== 'NIT');
     };
 
     const renderContactCard = ({ item, index, formik }: any) => (
@@ -309,7 +317,13 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
                                                 styles.clientTypeButton,
                                                 formik.values.client_type === 'Natural' && styles.clientTypeButtonActive
                                             ]}
-                                            onPress={() => formik.setFieldValue('client_type', 'Natural')}
+                                            onPress={() => {
+                                                formik.setFieldValue('client_type', 'Natural');
+                                                // Si el tipo de documento actual es NIT, cambiarlo a CC
+                                                if (formik.values.document_type === 'NIT') {
+                                                    formik.setFieldValue('document_type', 'CC');
+                                                }
+                                            }}
                                         >
                                             <Ionicons 
                                                 name="person" 
@@ -328,7 +342,11 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
                                                 styles.clientTypeButton,
                                                 formik.values.client_type === 'Jurídico' && styles.clientTypeButtonActive
                                             ]}
-                                            onPress={() => formik.setFieldValue('client_type', 'Jurídico')}
+                                            onPress={() => {
+                                                formik.setFieldValue('client_type', 'Jurídico');
+                                                // Cambiar automáticamente a NIT cuando se seleccione Jurídico
+                                                formik.setFieldValue('document_type', 'NIT');
+                                            }}
                                         >
                                             <Ionicons 
                                                 name="business" 
@@ -348,9 +366,18 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
                                 {/* Tipo de Documento */}
                                 <View style={styles.inputGroup}>
                                     <Text style={styles.label}>Tipo de Documento *</Text>
+                                    {formik.values.client_type === 'Jurídico' && (
+                                        <Text style={styles.infoText}>
+                                            Para clientes jurídicos solo se permite NIT
+                                        </Text>
+                                    )}
                                     <TouchableOpacity
-                                        style={styles.documentSelector}
+                                        style={[
+                                            styles.documentSelector,
+                                            formik.values.client_type === 'Jurídico' && styles.documentSelectorDisabled
+                                        ]}
                                         onPress={() => setShowDocumentModal(true)}
+                                        disabled={formik.values.client_type === 'Jurídico'}
                                     >
                                         {formik.values.document_type ? (
                                             <View style={styles.selectedDocument}>
@@ -506,7 +533,13 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
 
                             <TouchableOpacity
                                 style={[styles.submitButton, formik.isSubmitting && { opacity: 0.7 }]}
-                                onPress={formik.handleSubmit as any}
+                                onPress={() => {
+                                    console.log('🔍 ClienteForm - Submit button pressed');
+                                    console.log('🔍 ClienteForm - formik.isSubmitting:', formik.isSubmitting);
+                                    console.log('🔍 ClienteForm - formik.isValid:', formik.isValid);
+                                    console.log('🔍 ClienteForm - formik.errors:', formik.errors);
+                                    formik.handleSubmit();
+                                }}
                                 disabled={formik.isSubmitting}
                                 activeOpacity={0.8}
                             >
@@ -541,7 +574,7 @@ export default function ClienteForm({ initialValues, onSubmit, submitLabel = 'Gu
                                     </View>
                                     
                                     <FlatList
-                                        data={documentTypes}
+                                        data={getAvailableDocumentTypes(formik.values.client_type)}
                                         renderItem={({ item }) => (
                                             <TouchableOpacity
                                                 style={styles.documentOption}
@@ -728,6 +761,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
+    contactBadge: {
+        backgroundColor: '#667eea',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+    },
     contactBadgeText: {
         color: '#fff',
         fontSize: 12,
@@ -835,5 +874,21 @@ const styles = StyleSheet.create({
         fontSize: 13,
         color: '#6B7280',
         marginTop: 2,
+    },
+    infoText: {
+        fontSize: 12,
+        color: '#059669',
+        backgroundColor: '#ECFDF5',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 6,
+        marginBottom: 8,
+        borderWidth: 1,
+        borderColor: '#D1FAE5',
+    },
+    documentSelectorDisabled: {
+        backgroundColor: '#F3F4F6',
+        borderColor: '#D1D5DB',
+        opacity: 0.7,
     },
 });

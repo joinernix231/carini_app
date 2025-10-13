@@ -30,6 +30,7 @@ export function useTecnicos({
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
     const [page, setPage] = useState<number>(initialPage);
+    const [hasInitialLoad, setHasInitialLoad] = useState<boolean>(false);
 
     const mountedRef = useRef(true);
     useEffect(() => {
@@ -58,8 +59,7 @@ export function useTecnicos({
                 const resp: TecnicosResponse = await TecnicoService.getAll(
                     token,
                     pageToFetch,
-                    currentFilters,
-                    perPage
+                    currentFilters
                 );
 
                 if (!mountedRef.current) return;
@@ -86,8 +86,10 @@ export function useTecnicos({
         [token, currentFilters, perPage]
     );
 
-    // search con debounce
+    // search con debounce - solo si ya se cargó inicialmente
     useEffect(() => {
+        if (!hasInitialLoad) return;
+        
         const id = setTimeout(() => {
             if (searchText.trim().length === 0) {
                 fetchTecnicos(1, false);
@@ -98,12 +100,16 @@ export function useTecnicos({
         }, debounceMs);
 
         return () => clearTimeout(id);
-    }, [searchText, fetchTecnicos, debounceMs]);
+    }, [searchText, fetchTecnicos, debounceMs, hasInitialLoad]);
 
+    // Solo cargar datos iniciales cuando hay token
     useEffect(() => {
-        fetchTecnicos(initialPage, true);
+        if (token && !hasInitialLoad) {
+            fetchTecnicos(initialPage, true);
+            setHasInitialLoad(true);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token]);
+    }, [token, hasInitialLoad]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);

@@ -5,6 +5,7 @@ export interface ApiError {
   message: string;
   code?: string;
   details?: any;
+  validationErrors?: Record<string, string[]>;
 }
 
 export interface ErrorMessage {

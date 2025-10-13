@@ -8,6 +8,7 @@ import ClienteForm from '../../../components/Cliente/ClienteForm';
 import BackButton from '../../../components/BackButton';
 import { ClienteFormValues } from '../../../types/cliente/cliente';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useError } from '../../../context/ErrorContext';
 
 
 type RootStackParamList = {
@@ -30,14 +31,10 @@ const initialValues: ClienteFormValues = {
     contacts: [],
 };
 
-const showError = (error: any, defaultMessage: string) => {
-    const message = error?.response?.data?.message || error?.message || defaultMessage;
-    Alert.alert('Error', message);
-};
-
 export default function CrearCliente() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { addCliente } = useClientes();
+    const { showError } = useError();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (values: ClienteFormValues) => {

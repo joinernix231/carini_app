@@ -38,48 +38,48 @@ type MenuOption = {
 };
 
 const { width } = Dimensions.get('window');
-const ITEM_WIDTH = (width - 60) / 2; // Ancho fijo para cada item
+const ITEM_WIDTH = (width - 85) / 2; 
 
 const options: MenuOption[] = [
   {
     icon: 'groups',
     label: 'Clientes',
     screen: 'ClienteList',
-    color: '#1565C0',
-    bgColor: '#E3F2FD',
-    description: 'Gestiona clientes',
+    color: '#3B82F6', // Blue-500
+    bgColor: '#EFF6FF', // Blue-50
+    description: 'Gestión de clientes y contactos',
   },
   {
-    icon: 'people',
+    icon: 'build',
     label: 'Técnicos',
     screen: 'TecnicoList',
-    color: '#26A69A',
-    bgColor: '#E0F2F1',
-    description: 'Gestionar personal'
+    color: '#F59E0B', // Amber-500
+    bgColor: '#FFFBEB', // Amber-50
+    description: 'Administrar técnicos'
   },
-  {
-    icon: 'people',
+  {	
+    icon: 'badge',
     label: 'Coordinadores',
     screen: 'CoordinadorList',
-    color: '#3c1642',
-    bgColor: '#F3E5F5',
-    description: 'Gestionar personal'
+    color: '#8B5CF6', // Violet-500
+    bgColor: '#F5F3FF', // Violet-50
+    description: 'Gestión de coordinadores'
   },
   {
-    icon: 'edit',
+    icon: 'memory',
     label: 'Equipos',
     screen: 'EquipoList',
-    color: '#AB47BC',
-    bgColor: '#F3E5F5',
-    description: 'Editar información'
+    color: '#10B981', // Emerald-500
+    bgColor: '#ECFDF5', // Emerald-50
+    description: 'Gestión de equipos'
   },
   {
-    icon: 'engineering',
+    icon: 'schedule',
     label: 'Mantenimientos',
     screen: 'VerMantenimientos',
-    color: '#1E88E5',
-    bgColor: '#E3F2FD',
-    description: 'Ver programados'
+    color: '#EF4444', // Red-500
+    bgColor: '#FEF2F2', // Red-50
+    description: 'Seguimiento de mantenimientos'
   },
 ];
 

@@ -24,10 +24,9 @@ const authHeaders = (token: string) => ({
 async function getAll(
     token: string,
     page = 1,
-    filters?: string,
-    perPage = 20
+    filters?: string
 ): Promise<CoordinadoresResponse> {
-    let url = `/api/coordinators?page=${page}&per_page=${perPage}`;
+    let url = `/api/coordinators?page=${page}`;
     if (filters) url += `&filters=${encodeURIComponent(filters)}`;
 
     const res = await API.get(url, authHeaders(token));

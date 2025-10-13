@@ -20,7 +20,8 @@ import BackButton from '../../../components/BackButton';
 import { useAuth } from '../../../context/AuthContext';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { asignarEquipo as asignarEquipoCliente } from '../../../services/EquipoClienteService';
-import { getEquiposVinculados as getEquiposEmpresa } from '../../../services/EquiposService';
+import { AvailableDevicesService } from '../../../services/AvailableDevicesService';
+import { useError } from '../../../context/ErrorContext';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -43,6 +44,7 @@ type RootStackParamList = {
 export default function AgregarEquipo() {
     const { navigate, navigateReplace } = useSmartNavigation();
     const { token } = useAuth();
+    const { showError } = useError();
 
     const [devices, setDevices] = useState<Device[]>([]);
     const [loadingDevices, setLoadingDevices] = useState(true);
@@ -78,8 +80,12 @@ export default function AgregarEquipo() {
     const loadDevices = async () => {
         try {
             setLoadingDevices(true);
-            const data = await getEquiposEmpresa(token!);
+            console.log('🔍 AgregarEquipo - Cargando dispositivos...');
+            const data = await AvailableDevicesService.getAvailableDevices(token!);
+            console.log('🔍 AgregarEquipo - Datos recibidos:', data);
+            
             if (Array.isArray(data)) {
+                console.log('✅ AgregarEquipo - Datos es array, normalizando...');
                 const normalized: Device[] = data.map((d: any) => ({
                     id: d.id ?? d.device?.id ?? 0,
                     model: d.model ?? d.device?.model ?? 'N/A',
@@ -88,15 +94,17 @@ export default function AgregarEquipo() {
                     type: d.type ?? d.device?.type ?? 'device',
                     manufactured_at: d.manufactured_at ?? d.device?.manufactured_at,
                 }));
+                console.log('✅ AgregarEquipo - Dispositivos normalizados:', normalized.length);
                 setDevices(normalized);
                 setFilteredDevices(normalized);
             } else {
+                console.log('❌ AgregarEquipo - Datos no es array:', typeof data, data);
                 setDevices([]);
                 setFilteredDevices([]);
             }
         } catch (err) {
-            console.error('Error cargando dispositivos de la empresa', err);
-            Alert.alert('Error', 'No se pudo cargar la lista de dispositivos.');
+            console.error('❌ AgregarEquipo - Error cargando dispositivos:', err);
+            showError(err, 'No se pudo cargar la lista de dispositivos.');
             setDevices([]);
         } finally {
             setLoadingDevices(false);
@@ -147,8 +155,7 @@ export default function AgregarEquipo() {
             ]);
         } catch (error: any) {
             console.error('Error vinculando equipo:', error?.response?.data ?? error);
-            const msg = error?.response?.data?.message || 'No se pudo vincular el equipo';
-            Alert.alert('Error', msg);
+            showError(error, 'No se pudo vincular el equipo');
         } finally {
             setSubmitting(false);
         }
@@ -295,7 +302,7 @@ export default function AgregarEquipo() {
 
             {/* Header */}
             <View style={styles.header}>
-                <BackButton style={{ marginTop: 8 }} color="#000" size={24} />
+                <BackButton style={styles.backButton} color="#000" size={24} />
                 <View style={styles.headerContent}>
                     <Text style={styles.title}>Agregar Equipo</Text>
                     <Text style={styles.subtitle}>
@@ -438,13 +445,15 @@ const styles = StyleSheet.create({
         shadowRadius: 12,
         elevation: 8,
     },
+    backButton: {
+        padding: 8,
+        marginTop: 8,
+        marginBottom: 8,
+    },
     headerTop: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
-    },
-    backButton: {
-        marginTop: 4,
     },
     headerContent: {
         marginTop: 8,

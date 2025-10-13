@@ -6,7 +6,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
-    SafeAreaView,
     ActivityIndicator,
     RefreshControl,
     StatusBar,
@@ -19,7 +18,7 @@ import { useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useAuth } from '../../../context/AuthContext';
 import { getEquiposVinculados } from '../../../services/EquipoClienteService';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 // Tipos
@@ -222,7 +221,7 @@ export default function MisEquipos() {
 
             {/* Header */}
             <View style={styles.header}>
-                <BackButton style={{ marginTop: 8 }} color="#000" size={24} />
+                <BackButton style={styles.backButton} color="#000" size={24} />
                 <Text style={styles.title}>Mis Equipos</Text>
                 <Text style={styles.subtitle}>
                     {equipos.length} {equipos.length === 1 ? 'equipo registrado' : 'equipos registrados'}
@@ -305,6 +304,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#f8f9fa',
+    },
+    backButton: {
+        padding: 8,
+        marginTop: 8,
+        marginBottom: 8,
     },
     loadingContainer: {
         flex: 1,

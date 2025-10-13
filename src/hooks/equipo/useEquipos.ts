@@ -30,6 +30,7 @@ export function useEquipos({
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
     const [page, setPage] = useState<number>(initialPage);
+    const [hasInitialLoad, setHasInitialLoad] = useState<boolean>(false);
 
     const mountedRef = useRef(true);
     useEffect(() => {
@@ -58,8 +59,7 @@ export function useEquipos({
                 const resp: EquiposResponse = await EquipoService.getAll(
                     token,
                     pageToFetch,
-                    filters || currentFilters,
-                    perPage
+                    filters || currentFilters
                 );
 
                 if (!mountedRef.current) return;
@@ -84,8 +84,10 @@ export function useEquipos({
         [token, currentFilters, perPage]
     );
 
-    // search con debounce
+    // search con debounce - solo si ya se cargó inicialmente
     useEffect(() => {
+        if (!hasInitialLoad) return;
+        
         const id = setTimeout(() => {
             if (searchText.trim().length === 0) {
                 fetchEquipos(1, false);
@@ -96,12 +98,16 @@ export function useEquipos({
         }, debounceMs);
 
         return () => clearTimeout(id);
-    }, [searchText, fetchEquipos, debounceMs]);
+    }, [searchText, fetchEquipos, debounceMs, hasInitialLoad]);
 
+    // Solo cargar datos iniciales cuando hay token
     useEffect(() => {
-        fetchEquipos(initialPage, true);
+        if (token && !hasInitialLoad) {
+            fetchEquipos(initialPage, true);
+            setHasInitialLoad(true);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token]);
+    }, [token, hasInitialLoad]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);

@@ -53,12 +53,19 @@ export function useCliente(id: number) {
 
     const updateCliente = useCallback(
         async (payload: Parameters<typeof ClienteService.update>[1]) => {
+            console.log('🔍 useCliente - updateCliente called with payload:', payload);
+            console.log('🔍 useCliente - token available:', !!token);
+            console.log('🔍 useCliente - id:', id);
+            
             if (!token || !id) throw new Error('No auth token or ID');
             try {
+                console.log('🔍 useCliente - Calling ClienteService.update');
                 const updated = await ClienteService.update(id, payload, token);
+                console.log('✅ useCliente - Update successful, new cliente:', updated);
                 setCliente(updated);
                 return updated;
             } catch (err: any) {
+                console.error('❌ useCliente - Error updating cliente:', err);
                 showError(err, 'Error al actualizar el cliente');
                 setError(err.message || 'Error actualizando cliente');
                 throw err;

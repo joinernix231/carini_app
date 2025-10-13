@@ -1,127 +1,110 @@
-// src/services/ClienteService.ts
 import API from './api';
-import { Cliente, ClienteFormValues } from '../types/cliente/cliente';
-import { PaginationData } from '../components/PaginationControls';
-import { BaseResponse } from '../types/BaseResponse';
+import { authHeaders } from './api';
 
-export interface ClientesResponse extends BaseResponse {
-    data: Cliente[];
+export interface ClienteDashboardStats {
+  equiposCount: number;
+  mantenimientosPendientes: number;
+  mantenimientosCompletados: number;
+  mantenimientosEnProceso: number;
 }
 
-export interface CreateClientePayload {
-    name: string;
-    identifier: string;
-    email?: string | null;
-    client_type?: 'Natural' | 'Jurídico';
-    document_type?: 'CC' | 'CE' | 'CI' | 'PASS' | 'NIT';
-    city?: string | null;
-    department?: string | null;
-    address?: string | null;
-    phone?: string | null;
-    legal_representative?: string | null;
-    contacts?: Array<{
-        nombre_contacto: string;
-        correo: string;
-        telefono: string;
-        direccion: string;
-        cargo: string;
-    }>;
+export interface ClienteEquipo {
+  id: string;
+  name: string;
+  tipo_equipo: string;
+  serial?: string;
+  model?: string;
+  address?: string;
+  estado?: string;
+  ultimoMantenimiento?: string;
 }
 
-const authHeaders = (token: string) => ({
-    headers: { Authorization: `Bearer ${token}` },
-});
-
-async function getAll(
-    token: string,
-    page = 1,
-    filters?: string,
-    perPage = 20
-): Promise<ClientesResponse> {
-    let url = `/api/clients?page=${page}&per_page=${perPage}`;
-    if (filters) url += `&filters=${encodeURIComponent(filters)}`;
-
-    const res = await API.get(url, authHeaders(token));
-    return res.data.data as ClientesResponse;
+export interface ClienteMantenimiento {
+  id: string;
+  device: {
+    model: string;
+    serial: string;
+  };
+  type: string;
+  status: string;
+  created_at: string;
+  description?: string;
+  priority?: string;
 }
 
-function mapToPaginationData(response: ClientesResponse): PaginationData {
-    return {
-        current_page: response.current_page,
-        last_page: response.last_page,
-        from: response.from,
-        to: response.to,
-        total: response.total,
-        per_page: response.per_page,
-        next_page_url: response.next_page_url,
-        prev_page_url: response.prev_page_url,
-    };
-}
-
-async function getOne(id: number, token: string): Promise<Cliente> {
-    const res = await API.get(`/api/clients/${id}`, authHeaders(token));
-    return res.data.data ?? res.data;
-}
-
-async function create(payload: CreateClientePayload, token: string): Promise<Cliente> {
-    const res = await API.post('/api/clients', payload, authHeaders(token));
-    return res.data.data ?? res.data;
-}
-
-async function update(id: number, payload: Partial<CreateClientePayload>, token: string): Promise<Cliente> {
-    const res = await API.put(`/api/clients/${id}`, payload, authHeaders(token));
-    return res.data.data ?? res.data;
-}
-
-async function remove(id: number, token: string): Promise<void> {
-    await API.delete(`/api/clients/${id}`, authHeaders(token));
-}
-
-async function changeStatus(id: number, status: 'active' | 'inactive', token: string): Promise<Cliente> {
-    const res = await API.put(`/api/clients/${id}/status`, { status }, authHeaders(token));
-    return res.data.data ?? res.data;
-}
-
-// Función auxiliar para construir filtros
-function buildFilters(searchOptions: {
-    name?: string;
-    email?: string;
-    city?: string;
-    identifier?: string;
-    phone?: string;
-}): string {
-    const filters: string[] = [];
-
-    if (searchOptions.name?.trim()) {
-        filters.push(`name|like|${searchOptions.name.trim()}`);
+export class ClienteService {
+  /**
+   * Obtiene las estadísticas del dashboard del cliente
+   */
+  static async getDashboardStats(token: string): Promise<ClienteDashboardStats> {
+    try {
+      console.log('🔍 ClienteService - Obteniendo estadísticas del dashboard');
+      const response = await API.get('/api/cliente/dashboard/stats', authHeaders(token));
+      console.log('✅ ClienteService - Estadísticas obtenidas:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ClienteService - Error obteniendo estadísticas:', error);
+      throw new Error(error.response?.data?.message || 'Error obteniendo estadísticas del dashboard');
     }
+  }
 
-    if (searchOptions.email?.trim()) {
-        filters.push(`email|like|${searchOptions.email.trim()}`);
+  /**
+   * Obtiene los equipos del cliente
+   */
+  static async getEquipos(token: string): Promise<ClienteEquipo[]> {
+    try {
+      console.log('🔍 ClienteService - Obteniendo equipos del cliente');
+      const response = await API.get('/api/cliente/equipos', authHeaders(token));
+      console.log('✅ ClienteService - Equipos obtenidos:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ClienteService - Error obteniendo equipos:', error);
+      throw new Error(error.response?.data?.message || 'Error obteniendo equipos del cliente');
     }
+  }
 
-    if (searchOptions.city?.trim()) {
-        filters.push(`city|like|${searchOptions.city.trim()}`);
+  /**
+   * Obtiene los mantenimientos del cliente
+   */
+  static async getMantenimientos(token: string): Promise<ClienteMantenimiento[]> {
+    try {
+      console.log('🔍 ClienteService - Obteniendo mantenimientos del cliente');
+      const response = await API.get('/api/cliente/mantenimientos', authHeaders(token));
+      console.log('✅ ClienteService - Mantenimientos obtenidos:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ClienteService - Error obteniendo mantenimientos:', error);
+      throw new Error(error.response?.data?.message || 'Error obteniendo mantenimientos del cliente');
     }
+  }
 
-    if (searchOptions.identifier?.trim()) {
-        filters.push(`identifier|like|${searchOptions.identifier.trim()}`);
+  /**
+   * Obtiene el historial de mantenimientos del cliente
+   */
+  static async getHistorialMantenimientos(token: string, limit: number = 10): Promise<ClienteMantenimiento[]> {
+    try {
+      console.log('🔍 ClienteService - Obteniendo historial de mantenimientos');
+      const response = await API.get(`/api/cliente/mantenimientos/historial?limit=${limit}`, authHeaders(token));
+      console.log('✅ ClienteService - Historial obtenido:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ClienteService - Error obteniendo historial:', error);
+      throw new Error(error.response?.data?.message || 'Error obteniendo historial de mantenimientos');
     }
+  }
 
-    if (searchOptions.phone?.trim()) {
-        filters.push(`phone|like|${searchOptions.phone.trim()}`);
+  /**
+   * Obtiene notificaciones del cliente
+   */
+  static async getNotificaciones(token: string): Promise<any[]> {
+    try {
+      console.log('🔍 ClienteService - Obteniendo notificaciones');
+      const response = await API.get('/api/cliente/notificaciones', authHeaders(token));
+      console.log('✅ ClienteService - Notificaciones obtenidas:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ ClienteService - Error obteniendo notificaciones:', error);
+      throw new Error(error.response?.data?.message || 'Error obteniendo notificaciones');
     }
-
-    return filters.join(';');
+  }
 }
-
-export const ClienteService = {
-    getAll,
-    mapToPaginationData,
-    getOne,
-    create,
-    update,
-    remove,
-    changeStatus,
-    buildFilters,
-};

@@ -29,6 +29,7 @@ export function useCoordinadores({
     const [isSearching, setIsSearching] = useState<boolean>(false);
 
     const [page, setPage] = useState<number>(initialPage);
+    const [hasInitialLoad, setHasInitialLoad] = useState<boolean>(false);
 
     const mountedRef = useRef(true);
     useEffect(() => {
@@ -57,8 +58,7 @@ export function useCoordinadores({
                 const resp: CoordinadoresResponse = await CoordinadorService.getAll(
                     token,
                     pageToFetch,
-                    currentFilters,
-                    perPage
+                    currentFilters
                 );
 
 
@@ -88,8 +88,10 @@ export function useCoordinadores({
         [token, currentFilters, perPage]
     );
 
-    // search con debounce
+    // search con debounce - solo si ya se cargó inicialmente
     useEffect(() => {
+        if (!hasInitialLoad) return;
+        
         const id = setTimeout(() => {
             if (searchText.trim().length === 0) {
                 fetchCoordinadores(1, false);
@@ -100,12 +102,16 @@ export function useCoordinadores({
         }, debounceMs);
 
         return () => clearTimeout(id);
-    }, [searchText, fetchCoordinadores, debounceMs]);
+    }, [searchText, fetchCoordinadores, debounceMs, hasInitialLoad]);
 
+    // Solo cargar datos iniciales cuando hay token
     useEffect(() => {
-        fetchCoordinadores(initialPage, true);
+        if (token && !hasInitialLoad) {
+            fetchCoordinadores(initialPage, true);
+            setHasInitialLoad(true);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [token]);
+    }, [token, hasInitialLoad]);
 
     const onRefresh = useCallback(async () => {
         setRefreshing(true);

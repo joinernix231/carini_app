@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  SafeAreaView,
   RefreshControl,
   Alert,
   StatusBar,
@@ -21,6 +20,7 @@ import {
   getMantenimientos,
   deleteMantenimiento,
 } from '../../../services/MantenimientoService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type Mantenimiento = {
   id: number;
@@ -335,7 +335,9 @@ export default function MantenimientosList() {
         <SafeAreaView style={styles.container}>
           <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
           {renderHeader()}
-          {renderLoadingState()}
+          <View style={{ flex: 1 }}>
+            {renderLoadingState()}
+          </View>
         </SafeAreaView>
     );
   }
@@ -343,16 +345,15 @@ export default function MantenimientosList() {
   return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+        
+        {/* Header fijo */}
+        {renderHeader()}
 
         {mantenimientos.length === 0 ? (
-            <View style={styles.container}>
-              {renderHeader()}
-              {renderEmptyState()}
-            </View>
+            renderEmptyState()
         ) : (
             <>
               <FlatList
-                  ListHeaderComponent={renderHeader}
                   data={mantenimientos}
                   renderItem={renderItem}
                   keyExtractor={(item) => `mantenimiento_${item.id}`}

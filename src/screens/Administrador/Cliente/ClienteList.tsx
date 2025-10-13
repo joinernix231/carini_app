@@ -58,11 +58,8 @@ export default function ClienteList() {
     } = useClientes();
     const { showError } = useError();
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchClientes();
-        }, [fetchClientes])
-    );
+    // Los datos se cargan automáticamente en useClientes hook
+    // No se necesita useFocusEffect adicional
 
     const goToCreate = useCallback(() => navigation.navigate('CrearCliente'), [navigation]);
     const goToDetail = useCallback((id: number) => navigation.navigate('DetalleCliente', { id }), [navigation]);
@@ -246,7 +243,6 @@ export default function ClienteList() {
         <ClienteCard
             cliente={item}
             onPress={(id) => goToDetail(id)}
-            onEdit={(cliente) => navigation.navigate('EditarCliente', { id: cliente.id })}
             onDelete={(id, name) => handleDelete(id, name)}
         />
     ), [goToDetail, handleDelete, navigation]);

@@ -29,8 +29,8 @@ export class ErrorService {
       type: 'VALIDATION_ERROR',
       title: 'Error de Validación',
       message: 'Por favor, revisa los datos ingresados e intenta nuevamente.',
-      showAlert: false,
-      showToast: true,
+      showAlert: true,
+      showToast: false,
     },
     SERVER_ERROR: {
       type: 'SERVER_ERROR',
@@ -103,15 +103,27 @@ export class ErrorService {
     
     // Para errores 400, extraer el mensaje específico del servidor
     let message = 'Error desconocido';
+    let validationErrors: Record<string, string[]> = {};
     
     if (status === 400 && responseData) {
-      // Si hay datos específicos de validación, extraer el primer error
+      // Si hay datos específicos de validación, extraer todos los errores
       if (responseData.data && typeof responseData.data === 'object') {
-        const firstError = Object.values(responseData.data)[0];
-        if (Array.isArray(firstError) && firstError.length > 0) {
-          message = firstError[0];
-        } else if (typeof firstError === 'string') {
-          message = firstError;
+        validationErrors = responseData.data;
+        
+        // Crear un mensaje más descriptivo con todos los errores
+        const errorMessages: string[] = [];
+        Object.entries(responseData.data).forEach(([field, errors]) => {
+          if (Array.isArray(errors) && errors.length > 0) {
+            errorMessages.push(`${field}: ${errors[0]}`);
+          } else if (typeof errors === 'string') {
+            errorMessages.push(`${field}: ${errors}`);
+          }
+        });
+        
+        if (errorMessages.length > 0) {
+          message = errorMessages.join('\n');
+        } else {
+          message = responseData.message || 'Error de validación';
         }
       }
       // Si no hay datos específicos, usar el mensaje general
@@ -131,6 +143,7 @@ export class ErrorService {
       message,
       code: responseData?.code,
       details: responseData,
+      validationErrors,
     };
   }
 
@@ -138,11 +151,19 @@ export class ErrorService {
     const errorType = this.getErrorType(apiError.status, apiError);
     const config = this.getErrorConfig(errorType);
     
-    // Para errores 400, usar el mensaje del servidor como título y el error específico como mensaje
     let title = config.title;
     let message = config.message;
     
-    if (apiError.status === 400 && apiError.details) {
+    if (apiError.status === 400 && apiError.validationErrors) {
+      // Para errores de validación, mostrar el mensaje específico
+      title = 'Error de Validación';
+      
+      if (apiError.message && apiError.message !== 'Error desconocido') {
+        message = apiError.message;
+      } else if (apiError.details?.message) {
+        message = apiError.details.message;
+      }
+    } else if (apiError.status === 400 && apiError.details) {
       // Usar el mensaje general del servidor como título
       if (apiError.details.message) {
         title = apiError.details.message;

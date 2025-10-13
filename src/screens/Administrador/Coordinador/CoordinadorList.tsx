@@ -56,11 +56,8 @@ export default function CoordinadorList() {
     } = useCoordinadores();
     const { showError } = useError();
 
-    useFocusEffect(
-        useCallback(() => {
-            fetchCoordinadores();
-        }, [fetchCoordinadores])
-    );
+    // Removido useFocusEffect para evitar llamadas duplicadas
+    // Los datos se cargan automáticamente en useCoordinadores hook
 
     const goToCreate = useCallback(() => navigation.navigate('CrearCoordinador'), [navigation]);
     const goToDetail = useCallback((id: number) => navigation.navigate('DetalleCoordinador', { id }), [navigation]);

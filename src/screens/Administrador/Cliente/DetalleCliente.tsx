@@ -18,6 +18,7 @@ import BackButton from '../../../components/BackButton';
 import { useCliente } from '../../../hooks/cliente/useCliente';
 import { Cliente } from '../../../types/cliente/cliente';
 import { useError } from '../../../context/ErrorContext';
+import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 
 const { width } = Dimensions.get('window');
 
@@ -34,6 +35,7 @@ type RouteParams = {
 export default function DetalleCliente() {
     const route = useRoute();
     const navigation = useNavigation<any>();
+    const { navigate } = useSmartNavigation();
     const { id } = route.params as RouteParams;
 
     const {
@@ -228,6 +230,22 @@ export default function DetalleCliente() {
                     <View style={styles.card}>
                         <Row label="Creado" value={formatDate(cliente?.created_at)} icon="event" color="#34D399" />
                         <Row label="Actualizado" value={formatDate(cliente?.updated_at)} icon="update" color="#60A5FA" />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Dispositivos</Text>
+                    <View style={styles.actionRow}>
+                        <ActionButton 
+                            label="Ver Dispositivos" 
+                            icon="devices" 
+                            color="#3B82F6" 
+                            onPress={() => navigate('ClienteDevices', { 
+                                clientId: cliente?.id, 
+                                clientName: cliente?.name 
+                            })} 
+                            disabled={!cliente} 
+                        />
                     </View>
                 </View>
 
