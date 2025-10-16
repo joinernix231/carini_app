@@ -65,13 +65,15 @@ export default function AcceptPolicyScreen({ navigation }) {
     );
   };
 
-  const handleScroll = (event) => {
+  const handleScroll = (event: any) => {
+    // Persistir el evento para evitar errores de synthetic event
+    event.persist();
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const isScrolledToEnd = layoutMeasurement.height + contentOffset.y >= contentSize.height - 20;
     setScrolledToBottom(isScrolledToEnd);
   };
 
-  const PolicySection = ({ title, children }) => (
+  const PolicySection = ({ title, children }: { title: string; children: string }) => (
       <View style={styles.sectionContainer}>
         <Text style={styles.sectionTitle}>{title}</Text>
         <Text style={styles.sectionContent}>{children}</Text>

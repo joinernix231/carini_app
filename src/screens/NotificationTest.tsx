@@ -50,7 +50,7 @@ export default function NotificationTest() {
     const success = await registerToken();
     Alert.alert(
       '📱 Token',
-      success ? 'Token registrado correctamente' : 'Error registrando token'
+      success ? 'Token registrado correctamente' : 'No se pudo registrar el token'
     );
   };
 

@@ -21,20 +21,14 @@ import {
   deleteMantenimiento,
 } from '../../../services/MantenimientoService';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-type Mantenimiento = {
-  id: number;
-  tipo: 'preventive' | 'corrective';
-  equipo: string;
-  estado: string;
-  fecha: string;
-};
+import { MantenimientoCard } from '../../../components/Mantenimiento/MantenimientoCard';
+import { MantenimientoListItem } from '../../../types/mantenimiento/mantenimiento';
 
 export default function MantenimientosList() {
   const { token } = useAuth();
   const { showError } = useError();
   const { navigate } = useSmartNavigation();
-  const [mantenimientos, setMantenimientos] = useState<Mantenimiento[]>([]);
+  const [mantenimientos, setMantenimientos] = useState<MantenimientoListItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -118,13 +112,23 @@ export default function MantenimientosList() {
       const data = await getMantenimientos(token);
 
       if (Array.isArray(data)) {
-        const formattedData: Mantenimiento[] = data.map((item: any) => ({
-          id: item.id,
-          tipo: item.type || 'preventive',
-          equipo: item.device?.model || item.client_device?.device?.model || 'Equipo sin nombre',
-          estado: item.status || 'pending',
-          fecha: item.date_maintenance || item.created_at || new Date().toISOString(),
-        }));
+        const formattedData: MantenimientoListItem[] = data.map((item: any) => {
+          // Manejar la nueva estructura con múltiples dispositivos
+          const devices = Array.isArray(item.device) ? item.device : [item.device].filter(Boolean);
+          const primaryDevice = devices[0] || { model: 'Equipo sin nombre', brand: '', serial: '', address: '' };
+          
+          return {
+            id: item.id,
+            type: item.type || 'preventive',
+            status: item.status || 'pending',
+            devices: devices,
+            description: item.description || '',
+            date_maintenance: item.date_maintenance,
+            created_at: item.created_at || new Date().toISOString(),
+            deviceCount: devices.length,
+            primaryDevice: primaryDevice,
+          };
+        });
 
         setMantenimientos(formattedData);
       } else {
@@ -201,75 +205,13 @@ export default function MantenimientosList() {
     }
   };
 
-  const renderItem = ({ item }: { item: Mantenimiento }) => {
-    const estadoTraducido = traducirEstado(item.estado);
-    const estadoConfig = getEstadoConfig(estadoTraducido);
-    const tipoConfig = getTipoConfig(item.tipo);
-
+  const renderItem = ({ item }: { item: MantenimientoListItem }) => {
     return (
-        <TouchableOpacity
-            style={styles.card}
-            onPress={() => navigate('DetalleMantenimiento', { id: item.id })}
-            activeOpacity={0.8}
-        >
-          {/* Indicador de estado lateral */}
-          <View style={[styles.statusIndicator, { backgroundColor: estadoConfig.color }]} />
-
-          {/* Contenido de la tarjeta */}
-          <View style={styles.cardContent}>
-            {/* Header */}
-            <View style={styles.cardHeader}>
-              <View style={styles.equipoSection}>
-                <View style={[styles.tipoIcon, { backgroundColor: tipoConfig.bgColor }]}>
-                  <Ionicons
-                      name={tipoConfig.icon}
-                      size={24}
-                      color={tipoConfig.color}
-                  />
-                </View>
-                <View style={styles.equipoInfo}>
-                  <Text style={styles.equipoNombre} numberOfLines={1}>
-                    {item.equipo}
-                  </Text>
-                  <View style={[styles.tipoBadge, { backgroundColor: tipoConfig.bgColor }]}>
-                    <Text style={[styles.tipoText, { color: tipoConfig.color }]}>
-                      {tipoConfig.label}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Info section */}
-            <View style={styles.infoSection}>
-              <View style={styles.fechaContainer}>
-                <Ionicons name="calendar-outline" size={18} color="#666" />
-                <Text style={styles.fechaText}>{formatearFecha(item.fecha)}</Text>
-              </View>
-
-              <View style={[styles.estadoBadge, { backgroundColor: estadoConfig.bgColor }]}>
-                <Ionicons name={estadoConfig.icon} size={16} color={estadoConfig.color} />
-                <Text style={[styles.estadoText, { color: estadoConfig.color }]}>
-                  {estadoTraducido}
-                </Text>
-              </View>
-            </View>
-
-            {/* Footer con acciones */}
-            <View style={styles.cardFooter}>
-              <TouchableOpacity
-                  style={styles.deleteButton}
-                  onPress={() => eliminarMantenimiento(item.id)}
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              >
-                <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
-                <Text style={styles.deleteText}>Eliminar</Text>
-              </TouchableOpacity>
-
-              <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
-            </View>
-          </View>
-        </TouchableOpacity>
+      <MantenimientoCard
+        item={item}
+        onPress={() => navigate('DetalleMantenimiento', { id: item.id })}
+        onDelete={() => eliminarMantenimiento(item.id)}
+      />
     );
   };
 
@@ -289,14 +231,14 @@ export default function MantenimientosList() {
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {mantenimientos.filter(m => traducirEstado(m.estado) === 'Pendiente').length}
+              {mantenimientos.filter(m => traducirEstado(m.status) === 'Pendiente').length}
             </Text>
             <Text style={styles.statLabel}>Pendiente</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {mantenimientos.filter(m => traducirEstado(m.estado) === 'Completado').length}
+              {mantenimientos.filter(m => traducirEstado(m.status) === 'Completado').length}
             </Text>
             <Text style={styles.statLabel}>Completado</Text>
           </View>

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   FlatList,
   StatusBar,
-  SafeAreaView,
   RefreshControl,
   Alert,
   Modal,
@@ -18,6 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type MaintenanceStatus = 'pending' | 'in_progress' | 'completed';
 type MaintenanceType = 'preventivo' | 'correctivo';

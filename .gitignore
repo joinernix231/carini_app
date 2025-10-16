@@ -55,6 +55,11 @@ ios/*.xcuserdata
 *.aab
 *.ipa
 
+# Scripts de build
+build-*.bat
+config-*.bat
+setup-*.bat
+
 # IDE
 .vscode/
 .idea/

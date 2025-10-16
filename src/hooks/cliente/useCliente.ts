@@ -29,7 +29,7 @@ export function useCliente(id: number) {
             setLoading(true);
             setError(null);
 
-            const data = await ClienteService.getOne(id, token);
+            const data = await ClienteService.getById(id, token);
 
             if (!mountedRef.current) return;
 

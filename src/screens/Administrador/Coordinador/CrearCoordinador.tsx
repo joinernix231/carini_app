@@ -76,8 +76,7 @@ export default function CrearCoordinador() {
             <View style={styles.header}>
                 <BackButton color="#fff" />
                 <View style={styles.headerCenter}>
-                    <Text style={styles.title}>Editar Coordinador</Text>
-                    <Text style={styles.subtitle}>{coordinador?.name}</Text>
+                    <Text style={styles.title}>Crear Coordinador</Text>
                 </View>
             </View>
 
@@ -89,7 +88,7 @@ export default function CrearCoordinador() {
                 <CoordinadorForm
                     initialValues={initialValues}
                     onSubmit={handleSubmit}
-                    submitLabel="Actualizar Coordinador"
+                    submitLabel="Crear Coordinador"
                 />
             </ScrollView>
         </SafeAreaView>

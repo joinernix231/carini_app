@@ -191,6 +191,47 @@ export default function DetalleTecnicoScreen() {
                 </View>
 
                 <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Información laboral</Text>
+                    <View style={styles.card}>
+                        <Row label="Especialidad" value={tecnico?.specialty ?? '-'} icon="engineering" color="#10B981" />
+                        <Row label="Tipo de Sangre" value={tecnico?.blood_type ?? '-'} icon="bloodtype" color="#EF4444" />
+                        <Row label="Fecha de Contratación" value={tecnico?.hire_date ?? '-'} icon="event" color="#3B82F6" />
+                        <Row 
+                            label="Tipo de Contrato" 
+                            value={tecnico?.contract_type === 'full_time' ? 'Tiempo Completo' : 
+                                  tecnico?.contract_type === 'part_time' ? 'Medio Tiempo' : 
+                                  tecnico?.contract_type === 'contractor' ? 'Contratista' : '-'} 
+                            icon="work" 
+                            color="#8B5CF6" 
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Documentos parafiscales</Text>
+                    <View style={styles.card}>
+                        <Row 
+                            label="EPS" 
+                            value={tecnico?.eps_pdf ? 'Documento disponible' : 'Sin documento'} 
+                            icon="description" 
+                            color="#10B981" 
+                        />
+                        <Row 
+                            label="ARL" 
+                            value={tecnico?.arl_pdf ? 'Documento disponible' : 'Sin documento'} 
+                            icon="description" 
+                            color="#F59E0B" 
+                        />
+                        <Row 
+                            label="Pensión" 
+                            value={tecnico?.pension_pdf ? 'Documento disponible' : 'Sin documento'} 
+                            icon="description" 
+                            color="#3B82F6" 
+                        />
+                    </View>
+                </View>
+
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Información del sistema</Text>
                     <View style={styles.card}>
                         <Row label="Creado" value={formatDate(tecnico?.created_at)} icon="event" color="#34D399" />

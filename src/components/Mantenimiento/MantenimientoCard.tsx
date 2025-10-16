@@ -1,282 +1,417 @@
-import React from 'react';
+// src/components/Mantenimiento/MantenimientoCard.tsx
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  TouchableOpacity,
   StyleSheet,
-  Image,
-  ActivityIndicator,
+  TouchableOpacity,
+  Animated,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { 
-  CoordinadorMantenimiento, 
-  PaymentStatus, 
-  MaintenanceType, 
-  MaintenanceStatus 
-} from '../../services/CoordinadorMantenimientoService';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MantenimientoListItem } from '../../types/mantenimiento/mantenimiento';
 
 interface MantenimientoCardProps {
-  mantenimiento: CoordinadorMantenimiento;
-  onPress: (mantenimiento: CoordinadorMantenimiento) => void;
+  item: MantenimientoListItem;
+  onPress: () => void;
+  onDelete?: () => void;
 }
 
-export default function MantenimientoCard({ mantenimiento, onPress }: MantenimientoCardProps) {
-  const getTipoText = (type: MaintenanceType) => {
-    switch (type) {
-      case 'preventive': return 'Preventivo';
-      case 'corrective': return 'Correctivo';
+export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
+  item,
+  onPress,
+  onDelete,
+}) => {
+  const [expanded, setExpanded] = useState(false);
+  const [animation] = useState(new Animated.Value(0));
+
+  const toggleExpanded = () => {
+    const toValue = expanded ? 0 : 1;
+    Animated.timing(animation, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+    setExpanded(!expanded);
+  };
+
+  const traducirEstado = (estadoIngles: string): string => {
+    const traducciones: Record<string, string> = {
+      pending: 'Pendiente',
+      assigned: 'Asignado',
+      in_progress: 'En progreso',
+      completed: 'Completado',
+      cancelled: 'Cancelado',
+    };
+    return traducciones[estadoIngles] || estadoIngles;
+  };
+
+  const getEstadoConfig = (estado: string) => {
+    switch (estado) {
+      case 'Pendiente':
+        return {
+          color: '#FF9500',
+          bgColor: '#FFF4E6',
+          icon: 'time-outline' as const,
+        };
+      case 'Asignado':
+        return {
+          color: '#007AFF',
+          bgColor: '#E6F3FF',
+          icon: 'person-outline' as const,
+        };
+      case 'En progreso':
+        return {
+          color: '#34C759',
+          bgColor: '#E6F7E6',
+          icon: 'play-outline' as const,
+        };
+      case 'Completado':
+        return {
+          color: '#34C759',
+          bgColor: '#E6F7E6',
+          icon: 'checkmark-circle-outline' as const,
+        };
+      case 'Cancelado':
+        return {
+          color: '#FF3B30',
+          bgColor: '#FFE6E6',
+          icon: 'close-circle-outline' as const,
+        };
+      default:
+        return {
+          color: '#8E8E93',
+          bgColor: '#F2F2F7',
+          icon: 'help-circle-outline' as const,
+        };
     }
   };
 
-  const getTipoColor = (type: MaintenanceType) => {
-    switch (type) {
-      case 'preventive': return '#4CAF50';
-      case 'corrective': return '#FF9800';
+  const getTipoConfig = (tipo: string) => {
+    return tipo === 'preventive'
+      ? {
+          color: '#34C759',
+          bgColor: '#E6F7E6',
+          icon: 'shield-checkmark-outline' as const,
+          label: 'Preventivo'
+        }
+      : {
+          color: '#FF6B47',
+          bgColor: '#FFF0ED',
+          icon: 'warning-outline' as const,
+          label: 'Correctivo'
+        };
+  };
+
+  const formatearFecha = (fechaStr: string) => {
+    try {
+      const fecha = new Date(fechaStr);
+      return fecha.toLocaleDateString('es-CO', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      });
+    } catch {
+      return 'Fecha no válida';
     }
   };
 
-  const getStatusColor = (status: MaintenanceStatus) => {
-    switch (status) {
-      case 'pending': return '#FF9800';
-      case 'assigned': return '#2196F3';
-      case 'in_progress': return '#9C27B0';
-      case 'completed': return '#4CAF50';
-      case 'cancelled': return '#F44336';
-    }
-  };
+  const estadoTraducido = traducirEstado(item.status);
+  const estadoConfig = getEstadoConfig(estadoTraducido);
+  const tipoConfig = getTipoConfig(item.type);
 
-  const getStatusText = (status: MaintenanceStatus) => {
-    switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'assigned': return 'Asignado';
-      case 'in_progress': return 'En Proceso';
-      case 'completed': return 'Completado';
-      case 'cancelled': return 'Cancelado';
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const getPaymentStatus = (isPaid: PaymentStatus) => {
-    if (isPaid === null) {
-      return { text: 'Sin pago', color: '#9E9E9E', icon: 'money-off' as keyof typeof MaterialIcons.glyphMap };
-    } else if (isPaid === false) {
-      return { text: 'Requiere pago', color: '#FF9800', icon: 'payment' as keyof typeof MaterialIcons.glyphMap };
-    } else if (isPaid === true) {
-      return { text: 'Pago aprobado', color: '#4CAF50', icon: 'check-circle' as keyof typeof MaterialIcons.glyphMap };
-    } else {
-      return { text: 'Sin pago', color: '#9E9E9E', icon: 'money-off' as keyof typeof MaterialIcons.glyphMap };
-    }
-  };
-
+  const maxHeight = animation.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, item.devices.length * 60 + 20], // Altura aproximada por dispositivo
+  });
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => onPress(mantenimiento)}
-      activeOpacity={0.7}
+      onPress={onPress}
+      activeOpacity={0.8}
     >
-      <View style={styles.cardHeader}>
-        <View style={styles.tipoContainer}>
-          <MaterialIcons name="build" size={20} color={getTipoColor(mantenimiento.type)} />
-          <Text style={[styles.tipoText, { color: getTipoColor(mantenimiento.type) }]}>
-            {getTipoText(mantenimiento.type)}
-          </Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(mantenimiento.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(mantenimiento.status)}</Text>
-        </View>
-      </View>
+      {/* Indicador de estado lateral */}
+      <View style={[styles.statusIndicator, { backgroundColor: estadoConfig.color }]} />
 
-      {mantenimiento.description && (
-        <Text style={styles.descripcionText}>{mantenimiento.description}</Text>
-      )}
-
-      <View style={styles.clienteContainer}>
-        <View style={styles.clienteHeader}>
-          <MaterialIcons name="person" size={16} color="#666" />
-          <Text style={styles.clienteLabel}>Cliente</Text>
-        </View>
-        <Text style={styles.clienteName}>{mantenimiento.client.name}</Text>
-        <Text style={styles.clienteInfo}>
-          {mantenimiento.client.city}, {mantenimiento.client.department}
-        </Text>
-        <Text style={styles.clientePhone}>{mantenimiento.client.phone}</Text>
-      </View>
-
-      <View style={styles.equipoContainer}>
-        <View style={styles.equipoHeader}>
-          <MaterialIcons name="devices" size={16} color="#666" />
-          <Text style={styles.equipoLabel}>Equipo</Text>
-        </View>
-        <Text style={styles.equipoText}>
-          {mantenimiento.device.brand} {mantenimiento.device.model}
-        </Text>
-        <Text style={styles.equipoType}>{mantenimiento.device.type}</Text>
-        {mantenimiento.device.description && (
-          <Text style={styles.equipoDescription}>Descripción: {mantenimiento.device.description}</Text>
-        )}
-      </View>
-
-      {mantenimiento.photo && (
-        <View style={styles.photoContainer}>
-          <Image 
-            source={{ uri: mantenimiento.photo }} 
-            style={styles.photo}
-            resizeMode="cover"
-          />
-        </View>
-      )}
-
-      <View style={styles.cardFooter}>
-        <View style={styles.footerInfo}>
-          <View style={styles.idContainer}>
-            <Text style={styles.idText}>ID: {mantenimiento.id}</Text>
+      {/* Contenido de la tarjeta */}
+      <View style={styles.cardContent}>
+        {/* Header */}
+        <View style={styles.cardHeader}>
+          <View style={styles.equipoSection}>
+            <View style={[styles.tipoIcon, { backgroundColor: tipoConfig.bgColor }]}>
+              <Ionicons
+                name={tipoConfig.icon}
+                size={24}
+                color={tipoConfig.color}
+              />
+            </View>
+            <View style={styles.equipoInfo}>
+              <Text style={styles.equipoNombre} numberOfLines={1}>
+                {item.primaryDevice.model} {item.deviceCount > 1 && `+${item.deviceCount - 1} más`}
+              </Text>
+              <View style={styles.badgesContainer}>
+                <View style={[styles.tipoBadge, { backgroundColor: tipoConfig.bgColor }]}>
+                  <Text style={[styles.tipoText, { color: tipoConfig.color }]}>
+                    {tipoConfig.label}
+                  </Text>
+                </View>
+                {item.deviceCount > 1 && (
+                  <View style={styles.countBadge}>
+                    <Ionicons name="hardware-chip-outline" size={12} color="#007AFF" />
+                    <Text style={styles.countText}>{item.deviceCount} equipos</Text>
+                  </View>
+                )}
+              </View>
+            </View>
           </View>
-          <View style={styles.dateContainer}>
-            <MaterialIcons name="schedule" size={14} color="#666" />
-            <Text style={styles.dateText}>
-              Creado: {formatDate(mantenimiento.created_at)}
+        </View>
+
+        {/* Descripción */}
+        {item.description && (
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.descriptionText} numberOfLines={2}>
+              {item.description}
             </Text>
           </View>
-          {mantenimiento.is_paid !== null && (
-            <View style={styles.paymentContainer}>
-              <MaterialIcons 
-                name={getPaymentStatus(mantenimiento.is_paid).icon} 
-                size={14} 
-                color={getPaymentStatus(mantenimiento.is_paid).color} 
-              />
-              <Text style={[styles.paymentText, { color: getPaymentStatus(mantenimiento.is_paid).color }]}>
-                {getPaymentStatus(mantenimiento.is_paid).text}
-              </Text>
-            </View>
-          )}
+        )}
+
+        {/* Info section */}
+        <View style={styles.infoSection}>
+          <View style={styles.fechaContainer}>
+            <Ionicons name="calendar-outline" size={18} color="#666" />
+            <Text style={styles.fechaText}>
+              {formatearFecha(item.date_maintenance || item.created_at)}
+            </Text>
+          </View>
+
+          <View style={[styles.estadoBadge, { backgroundColor: estadoConfig.bgColor }]}>
+            <Ionicons name={estadoConfig.icon} size={16} color={estadoConfig.color} />
+            <Text style={[styles.estadoText, { color: estadoConfig.color }]}>
+              {estadoTraducido}
+            </Text>
+          </View>
         </View>
-        <MaterialIcons name="arrow-forward-ios" size={16} color="#666" />
+
+        {/* Lista de equipos expandible */}
+        {item.deviceCount > 1 && (
+          <View style={styles.expandableSection}>
+            <TouchableOpacity
+              style={styles.expandButton}
+              onPress={toggleExpanded}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.expandButtonText}>
+                {expanded ? 'Ocultar equipos' : 'Ver todos los equipos'}
+              </Text>
+              <Ionicons
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={20}
+                color="#007AFF"
+              />
+            </TouchableOpacity>
+
+            <Animated.View style={[styles.devicesList, { maxHeight }]}>
+              {item.devices.map((device, index) => (
+                <View key={device.id} style={styles.deviceItem}>
+                  <View style={styles.deviceInfo}>
+                    <Text style={styles.deviceModel}>{device.model}</Text>
+                    <Text style={styles.deviceDetails}>
+                      {device.brand} • {device.serial}
+                    </Text>
+                    {device.pivot_description && (
+                      <Text style={styles.deviceDescription} numberOfLines={1}>
+                        {device.pivot_description}
+                      </Text>
+                    )}
+                  </View>
+                  <View style={styles.deviceType}>
+                    <Ionicons name="hardware-chip-outline" size={16} color="#666" />
+                  </View>
+                </View>
+              ))}
+            </Animated.View>
+          </View>
+        )}
+
+        {/* Footer con acciones */}
+        <View style={styles.cardFooter}>
+          {onDelete && (
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={onDelete}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
+              <Text style={styles.deleteText}>Eliminar</Text>
+            </TouchableOpacity>
+          )}
+
+          <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
+        </View>
       </View>
     </TouchableOpacity>
   );
-}
+};
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
+    marginHorizontal: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    overflow: 'hidden',
+  },
+  statusIndicator: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    width: 4,
+  },
+  cardContent: {
+    padding: 16,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  tipoContainer: {
+  equipoSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
   },
-  tipoText: {
+  tipoIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  equipoInfo: {
+    flex: 1,
+  },
+  equipoNombre: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#1C1C1E',
+    marginBottom: 4,
   },
-  statusBadge: {
+  badgesContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  tipoBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginRight: 8,
+  },
+  tipoText: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  countBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E6F3FF',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
-  statusText: {
-    color: '#fff',
+  countText: {
     fontSize: 12,
-    fontWeight: '600',
+    color: '#007AFF',
+    marginLeft: 4,
+    fontWeight: '500',
   },
-  descripcionText: {
-    fontSize: 14,
-    color: '#333',
+  descriptionContainer: {
     marginBottom: 12,
+  },
+  descriptionText: {
+    fontSize: 14,
+    color: '#666',
     lineHeight: 20,
   },
-  equipoContainer: {
+  infoSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
-  equipoHeader: {
+  fechaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
   },
-  equipoLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-  },
-  equipoText: {
+  fechaText: {
     fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  equipoType: {
-    fontSize: 12,
     color: '#666',
-    textTransform: 'capitalize',
+    marginLeft: 6,
+  },
+  estadoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  estadoText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  expandableSection: {
+    marginBottom: 12,
+  },
+  expandButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  expandButtonText: {
+    fontSize: 14,
+    color: '#007AFF',
+    marginRight: 4,
+    fontWeight: '500',
+  },
+  devicesList: {
+    overflow: 'hidden',
+  },
+  deviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 8,
     marginBottom: 4,
   },
-  equipoDescription: {
+  deviceInfo: {
+    flex: 1,
+  },
+  deviceModel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#1C1C1E',
+  },
+  deviceDetails: {
     fontSize: 12,
     color: '#666',
+    marginTop: 2,
+  },
+  deviceDescription: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 2,
     fontStyle: 'italic',
   },
-  clienteContainer: {
-    marginBottom: 12,
-  },
-  clienteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  clienteLabel: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '600',
-  },
-  clienteName: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  clienteInfo: {
-    fontSize: 12,
-    color: '#666',
-    marginBottom: 2,
-  },
-  clientePhone: {
-    fontSize: 12,
-    color: '#666',
-  },
-  photoContainer: {
-    marginBottom: 12,
-  },
-  photo: {
-    width: '100%',
-    height: 120,
-    borderRadius: 8,
+  deviceType: {
+    marginLeft: 8,
   },
   cardFooter: {
     flexDirection: 'row',
@@ -284,40 +419,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
+    borderTopColor: '#F2F2F7',
   },
-  footerInfo: {
-    flex: 1,
-  },
-  idContainer: {
+  deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
   },
-  idText: {
-    fontSize: 12,
-    color: '#666',
-    fontWeight: '500',
-  },
-  dateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  dateText: {
-    fontSize: 11,
-    color: '#999',
-    fontWeight: '400',
-  },
-  paymentContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 4,
-  },
-  paymentText: {
-    fontSize: 11,
-    fontWeight: '500',
+  deleteText: {
+    fontSize: 14,
+    color: '#FF3B30',
+    marginLeft: 4,
   },
 });

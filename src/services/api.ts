@@ -1,9 +1,10 @@
 import axios from 'axios';
 import { ErrorService } from './ErrorService';
 import { ApiError } from '../types/ErrorTypes';
+import { logger } from '../utils/logger';
 
 const API = axios.create({
-     baseURL: 'https://cariniservice-production.up.railway.app/',
+     baseURL: 'http://192.168.2.46:8600/',
     timeout: 5000,
 });
 
@@ -14,7 +15,7 @@ API.interceptors.response.use(
         const errorType = ErrorService.getErrorType(apiError.status, error);
         const config = ErrorService.getErrorConfig(errorType);
         
-        console.error('Error en la API:', {
+        logger.error('Error en la API:', {
             status: apiError.status,
             message: apiError.message,
             type: errorType,
@@ -39,5 +40,9 @@ export const acceptPolicy = async () => {
     const response = await API.post('api/acceptPolicy');
     return response.data;
 };
+
+export const authHeaders = (token: string) => ({
+    headers: { Authorization: `Bearer ${token}` },
+});
 
 export default API;

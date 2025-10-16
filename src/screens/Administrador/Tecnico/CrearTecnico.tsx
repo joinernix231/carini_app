@@ -1,5 +1,5 @@
 // src/screens/Administrador/Tecnico/CrearTecnico.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import {ScrollView, StatusBar, Text, StyleSheet, Alert } from 'react-native';
 import BackButton from '../../../components/BackButton';
 import TecnicoForm from '../../../components/Tecnico/TecnicoForm';
@@ -17,16 +17,36 @@ type RootStackParamList = {
 export default function CrearTecnico() {
     const { token } = useAuth();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const [uploadingDocs, setUploadingDocs] = useState(false);
+    const [photo, setPhoto] = useState<string | null>(null);
+    const [epsPdf, setEpsPdf] = useState<string | null>(null);
+    const [arlPdf, setArlPdf] = useState<string | null>(null);
+    const [pensionPdf, setPensionPdf] = useState<string | null>(null);
 
     const handleCreate = async (values: CreateTecnicoPayload) => {
         if (!token) return;
         try {
+            setUploadingDocs(true);
             const created = await TecnicoService.create(values, token);
+            
+            // Actualizar con documentos si se subieron
+            const updatePayload: any = {};
+            if (photo) updatePayload.photo = photo;
+            if (epsPdf) updatePayload.eps_pdf = epsPdf;
+            if (arlPdf) updatePayload.arl_pdf = arlPdf;
+            if (pensionPdf) updatePayload.pension_pdf = pensionPdf;
+            
+            if (Object.keys(updatePayload).length > 0) {
+                await TecnicoService.update(created.id, updatePayload, token);
+            }
+            
             Alert.alert('Éxito', 'Técnico creado correctamente', [
                 { text: 'OK', onPress: () => navigation.replace('DetalleTecnico', { id: created.id }) },
             ]);
         } catch (err: any) {
             Alert.alert('Error', err?.response?.data?.message || 'No se pudo crear el técnico');
+        } finally {
+            setUploadingDocs(false);
         }
     };
 
@@ -39,9 +59,28 @@ export default function CrearTecnico() {
                 <Text style={styles.subtitle}>Completa la información para registrar un nuevo técnico</Text>
 
                 <TecnicoForm
-                    initialValues={{ name: '', document: '', email: null, phone: null, address: null }}
+                    initialValues={{ 
+                        name: '', 
+                        document: '', 
+                        email: null, 
+                        phone: null, 
+                        address: null,
+                        specialty: '',
+                        blood_type: null,
+                        hire_date: '',
+                        contract_type: 'full_time'
+                    }}
                     onSubmit={handleCreate}
                     submitLabel="Crear técnico"
+                    showDocumentUploaders={true}
+                    onPhotoUploaded={setPhoto}
+                    onEpsUploaded={setEpsPdf}
+                    onArlUploaded={setArlPdf}
+                    onPensionUploaded={setPensionPdf}
+                    initialPhoto={photo}
+                    initialEps={epsPdf}
+                    initialArl={arlPdf}
+                    initialPension={pensionPdf}
                 />
             </ScrollView>
         </SafeAreaView>

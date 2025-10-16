@@ -110,7 +110,6 @@ export class PushNotificationService {
   public async registerToken(userId: number, authToken: string): Promise<boolean> {
     try {
       if (!this.pushToken) {
-        console.error('❌ No hay token de push disponible');
         return false;
       }
 
@@ -134,11 +133,9 @@ export class PushNotificationService {
         console.log('✅ Token registrado correctamente');
         return true;
       } else {
-        console.error('❌ Error registrando token:', response.data.message);
         return false;
       }
     } catch (error) {
-      console.error('❌ Error registrando token:', error);
       return false;
     }
   }

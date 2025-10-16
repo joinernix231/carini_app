@@ -1,52 +1,58 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
+import { logger } from '../utils/logger';
 
-// Importar todas las pantallas
+// Importar pantallas críticas (no lazy)
 import LoginScreen from '../screens/LoginScreen';
 import AcceptPolicyScreen from '../screens/AcceptPolicyScreen';
 
-// Cliente screens
-import ClienteDashboard from '../screens/client/ClienteDashboard';
-import MisEquipos from '../screens/client/MyDevices/MisEquipos';
+// Importar pantallas (usando versiones normales temporalmente)
+import {
+  LazyAdminDashboard,
+  LazyClienteList,
+  LazyTecnicoList,
+  LazyEquipoList,
+  LazyCoordinadorList,
+  LazyTecnicoDashboard,
+  LazyMisMantenimientos,
+  LazyGestionarDocumentos,
+  LazyCoordinadorDashboard,
+  LazyAsignarEquipos,
+  LazyClienteDashboard,
+  LazyMisEquipos,
+  LazyMantenimientosList,
+  LazyCrearCliente,
+  LazyCrearTecnico,
+  LazyCrearEquipo,
+  LazyCrearCoordinador,
+  LazyEditarCliente,
+  LazyEditarTecnico,
+  LazyEditarEquipo,
+  LazyEditarCoordinador,
+  LazyDetalleCliente,
+  LazyDetalleTecnico,
+  LazyDetalleEquipo,
+  LazyDetalleCoordinador,
+} from '../screens/NormalScreens';
+
+// Importar pantallas no lazy (críticas o pequeñas)
 import DetalleEquipoCliente from '../screens/client/MyDevices/DetalleEquipo';
 import AgregarEquipo from '../screens/client/MyDevices/AgregarEquipo';
-import MantenimientosList from '../screens/client/mantenimiento/MantenimientosList';
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
 import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
 import MiPerfil from '../screens/client/MiPerfil/MiPerfil';
-
-// Técnico screens
-import TecnicoDashboard from '../screens/Tecnico/TecnicoDashboard';
-import MisMantenimientos from '../screens/Tecnico/MisMantenimientos';
-
-// Coordinador screens
-import CoordinadorDashboard from '../screens/Coordinator/CoordinadorDashboard';
-import AsignarEquipos from '../screens/Coordinator/AsignarEquipos';
-import MantenimientosSinAsignarScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosSinAsignarScreen';
+import MiCarnet from '../screens/Tecnico/MiCarnet';
+import Parafiscales from '../screens/Tecnico/Parafiscales';
+import MantenimientosMainScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosMainScreen';
+import MantenimientosSinCotizacionScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosSinCotizacionScreen';
+import MantenimientosAprobadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosAprobadosScreen';
 import MantenimientosAsignadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosAsignadosScreen';
+import MantenimientosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosScreen';
 import DetalleMantenimientoScreen from '../screens/Coordinator/AsignarTecnico/DetalleMantenimientoScreen';
 import AsignarTecnicoScreen from '../screens/Coordinator/AsignarTecnico/AsignarTecnicoScreen';
-
-// Administrador screens
-import AdminDashboard from '../screens/Administrador/AdministradorDashboard';
-import ClienteList from '../screens/Administrador/Cliente/ClienteList';
-import DetalleCliente from '../screens/Administrador/Cliente/DetalleCliente';
+import MantenimientosRechazadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosRechazadosScreen';
 import ClienteDevicesScreen from '../screens/Administrador/Cliente/ClienteDevicesScreen';
-import CrearCliente from '../screens/Administrador/Cliente/CrearCliente';
-import EditarCliente from '../screens/Administrador/Cliente/EditarCliente';
-import EquipoList from '../screens/Administrador/Equipo/EquipoList';
-import CrearEquipo from '../screens/Administrador/Equipo/CrearEquipo';
-import DetalleEquipo from '../screens/Administrador/Equipo/DetalleEquipo';
-import EditarEquipo from '../screens/Administrador/Equipo/EditarEquipo';
-import TecnicoList from '../screens/Administrador/Tecnico/TecnicoList';
-import DetalleTecnicoScreen from '../screens/Administrador/Tecnico/DetalleTecnico';
-import CrearTecnico from '../screens/Administrador/Tecnico/CrearTecnico';
-import EditarTecnico from '../screens/Administrador/Tecnico/EditarTecnico';
-import CoordinadorList from '../screens/Administrador/Coordinador/CoordinadorList';
-import DetalleCoordinador from '../screens/Administrador/Coordinador/DetalleCoordinador';
-import CrearCoordinador from '../screens/Administrador/Coordinador/CrearCoordinador';
-import EditarCoordinador from '../screens/Administrador/Coordinador/EditarCoordinador';
 
 // Stack Navigators por rol
 const AuthStack = createNativeStackNavigator();
@@ -77,11 +83,11 @@ export function ClienteNavigator() {
       screenOptions={commonScreenOptions}
       initialRouteName="ClienteDashboard"
     >
-      <ClienteStack.Screen name="ClienteDashboard" component={ClienteDashboard} />
-      <ClienteStack.Screen name="MisEquipos" component={MisEquipos} />
+      <ClienteStack.Screen name="ClienteDashboard" component={LazyClienteDashboard} />
+      <ClienteStack.Screen name="MisEquipos" component={LazyMisEquipos} />
       <ClienteStack.Screen name="DetalleEquipo" component={DetalleEquipoCliente} />
       <ClienteStack.Screen name="AgregarEquipo" component={AgregarEquipo} />
-      <ClienteStack.Screen name="SolicitarMantenimiento" component={MantenimientosList} />
+      <ClienteStack.Screen name="SolicitarMantenimiento" component={LazyMantenimientosList} />
       <ClienteStack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
       <ClienteStack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
       <ClienteStack.Screen name="MiPerfil" component={MiPerfil} />
@@ -95,10 +101,13 @@ export function TecnicoNavigator() {
       screenOptions={commonScreenOptions}
       initialRouteName="TecnicoDashboard"
     >
-      <TecnicoStack.Screen name="TecnicoDashboard" component={TecnicoDashboard} />
-      <TecnicoStack.Screen name="MisMantenimientos" component={MisMantenimientos} />
+      <TecnicoStack.Screen name="TecnicoDashboard" component={LazyTecnicoDashboard} />
+      <TecnicoStack.Screen name="MisMantenimientos" component={LazyMisMantenimientos} />
       <TecnicoStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoScreen} />
       <TecnicoStack.Screen name="MiPerfil" component={MiPerfil} />
+      <TecnicoStack.Screen name="MiCarnet" component={MiCarnet} />
+      <TecnicoStack.Screen name="Parafiscales" component={Parafiscales} />
+      <TecnicoStack.Screen name="GestionarDocumentos" component={LazyGestionarDocumentos} />
     </TecnicoStack.Navigator>
   );
 }
@@ -109,25 +118,29 @@ export function CoordinadorNavigator() {
       screenOptions={commonScreenOptions}
       initialRouteName="CoordinadorDashboard"
     >
-      <CoordinadorStack.Screen name="CoordinadorDashboard" component={CoordinadorDashboard} />
-      <CoordinadorStack.Screen name="AsignarEquipos" component={AsignarEquipos} />
-      <CoordinadorStack.Screen name="MantenimientosSinAsignar" component={MantenimientosSinAsignarScreen} />
+      <CoordinadorStack.Screen name="CoordinadorDashboard" component={LazyCoordinadorDashboard} />
+      <CoordinadorStack.Screen name="AsignarEquipos" component={LazyAsignarEquipos} />
+      <CoordinadorStack.Screen name="MantenimientosMain" component={MantenimientosMainScreen} />
+      <CoordinadorStack.Screen name="MantenimientosSinCotizacion" component={MantenimientosSinCotizacionScreen} />
+      <CoordinadorStack.Screen name="MantenimientosAprobados" component={MantenimientosAprobadosScreen} />
+      <CoordinadorStack.Screen name="Mantenimientos" component={MantenimientosScreen} />
       <CoordinadorStack.Screen name="MantenimientosAsignados" component={MantenimientosAsignadosScreen} />
+      <CoordinadorStack.Screen name="MantenimientosRechazados" component={MantenimientosRechazadosScreen} />
       <CoordinadorStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoScreen} />
       <CoordinadorStack.Screen name="AsignarTecnico" component={AsignarTecnicoScreen} />
       
       {/* Pantallas compartidas con Administrador */}
       {/* Técnicos */}
-      <CoordinadorStack.Screen name="TecnicoList" component={TecnicoList} />
-      <CoordinadorStack.Screen name="DetalleTecnico" component={DetalleTecnicoScreen} />
-      <CoordinadorStack.Screen name="CrearTecnico" component={CrearTecnico} />
-      <CoordinadorStack.Screen name="EditarTecnico" component={EditarTecnico} />
+      <CoordinadorStack.Screen name="TecnicoList" component={LazyTecnicoList} />
+      <CoordinadorStack.Screen name="DetalleTecnico" component={LazyDetalleTecnico} />
+      <CoordinadorStack.Screen name="CrearTecnico" component={LazyCrearTecnico} />
+      <CoordinadorStack.Screen name="EditarTecnico" component={LazyEditarTecnico} />
       
       {/* Equipos */}
-      <CoordinadorStack.Screen name="EquipoList" component={EquipoList} />
-      <CoordinadorStack.Screen name="CrearEquipo" component={CrearEquipo} />
-      <CoordinadorStack.Screen name="DetalleEquipoAdmin" component={DetalleEquipo} />
-      <CoordinadorStack.Screen name="EditarEquipo" component={EditarEquipo} />
+      <CoordinadorStack.Screen name="EquipoList" component={LazyEquipoList} />
+      <CoordinadorStack.Screen name="CrearEquipo" component={LazyCrearEquipo} />
+      <CoordinadorStack.Screen name="DetalleEquipoAdmin" component={LazyDetalleEquipo} />
+      <CoordinadorStack.Screen name="EditarEquipo" component={LazyEditarEquipo} />
     </CoordinadorStack.Navigator>
   );
 }
@@ -138,32 +151,32 @@ export function AdministradorNavigator() {
       screenOptions={commonScreenOptions}
       initialRouteName="AdminDashboard"
     >
-      <AdministradorStack.Screen name="AdminDashboard" component={AdminDashboard} />
+      <AdministradorStack.Screen name="AdminDashboard" component={LazyAdminDashboard} />
       
       {/* Clientes */}
-      <AdministradorStack.Screen name="ClienteList" component={ClienteList} />
-      <AdministradorStack.Screen name="CrearCliente" component={CrearCliente} />
-      <AdministradorStack.Screen name="DetalleCliente" component={DetalleCliente} />
+      <AdministradorStack.Screen name="ClienteList" component={LazyClienteList} />
+      <AdministradorStack.Screen name="CrearCliente" component={LazyCrearCliente} />
+      <AdministradorStack.Screen name="DetalleCliente" component={LazyDetalleCliente} />
       <AdministradorStack.Screen name="ClienteDevices" component={ClienteDevicesScreen} />
-      <AdministradorStack.Screen name="EditarCliente" component={EditarCliente} />
+      <AdministradorStack.Screen name="EditarCliente" component={LazyEditarCliente} />
       
       {/* Equipos */}
-      <AdministradorStack.Screen name="EquipoList" component={EquipoList} />
-      <AdministradorStack.Screen name="CrearEquipo" component={CrearEquipo} />
-      <AdministradorStack.Screen name="DetalleEquipoAdmin" component={DetalleEquipo} />
-      <AdministradorStack.Screen name="EditarEquipo" component={EditarEquipo} />
+      <AdministradorStack.Screen name="EquipoList" component={LazyEquipoList} />
+      <AdministradorStack.Screen name="CrearEquipo" component={LazyCrearEquipo} />
+      <AdministradorStack.Screen name="DetalleEquipoAdmin" component={LazyDetalleEquipo} />
+      <AdministradorStack.Screen name="EditarEquipo" component={LazyEditarEquipo} />
       
       {/* Técnicos */}
-      <AdministradorStack.Screen name="TecnicoList" component={TecnicoList} />
-      <AdministradorStack.Screen name="DetalleTecnico" component={DetalleTecnicoScreen} />
-      <AdministradorStack.Screen name="CrearTecnico" component={CrearTecnico} />
-      <AdministradorStack.Screen name="EditarTecnico" component={EditarTecnico} />
+      <AdministradorStack.Screen name="TecnicoList" component={LazyTecnicoList} />
+      <AdministradorStack.Screen name="DetalleTecnico" component={LazyDetalleTecnico} />
+      <AdministradorStack.Screen name="CrearTecnico" component={LazyCrearTecnico} />
+      <AdministradorStack.Screen name="EditarTecnico" component={LazyEditarTecnico} />
       
       {/* Coordinadores */}
-      <AdministradorStack.Screen name="CoordinadorList" component={CoordinadorList} />
-      <AdministradorStack.Screen name="DetalleCoordinador" component={DetalleCoordinador} />
-      <AdministradorStack.Screen name="CrearCoordinador" component={CrearCoordinador} />
-      <AdministradorStack.Screen name="EditarCoordinador" component={EditarCoordinador} />
+      <AdministradorStack.Screen name="CoordinadorList" component={LazyCoordinadorList} />
+      <AdministradorStack.Screen name="DetalleCoordinador" component={LazyDetalleCoordinador} />
+      <AdministradorStack.Screen name="CrearCoordinador" component={LazyCrearCoordinador} />
+      <AdministradorStack.Screen name="EditarCoordinador" component={LazyEditarCoordinador} />
     </AdministradorStack.Navigator>
   );
 }
@@ -172,13 +185,24 @@ export function AdministradorNavigator() {
 export function RoleBasedNavigator() {
   const { user } = useAuth();
 
+  // Logging para debugging de navegación
+  React.useEffect(() => {
+    if (user) {
+      logger.navigation(`User role: ${user.role}, policy_accepted: ${user.policy_accepted}`);
+    } else {
+      logger.navigation('No user authenticated');
+    }
+  }, [user]);
+
   // No autenticado
   if (!user) {
+    logger.navigation('Rendering AuthNavigator - no user');
     return <AuthNavigator />;
   }
 
   // No ha aceptado políticas - forzar pantalla de políticas
   if (!user.policy_accepted) {
+    logger.navigation('Rendering AcceptPolicy screen - policy not accepted');
     return (
       <AuthStack.Navigator 
         screenOptions={commonScreenOptions}
@@ -190,6 +214,7 @@ export function RoleBasedNavigator() {
   }
 
   // Navegadores por rol
+  logger.navigation(`Rendering navigator for role: ${user.role}`);
   switch (user.role) {
     case 'cliente':
       return <ClienteNavigator />;
@@ -200,6 +225,7 @@ export function RoleBasedNavigator() {
     case 'administrador':
       return <AdministradorNavigator />;
     default:
+      logger.warn(`Unknown user role: ${user.role}, falling back to AuthNavigator`);
       return <AuthNavigator />;
   }
 }

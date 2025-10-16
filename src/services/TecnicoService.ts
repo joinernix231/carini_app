@@ -13,7 +13,18 @@ export interface CreateTecnicoPayload {
     address: string | null;
     email: string | null;
     phone?: string | null;
+    specialty: string;
+    blood_type?: string | null;
+    hire_date: string;
+    contract_type: 'full_time' | 'part_time' | 'contractor';
 }
+
+export type UpdateTecnicoPayload = Partial<CreateTecnicoPayload> & {
+    photo?: string | null;
+    eps_pdf?: string | null;
+    arl_pdf?: string | null;
+    pension_pdf?: string | null;
+};
 
 const authHeaders = (token: string) => ({
   headers: { Authorization: `Bearer ${token}` },
@@ -60,7 +71,7 @@ async function create(payload: CreateTecnicoPayload, token: string): Promise<Tec
     return res.data.data ?? res.data;
 }
 
-async function update(id: number, payload: Partial<CreateTecnicoPayload>, token: string): Promise<Tecnico> {
+async function update(id: number, payload: UpdateTecnicoPayload, token: string): Promise<Tecnico> {
     const res = await API.put(`/api/technical/${id}`, payload, authHeaders(token));
     return res.data.data ?? res.data;
 }
@@ -74,6 +85,7 @@ async function changeStatus(id: number, status: 'active' | 'inactive', token: st
     return res.data.data ?? res.data;
 }
 
+
 export interface AvailableTechnician {
     id: number;
     user_id: number;
@@ -81,6 +93,9 @@ export interface AvailableTechnician {
     phone: string;
     address: string;
     status: string;
+    specialty?: string;
+    blood_type?: string;
+    contract_type?: 'full_time' | 'part_time' | 'contractor';
     user: {
         id: number;
         name: string;

@@ -14,14 +14,15 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import BackButton from '../../../components/BackButton';
-import MantenimientoCard from '../../../components/Mantenimiento/MantenimientoCard';
+import { MantenimientoCard } from '../../../components/Mantenimiento/MantenimientoCard';
 import { useMantenimientosSinAsignar } from '../../../hooks/mantenimiento/useMantenimientosSinAsignar';
 import { CoordinadorMantenimiento } from '../../../services/CoordinadorMantenimientoService';
+import { Device, MantenimientoListItem } from '../../../types/mantenimiento/mantenimiento';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RootStackParamList = {
   MantenimientosSinAsignar: undefined;
-  AsignarTecnico: { mantenimientoId: number };
+  DetalleMantenimiento: { mantenimientoId: number };
   CoordinadorDashboard: undefined;
 };
 
@@ -29,28 +30,43 @@ export default function MantenimientosSinAsignarScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { mantenimientos, loading, refreshing, error, onRefresh, fetchMantenimientos } = useMantenimientosSinAsignar();
 
-  const handleAsignarTecnico = useCallback((mantenimiento: CoordinadorMantenimiento) => {
-    Alert.alert(
-      'Asignar Técnico',
-      `¿Deseas asignar un técnico para el mantenimiento del equipo ${mantenimiento.device.brand} ${mantenimiento.device.model}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Asignar',
-          onPress: () => {
-            navigation.navigate('AsignarTecnico', { mantenimientoId: mantenimiento.id });
-          },
-        },
-      ]
-    );
+  const handleOpenDetalle = useCallback((mantenimiento: CoordinadorMantenimiento) => {
+    navigation.navigate('DetalleMantenimiento', { mantenimientoId: mantenimiento.id });
   }, [navigation]);
 
-  const renderMantenimiento = ({ item }: { item: CoordinadorMantenimiento }) => (
-    <MantenimientoCard
-      mantenimiento={item}
-      onPress={handleAsignarTecnico}
-    />
-  );
+  const renderMantenimiento = ({ item }: { item: CoordinadorMantenimiento }) => {
+    // Adaptar datos del servicio al componente de tarjeta
+    const devicesRaw = Array.isArray(item.device) ? item.device : (item.device ? [item.device] : []);
+    const devices: Device[] = devicesRaw.map((d) => ({
+      id: d.id,
+      model: d.model,
+      brand: d.brand,
+      type: d.type,
+      serial: '',
+      address: '',
+      pivot_description: d.description || null,
+    }));
+
+    const listItem: MantenimientoListItem = {
+      id: item.id,
+      type: item.type,
+      status: item.status,
+      devices,
+      description: item.description || '',
+      date_maintenance: item.date_maintenance,
+      created_at: item.created_at,
+      deviceCount: devices.length,
+      primaryDevice: devices[0] || { id: 0, model: 'N/A', brand: 'N/A', type: 'N/A', serial: '', address: '' },
+    };
+
+    return (
+      <MantenimientoCard
+        item={listItem}
+        onPress={() => handleOpenDetalle(item)}
+        onDelete={() => {}}
+      />
+    );
+  };
 
   const preventivosCount = mantenimientos.filter(m => m.type === 'preventive').length;
   const correctivosCount = mantenimientos.filter(m => m.type === 'corrective').length;
@@ -98,7 +114,7 @@ export default function MantenimientosSinAsignarScreen() {
       
       <View style={styles.header}>
         <BackButton color="#fff" />
-        <Text style={styles.headerTitle}>Mantenimientos Sin Asignar</Text>
+        <Text style={styles.headerTitle}>Verificar Mantenimientos</Text>
       </View>
 
       <View style={styles.content}>
@@ -121,7 +137,7 @@ export default function MantenimientosSinAsignarScreen() {
             <Text style={styles.congratsTitle}>¡Felicitaciones!</Text>
             <Text style={styles.congratsSubtitle}>Excelente trabajo coordinador</Text>
             <Text style={styles.congratsText}>
-              No hay mantenimientos pendientes por asignar. Todos los equipos están siendo atendidos correctamente.
+              No hay mantenimientos pendientes por verificar. Todos los equipos están siendo atendidos correctamente.
             </Text>
             <View style={styles.successBadge}>
               <MaterialIcons name="stars" size={20} color="#4CAF50" />

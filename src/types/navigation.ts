@@ -16,6 +16,8 @@ export type TecnicoStackParamList = {
   TecnicoDashboard: undefined;
   MisMantenimientos: undefined;
   MiPerfil: undefined;
+  MiCarnet: undefined;
+  Parafiscales: undefined;
 };
 
 export type CoordinadorStackParamList = {

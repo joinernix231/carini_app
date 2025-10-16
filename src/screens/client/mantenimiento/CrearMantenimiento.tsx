@@ -23,6 +23,8 @@ import { uploadImage } from '../../../services/UploadImage';
 import { useAuth } from '../../../context/AuthContext';
 import BackButton from '../../../components/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MultiDeviceSelector } from '../../../components/Mantenimiento/MultiDeviceSelector';
+import { Device } from '../../../types/mantenimiento/mantenimiento';
 
 type RootStackParamList = {
   SolicitarMantenimiento: undefined;
@@ -57,20 +59,24 @@ export default function CrearMantenimiento() {
   const { showError } = useError();
 
   const [equipos, setEquipos] = useState<
-      { id: number; name: string; tipo_equipo?: string }[]
+      { 
+        id: number; 
+        name: string; 
+        tipo_equipo?: string;
+        serial?: string;
+        brand?: string;
+        device_info?: any;
+      }[]
   >([]);
-  const [equipoSeleccionado, setEquipoSeleccionado] = useState<{
-    id: number;
-    name: string;
-    tipo_equipo?: string;
-  } | null>(null);
+
+  // Estado para equipos seleccionados
+  const [selectedDevices, setSelectedDevices] = useState<{ device_id: number; description?: string }[]>([]);
+  const [showDeviceSelector, setShowDeviceSelector] = useState(false);
 
   const [tipo, setTipo] = useState<'preventive' | 'corrective'>('preventive');
   const [descripcion, setDescripcion] = useState('');
   const [foto, setFoto] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const [modalEquipo, setModalEquipo] = useState(false);
 
 
   useEffect(() => {
@@ -81,12 +87,15 @@ export default function CrearMantenimiento() {
         const equiposData = await getEquiposVinculados(token);
         
         const listaEquipos = equiposData.map((item: any) => {
-          const { device, address, id } = item;
+          const { device, address, id, serial } = item;
           console.log('🔍 device', device);
           return {
             id,
             name: `${device.model} - ${address}`,
             tipo_equipo: device.type,
+            serial: serial,
+            brand: 'Carini', // Siempre Carini
+            device_info: device,
           };
         });
         setEquipos(listaEquipos);
@@ -191,28 +200,32 @@ export default function CrearMantenimiento() {
         }
       }
 
-      if (!equipoSeleccionado) {
-        Alert.alert('Error', 'Selecciona un equipo.');
+      // Validar selección de equipos
+      if (selectedDevices.length === 0) {
+        Alert.alert('Error', 'Selecciona al menos un equipo.');
         return;
       }
-
 
       if (tipo === 'corrective' && descripcion.trim() === '') {
         Alert.alert('Error', 'La descripción es obligatoria para mantenimientos correctivos.');
         return;
       }
 
+      // Crear payload para múltiples equipos
       const payload: any = {
-        client_device_id: equipoSeleccionado.id,
         type: tipo,
         description: descripcion.trim(),
         photo: nombreImagen,
+        client_devices: selectedDevices.map(device => ({
+          id: device.device_id,
+          description: device.description || null
+        })),
       };
 
       console.log('Enviando payload:', payload);
       await createMantenimiento(payload, token!);
 
-      setEquipoSeleccionado(null);
+      setSelectedDevices([]);
       setDescripcion('');
       setFoto(null);
 
@@ -252,7 +265,9 @@ export default function CrearMantenimiento() {
   };
 
     const isFormValid = () => {
-        if (!equipoSeleccionado) return false;
+        // Validar selección de equipos
+        if (selectedDevices.length === 0) return false;
+        
         if (tipo === 'preventive') {
             return true;
         }
@@ -265,30 +280,67 @@ export default function CrearMantenimiento() {
 
     const renderEquipoSelector = () => (
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Equipo a mantener</Text>
+        <Text style={styles.sectionTitle}>Equipos a mantener</Text>
+        <Text style={styles.sectionSubtitle}>Selecciona uno o más equipos para el mantenimiento</Text>
+        
+        {/* Selector de equipos */}
         <TouchableOpacity
-            style={[styles.selector, equipoSeleccionado && styles.selectorFilled]}
-            onPress={() => setModalEquipo(true)}
+          style={[styles.selector, selectedDevices.length > 0 && styles.selectorFilled]}
+          onPress={() => setShowDeviceSelector(true)}
         >
           <View style={styles.selectorContent}>
             <View style={styles.selectorIcon}>
               <Ionicons
                   name="hardware-chip"
                   size={24}
-                  color={equipoSeleccionado ? "#007AFF" : "#666"}
+                  color={selectedDevices.length > 0 ? "#007AFF" : "#666"}
               />
             </View>
             <View style={styles.selectorTextContainer}>
               <Text style={[
                 styles.selectorText,
-                equipoSeleccionado && styles.selectorTextFilled
+                selectedDevices.length > 0 && styles.selectorTextFilled
               ]}>
-                {equipoSeleccionado?.name || 'Selecciona un equipo'}
+                {selectedDevices.length === 0
+                  ? 'Seleccionar equipos'
+                  : `${selectedDevices.length} equipo${selectedDevices.length !== 1 ? 's' : ''} seleccionado${selectedDevices.length !== 1 ? 's' : ''}`
+                }
               </Text>
             </View>
           </View>
-          <Ionicons name="chevron-down" size={24} color="#666" />
+          <Ionicons name="chevron-forward" size={24} color="#666" />
         </TouchableOpacity>
+
+        {/* Lista de equipos seleccionados */}
+        {selectedDevices.length > 0 && (
+          <View style={styles.selectedDevicesContainer}>
+            {selectedDevices.map((selection, index) => {
+              const device = equipos.find(e => e.id === selection.device_id);
+              return (
+                <View key={selection.device_id} style={styles.selectedDeviceItem}>
+                  <View style={styles.selectedDeviceInfo}>
+                    <Text style={styles.selectedDeviceModel}>
+                      {device?.name || 'Equipo no encontrado'}
+                    </Text>
+                    {selection.description && (
+                      <Text style={styles.selectedDeviceDescription}>
+                        {selection.description}
+                      </Text>
+                    )}
+                  </View>
+                  <TouchableOpacity
+                    style={styles.removeDeviceButton}
+                    onPress={() => setSelectedDevices(prev => 
+                      prev.filter(sel => sel.device_id !== selection.device_id)
+                    )}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </View>
   );
 
@@ -341,24 +393,91 @@ export default function CrearMantenimiento() {
   );
 
   const renderChecklist = () => {
-    if (tipo !== 'preventive' || !equipoSeleccionado?.tipo_equipo) return null;
+    if (tipo !== 'preventive' || selectedDevices.length === 0) return null;
 
-    const checklistItems = CHECKLIST_MANTENIMIENTO[equipoSeleccionado.tipo_equipo.toLowerCase()];
-    if (!checklistItems) return null;
+    // Obtener tipos de equipos seleccionados
+    const deviceTypes = selectedDevices.map(selection => {
+      const device = equipos.find(e => e.id === selection.device_id);
+      return device?.tipo_equipo?.toLowerCase();
+    }).filter(Boolean);
 
-    return (
+    if (deviceTypes.length === 0) return null;
+
+    // Agrupar equipos por tipo
+    const equipmentGroups: { [key: string]: string[] } = {};
+    selectedDevices.forEach(selection => {
+      const device = equipos.find(e => e.id === selection.device_id);
+      const type = device?.tipo_equipo?.toLowerCase();
+      if (type && device) {
+        if (!equipmentGroups[type]) {
+          equipmentGroups[type] = [];
+        }
+        equipmentGroups[type].push(device.name);
+      }
+    });
+
+    // Si todos los equipos son del mismo tipo, mostrar un solo checklist
+    if (Object.keys(equipmentGroups).length === 1) {
+      const equipmentType = Object.keys(equipmentGroups)[0];
+      const checklistItems = CHECKLIST_MANTENIMIENTO[equipmentType];
+      
+      if (!checklistItems) return null;
+
+      return (
         <View style={styles.checklistContainer}>
           <View style={styles.checklistHeader}>
             <Ionicons name="checkmark-circle" size={24} color="#34C759" />
-            <Text style={styles.checklistTitle}>Este mantenimiento incluye:</Text>
+            <Text style={styles.checklistTitle}>
+              Mantenimiento preventivo para {equipmentType}s incluye:
+            </Text>
           </View>
           {checklistItems.map((item, index) => (
-              <View key={index} style={styles.checklistItem}>
-                <View style={styles.checklistBullet} />
-                <Text style={styles.checklistItemText}>{item}</Text>
-              </View>
+            <View key={index} style={styles.checklistItem}>
+              <View style={styles.checklistBullet} />
+              <Text style={styles.checklistItemText}>{item}</Text>
+            </View>
           ))}
         </View>
+      );
+    }
+
+    // Si hay diferentes tipos de equipos, mostrar checklists separados
+    return (
+      <View style={styles.checklistContainer}>
+        <View style={styles.checklistHeader}>
+          <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+          <Text style={styles.checklistTitle}>
+            Mantenimientos preventivos incluidos:
+          </Text>
+        </View>
+        
+        {Object.entries(equipmentGroups).map(([equipmentType, deviceNames]) => {
+          const checklistItems = CHECKLIST_MANTENIMIENTO[equipmentType];
+          if (!checklistItems) return null;
+
+          return (
+            <View key={equipmentType} style={styles.checklistGroup}>
+              <View style={styles.checklistGroupHeader}>
+                <Ionicons 
+                  name={equipmentType === 'lavadora' ? 'water' : 'flame'} 
+                  size={20} 
+                  color="#34C759" 
+                />
+                <Text style={styles.checklistGroupTitle}>
+                  {equipmentType === 'lavadora' ? 'Lavadoras' : 'Secadoras'} ({deviceNames.length})
+                </Text>
+              </View>
+              
+              {checklistItems.map((item, index) => (
+                <View key={index} style={styles.checklistItem}>
+                  <View style={styles.checklistBullet} />
+                  <Text style={styles.checklistItemText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          );
+        })}
+      </View>
     );
   };
 
@@ -465,37 +584,25 @@ export default function CrearMantenimiento() {
           </TouchableOpacity>
         </ScrollView>
 
-        {/* Modal Equipos */}
-        <Modal visible={modalEquipo} animationType="slide" presentationStyle="pageSheet">
-          <SafeAreaView style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setModalEquipo(false)}>
-                <Text style={styles.modalCancelButton}>Cancelar</Text>
-              </TouchableOpacity>
-              <Text style={styles.modalTitle}>Seleccionar Equipo</Text>
-              <View style={styles.modalSpacer} />
-            </View>
-            <FlatList
-                data={equipos}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={styles.modalItem}
-                        onPress={() => {
-                          setEquipoSeleccionado(item);
-                          setModalEquipo(false);
-                        }}
-                    >
-                      <Ionicons name="hardware-chip" size={24} color="#007AFF" />
-                      <Text style={styles.modalItemText}>{item.name}</Text>
-                      {equipoSeleccionado?.id === item.id && (
-                          <Ionicons name="checkmark" size={24} color="#007AFF" />
-                      )}
-                    </TouchableOpacity>
-                )}
-                ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
-            />
-          </SafeAreaView>
+        {/* Modal Selector de Equipos */}
+        <Modal
+          visible={showDeviceSelector}
+          animationType="slide"
+          presentationStyle="pageSheet"
+        >
+          <MultiDeviceSelector
+            devices={equipos.map(eq => ({
+              id: eq.id,
+              model: eq.name.split(' - ')[0] || eq.name,
+              brand: 'Carini', // Siempre Carini
+              type: eq.tipo_equipo || 'equipo',
+              serial: eq.serial || 'N/A',
+              address: eq.name.split(' - ')[1] || 'N/A',
+            }))}
+            selectedDevices={selectedDevices}
+            onSelectionChange={setSelectedDevices}
+            onClose={() => setShowDeviceSelector(false)}
+          />
         </Modal>
 
 
@@ -812,5 +919,81 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: '#E0E0E0',
     marginLeft: 60,
+  },
+  // Estilos para el selector de modo
+  modeSelector: {
+    flexDirection: 'row',
+    backgroundColor: '#E8E8E8',
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+  },
+  modeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  modeButtonActive: {
+    backgroundColor: '#007AFF',
+  },
+  modeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  modeButtonTextActive: {
+    color: '#fff',
+  },
+  // Estilos para equipos seleccionados
+  selectedDevicesContainer: {
+    marginTop: 12,
+  },
+  selectedDeviceItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#E5E5EA',
+  },
+  selectedDeviceInfo: {
+    flex: 1,
+  },
+  selectedDeviceModel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1C1C1E',
+  },
+  selectedDeviceDescription: {
+    fontSize: 12,
+    color: '#007AFF',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  removeDeviceButton: {
+    marginLeft: 8,
+  },
+  // Estilos para checklist agrupado
+  checklistGroup: {
+    marginBottom: 20,
+    paddingLeft: 8,
+  },
+  checklistGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  checklistGroupTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2E7D2E',
   },
 });

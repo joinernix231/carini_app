@@ -12,12 +12,17 @@ import {
   Image,
   Dimensions,
   Linking,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../../components/BackButton';
+import DocumentUploader from '../../../components/DocumentUploader';
+import EditQuotationModal from '../../../components/EditQuotationModal';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useMantenimientoDetalle } from '../../../hooks/mantenimiento/useMantenimientoDetalle';
 import { 
@@ -25,6 +30,8 @@ import {
   MaintenanceStatus, 
   PaymentStatus 
 } from '../../../services/CoordinadorMantenimientoService';
+import { CoordinadorMantenimientoService } from '../../../services/CoordinadorMantenimientoService';
+import { useAuth } from '../../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +39,7 @@ type RootStackParamList = {
   DetalleMantenimiento: { mantenimientoId: number };
   CoordinadorDashboard: undefined;
   TecnicoDashboard: undefined;
+  AsignarTecnico: { mantenimientoId: number };
 };
 
 type DetalleMantenimientoRouteProp = RouteProp<RootStackParamList, 'DetalleMantenimiento'>;
@@ -77,7 +85,12 @@ interface MantenimientoDetalle {
 }
 
 export default function DetalleMantenimientoScreen() {
+  const { token } = useAuth();
+  const [quotationUrl, setQuotationUrl] = useState<string | null>(null);
+  const [maintenanceValue, setMaintenanceValue] = useState<string>('');
+  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const route = useRoute<DetalleMantenimientoRouteProp>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { goBack } = useSmartNavigation();
   const { mantenimientoId } = route.params;
   
@@ -160,6 +173,10 @@ export default function DetalleMantenimientoScreen() {
   const getStatusColor = (status: MaintenanceStatus) => {
     switch (status) {
       case 'pending': return '#FF9800';
+      case 'quoted': return '#FFC107';
+      case 'payment_uploaded': return '#FFB300';
+      case 'approved': return '#4CAF50';
+      case 'rejected': return '#E53935';
       case 'assigned': return '#2196F3';
       case 'in_progress': return '#9C27B0';
       case 'completed': return '#4CAF50';
@@ -170,6 +187,10 @@ export default function DetalleMantenimientoScreen() {
   const getStatusText = (status: MaintenanceStatus) => {
     switch (status) {
       case 'pending': return 'Pendiente';
+      case 'quoted': return 'Cotizado';
+      case 'payment_uploaded': return 'Pago Subido';
+      case 'approved': return 'Aprobado';
+      case 'rejected': return 'Rechazado';
       case 'assigned': return 'Asignado';
       case 'in_progress': return 'En Proceso';
       case 'completed': return 'Completado';
@@ -194,6 +215,15 @@ export default function DetalleMantenimientoScreen() {
   };
 
   const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-ES', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
+  const formatDateWithTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES', {
       day: '2-digit',
@@ -237,6 +267,331 @@ export default function DetalleMantenimientoScreen() {
     );
   }
 
+  const handleUploadPriceSupport = async () => {
+    if (!token || !quotationUrl) {
+      Alert.alert('Falta información', 'Selecciona un PDF de cotización antes de enviar.');
+      return;
+    }
+    if (!maintenanceValue || maintenanceValue.trim() === '') {
+      Alert.alert('Falta información', 'Ingresa el valor del mantenimiento antes de enviar.');
+      return;
+    }
+    try {
+      const value = parseFloat(maintenanceValue);
+      if (isNaN(value) || value <= 0) {
+        Alert.alert('Valor inválido', 'Ingresa un valor numérico válido mayor a 0.');
+        return;
+      }
+      await CoordinadorMantenimientoService.uploadPriceSupport(
+        mantenimiento.id, 
+        quotationUrl, 
+        token,
+        { 
+          is_paid: false,  // Requiere pago
+          value: value
+        }
+      );
+      Alert.alert('Éxito', 'Cotización enviada correctamente.');
+      goBack();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudo enviar la cotización');
+    }
+  };
+
+  const handleNoPaymentRequired = async () => {
+    if (!token) {
+      Alert.alert('Error', 'No hay token de autenticación');
+      return;
+    }
+    try {
+      await CoordinadorMantenimientoService.uploadPriceSupport(
+        mantenimiento.id, 
+        null,  // No hay PDF
+        token,
+        { 
+          is_paid: null,  // No requiere pago
+          value: null
+        }
+      );
+      Alert.alert('Éxito', 'Mantenimiento marcado como no requiere pago');
+      goBack();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudo procesar');
+    }
+  };
+
+  const handleEditQuotation = () => {
+    setEditModalVisible(true);
+  };
+
+  const handleSaveEdit = async (data: {
+    is_paid: boolean | null;
+    value: number | null;
+    price_support: string | null;
+  }) => {
+    if (!token) {
+      Alert.alert('Error', 'No hay token de autenticación');
+      return;
+    }
+    
+    try {
+      await CoordinadorMantenimientoService.updateQuotation(
+        mantenimiento.id,
+        token,
+        data
+      );
+      Alert.alert('Éxito', 'Cotización actualizada correctamente');
+      setEditModalVisible(false);
+      onRefresh(); // Refrescar datos
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudo actualizar la cotización');
+    }
+  };
+
+  const handlePaymentVerification = async (verified: boolean) => {
+    if (!token) {
+      Alert.alert('Error', 'No hay token de autenticación');
+      return;
+    }
+    
+    try {
+      // Aquí iría el endpoint para verificar pago
+      // await CoordinadorMantenimientoService.verifyPayment(mantenimiento.id, verified, token);
+      Alert.alert('Éxito', verified ? 'Pago verificado correctamente' : 'Pago marcado como no realizado');
+      onRefresh();
+    } catch (e: any) {
+      Alert.alert('Error', e?.response?.data?.message || 'No se pudo verificar el pago');
+    }
+  };
+
+  const renderActionSection = () => {
+    const status = mantenimiento?.status;
+    const isPaid = mantenimiento?.is_paid;
+    
+    switch (status) {
+      case 'pending':
+        return renderQuotationSection();
+      case 'quoted':
+        if (isPaid === null) {
+          // No requiere pago - puede asignar técnico directamente
+          return renderAssignTechnicianSection();
+        } else if (isPaid === false) {
+          // Requiere pago - esperando que el cliente pague
+          return renderPaymentPendingSection();
+        } else if (isPaid === true) {
+          // Pago verificado - puede asignar técnico
+          return renderAssignTechnicianSection();
+        }
+        return null;
+      case 'payment_uploaded':
+        // Cliente subió soporte de pago - coordinador debe verificar
+        return renderPaymentVerificationSection();
+      case 'assigned':
+      case 'in_progress':
+        return renderProgressSection();
+      case 'completed':
+        return renderCompletedSection();
+      default:
+        return null;
+    }
+  };
+
+  const renderQuotationSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Verificación y Cotización</Text>
+      <View style={styles.verificationCard}>
+        <View style={styles.verificationHeader}>
+          <MaterialIcons name="assignment-turned-in" size={24} color="#1976D2" />
+          <Text style={styles.verificationTitle}>Adjuntar Cotización</Text>
+        </View>
+        <Text style={styles.verificationDescription}>
+          Sube el archivo PDF del soporte de precio para este mantenimiento. Una vez enviado, el precio será registrado en el sistema.
+        </Text>
+        
+        <View style={styles.uploadSection}>
+          <DocumentUploader
+            title="Cotización PDF"
+            onDocumentUploaded={(url) => setQuotationUrl(url)}
+            options={{ mimeTypes: ['application/pdf'] }}
+            required
+          />
+          
+          <View style={styles.valueInputContainer}>
+            <Text style={styles.valueLabel}>Valor del Mantenimiento *</Text>
+            <TextInput
+              style={styles.valueInput}
+              placeholder="Ej: 150000"
+              value={maintenanceValue}
+              onChangeText={setMaintenanceValue}
+              keyboardType="numeric"
+              placeholderTextColor="#999"
+            />
+          </View>
+        </View>
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={[styles.verifyButton, (!quotationUrl || !maintenanceValue) && styles.verifyButtonDisabled]}
+            onPress={handleUploadPriceSupport}
+            disabled={!quotationUrl || !maintenanceValue}
+          >
+            <MaterialIcons name="send" size={20} color="#fff" />
+            <Text style={styles.verifyButtonText}>
+              {quotationUrl && maintenanceValue ? 'Enviar Cotización' : 'Completa todos los campos'}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.noPaymentButton}
+            onPress={handleNoPaymentRequired}
+          >
+            <MaterialIcons name="money-off" size={20} color="#fff" />
+            <Text style={styles.noPaymentButtonText}>No Requiere Pago</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderPaymentVerificationSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Verificación de Pago</Text>
+      <View style={styles.verificationCard}>
+        <View style={styles.verificationHeader}>
+          <MaterialIcons name="payment" size={24} color="#FF9800" />
+          <Text style={styles.verificationTitle}>Soporte de Pago Recibido</Text>
+        </View>
+        <Text style={styles.verificationDescription}>
+          El cliente ha subido un soporte de pago. Verifica si el pago es válido y procede con la asignación del técnico.
+        </Text>
+        
+        {mantenimiento?.payment_support && (
+          <View style={styles.paymentSupportSection}>
+            <Text style={styles.paymentSupportLabel}>Soporte de Pago:</Text>
+            <TouchableOpacity
+              style={styles.paymentSupportButton}
+              onPress={() => Linking.openURL(mantenimiento.payment_support)}
+            >
+              <MaterialIcons name="picture-as-pdf" size={20} color="#1976D2" />
+              <Text style={styles.paymentSupportText}>Ver PDF</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.verifyPaymentButton}
+            onPress={() => handlePaymentVerification(true)}
+          >
+            <MaterialIcons name="check-circle" size={20} color="#fff" />
+            <Text style={styles.verifyPaymentButtonText}>Pago Verificado</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={styles.rejectPaymentButton}
+            onPress={() => handlePaymentVerification(false)}
+          >
+            <MaterialIcons name="cancel" size={20} color="#fff" />
+            <Text style={styles.rejectPaymentButtonText}>Pago No Realizado</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderAssignTechnicianSection = () => {
+    const isPaid = mantenimiento?.is_paid;
+    const isPaymentVerified = isPaid === true;
+    const isNoPaymentRequired = isPaid === null;
+    
+    return (
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Asignar Técnico</Text>
+        <View style={styles.verificationCard}>
+          <View style={styles.verificationHeader}>
+            <MaterialIcons name="engineering" size={24} color="#4CAF50" />
+            <Text style={styles.verificationTitle}>
+              {isPaymentVerified ? 'Pago Verificado' : 'Sin Pago Requerido'}
+            </Text>
+          </View>
+          <Text style={styles.verificationDescription}>
+            {isPaymentVerified 
+              ? 'El pago ha sido verificado. Puedes proceder a asignar un técnico.'
+              : 'Este mantenimiento no requiere pago. Puedes asignar un técnico directamente.'
+            }
+          </Text>
+          
+          <TouchableOpacity
+            style={styles.assignTechnicianButton}
+            onPress={() => navigation.navigate('AsignarTecnico', { mantenimientoId: mantenimiento.id })}
+          >
+            <MaterialIcons name="person-add" size={20} color="#fff" />
+            <Text style={styles.assignTechnicianButtonText}>Asignar Técnico</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  const renderPaymentPendingSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Esperando Pago</Text>
+      <View style={styles.verificationCard}>
+        <View style={styles.verificationHeader}>
+          <MaterialIcons name="schedule" size={24} color="#FF9800" />
+          <Text style={styles.verificationTitle}>Cotización Enviada</Text>
+        </View>
+        <Text style={styles.verificationDescription}>
+          La cotización ha sido enviada al cliente. El cliente debe subir el soporte de pago antes de poder asignar un técnico.
+        </Text>
+        
+        {mantenimiento?.value && (
+          <View style={styles.quotationInfo}>
+            <Text style={styles.quotationInfoLabel}>Valor de la cotización:</Text>
+            <Text style={styles.quotationInfoValue}>${mantenimiento.value.toLocaleString()}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderProgressSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>En Progreso</Text>
+      <View style={styles.verificationCard}>
+        <View style={styles.verificationHeader}>
+          <MaterialIcons name="build" size={24} color="#2196F3" />
+          <Text style={styles.verificationTitle}>Mantenimiento en Progreso</Text>
+        </View>
+        <Text style={styles.verificationDescription}>
+          El técnico está trabajando en este mantenimiento.
+        </Text>
+        
+        {mantenimiento?.technician && (
+          <View style={styles.technicianInfo}>
+            <Text style={styles.technicianInfoLabel}>Técnico asignado:</Text>
+            <Text style={styles.technicianInfoValue}>{mantenimiento.technician.user.name}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+
+  const renderCompletedSection = () => (
+    <View style={styles.section}>
+      <Text style={styles.sectionTitle}>Completado</Text>
+      <View style={styles.verificationCard}>
+        <View style={styles.verificationHeader}>
+          <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+          <Text style={styles.verificationTitle}>Mantenimiento Completado</Text>
+        </View>
+        <Text style={styles.verificationDescription}>
+          Este mantenimiento ha sido completado exitosamente.
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#1976D2" />
@@ -245,18 +600,23 @@ export default function DetalleMantenimientoScreen() {
         <Text style={styles.headerTitle}>Detalle del Mantenimiento</Text>
       </View>
 
-      <ScrollView
-        style={styles.content}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#1976D2']}
-            tintColor="#1976D2"
-          />
-        }
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
+        <ScrollView
+          style={styles.content}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#1976D2']}
+              tintColor="#1976D2"
+            />
+          }
+          showsVerticalScrollIndicator={false}
+        >
         {/* Información General */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Información General</Text>
@@ -287,13 +647,15 @@ export default function DetalleMantenimientoScreen() {
             {mantenimiento.date_maintenance && (
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Fecha Programada:</Text>
-                <Text style={styles.infoValue}>{formatDate(mantenimiento.date_maintenance)}</Text>
+                <Text style={styles.infoValue}>{formatDateWithTime(mantenimiento.date_maintenance)}</Text>
               </View>
             )}
             {mantenimiento.shift && (
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Turno:</Text>
-                <Text style={styles.infoValue}>{mantenimiento.shift}</Text>
+                <Text style={styles.infoValue}>
+                  {mantenimiento.shift} {mantenimiento.shift === 'AM' ? '(8:00 AM - 12:30 PM)' : '(1:30 PM - 6:00 PM)'}
+                </Text>
               </View>
             )}
           </View>
@@ -342,69 +704,99 @@ export default function DetalleMantenimientoScreen() {
         )}
 
         {/* Información del Cliente */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cliente</Text>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Nombre:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.client.name}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Teléfono:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.client.phone}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Dirección:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.client.address}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Ciudad:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.client.city}, {mantenimiento.client.department}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Información del Equipo */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Equipo</Text>
-          <View style={styles.infoCard}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Marca:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.device.brand}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Modelo:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.device.model}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Tipo:</Text>
-              <Text style={styles.infoValue}>{mantenimiento.device.type}</Text>
-            </View>
-            {mantenimiento.device.description && (
+        {mantenimiento.client && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Cliente</Text>
+            <View style={styles.infoCard}>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Descripción:</Text>
-                <Text style={styles.infoValue}>{mantenimiento.device.description}</Text>
+                <Text style={styles.infoLabel}>Nombre:</Text>
+                <Text style={styles.infoValue}>{mantenimiento.client.name || 'N/A'}</Text>
               </View>
-            )}
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Teléfono:</Text>
+                <Text style={styles.infoValue}>{mantenimiento.client.phone || 'N/A'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Dirección:</Text>
+                <Text style={styles.infoValue}>{mantenimiento.client.address || 'N/A'}</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Ciudad:</Text>
+                <Text style={styles.infoValue}>{mantenimiento.client.city || 'N/A'}, {mantenimiento.client.department || 'N/A'}</Text>
+              </View>
+            </View>
           </View>
+        )}
+
+        {/* Información de los Equipos */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            Equipos ({Array.isArray(mantenimiento.device) ? mantenimiento.device.length : 1})
+          </Text>
+          {(() => {
+            const devices = Array.isArray(mantenimiento.device) ? mantenimiento.device : (mantenimiento.device ? [mantenimiento.device] : []);
+            return devices.length > 0 ? (
+              devices.map((device, index) => (
+                <View key={device.id} style={[styles.infoCard, index > 0 && styles.deviceCardSpacing]}>
+                  <View style={styles.deviceHeader}>
+                    <MaterialIcons name="devices" size={20} color="#1976D2" />
+                    <Text style={styles.deviceTitle}>Equipo #{device.id}</Text>
+                  </View>
+                  
+                  <View style={styles.deviceGrid}>
+                    <View style={styles.deviceInfoItem}>
+                      <Text style={styles.deviceInfoLabel}>Marca</Text>
+                      <Text style={styles.deviceInfoValue}>{device.brand || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.deviceInfoItem}>
+                      <Text style={styles.deviceInfoLabel}>Modelo</Text>
+                      <Text style={styles.deviceInfoValue}>{device.model || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.deviceInfoItem}>
+                      <Text style={styles.deviceInfoLabel}>Tipo</Text>
+                      <Text style={styles.deviceInfoValue}>{device.type || 'N/A'}</Text>
+                    </View>
+                    <View style={styles.deviceInfoItem}>
+                      <Text style={styles.deviceInfoLabel}>Serial</Text>
+                      <Text style={styles.deviceInfoValue}>{device.serial || 'N/A'}</Text>
+                    </View>
+                    <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
+                      <Text style={styles.deviceInfoLabel}>Dirección</Text>
+                      <Text style={styles.deviceInfoValue}>{device.address || 'N/A'}</Text>
+                    </View>
+                    {device.pivot_description && (
+                      <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
+                        <Text style={styles.deviceInfoLabel}>Descripción del Mantenimiento</Text>
+                        <Text style={styles.deviceInfoValue}>{device.pivot_description}</Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              ))
+            ) : (
+              <View style={styles.infoCard}>
+                <Text style={styles.emptyText}>No hay información de equipos disponible</Text>
+              </View>
+            );
+          })()}
         </View>
 
         {/* Técnico Asignado */}
-        {mantenimiento.technician && (
+        {mantenimiento.technician && mantenimiento.technician.user && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Técnico Asignado</Text>
             <View style={styles.infoCard}>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Nombre:</Text>
-                <Text style={styles.infoValue}>{mantenimiento.technician.user.name}</Text>
+                <Text style={styles.infoValue}>{mantenimiento.technician.user.name || 'N/A'}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Email:</Text>
-                <Text style={styles.infoValue}>{mantenimiento.technician.user.email}</Text>
+                <Text style={styles.infoValue}>{mantenimiento.technician.user.email || 'N/A'}</Text>
               </View>
               <View style={styles.infoRow}>
                 <Text style={styles.infoLabel}>Teléfono:</Text>
-                <Text style={styles.infoValue}>{mantenimiento.technician.phone}</Text>
+                <Text style={styles.infoValue}>{mantenimiento.technician.phone || 'N/A'}</Text>
               </View>
             </View>
           </View>
@@ -455,9 +847,46 @@ export default function DetalleMantenimientoScreen() {
           </View>
         )}
 
-        {/* Espacio inferior */}
+        {/* Sección de Acciones según el Estado */}
+        {renderActionSection()}
+
+        {/* Botón de Editar Cotización - Si tiene cotización (quoted o payment_uploaded) */}
+        {(mantenimiento?.status === 'quoted' || mantenimiento?.status === 'payment_uploaded') && (
+          <View style={styles.section}>
+            <View style={styles.editSection}>
+              <View style={styles.editHeader}>
+                <MaterialIcons name="edit" size={24} color="#FF9800" />
+                <Text style={styles.editSectionTitle}>Editar Cotización</Text>
+              </View>
+              <Text style={styles.editDescription}>
+                Puedes modificar el tipo de mantenimiento, valor o documento de cotización
+              </Text>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleEditQuotation}
+              >
+                <MaterialIcons name="edit" size={20} color="#fff" />
+                <Text style={styles.editButtonText}>Editar Cotización</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.bottomSpacing} />
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+
+      {/* Modal de Edición */}
+      <EditQuotationModal
+        visible={editModalVisible}
+        onClose={() => setEditModalVisible(false)}
+        onSave={handleSaveEdit}
+        currentData={{
+          is_paid: mantenimiento?.is_paid || null,
+          value: mantenimiento?.value || null,
+          price_support: mantenimiento?.price_support || null,
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -466,6 +895,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F0F2F5',
+  },
+  keyboardAvoidingView: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',
@@ -645,5 +1077,315 @@ const styles = StyleSheet.create({
   },
   bottomSpacing: {
     height: 20,
+  },
+  // Estilos para equipos
+  deviceCardSpacing: {
+    marginTop: 12,
+  },
+  deviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deviceTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1976D2',
+    marginLeft: 8,
+  },
+  deviceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  deviceInfoItem: {
+    width: '48%',
+    marginBottom: 12,
+  },
+  deviceInfoItemFull: {
+    width: '100%',
+  },
+  deviceInfoLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  deviceInfoValue: {
+    fontSize: 14,
+    color: '#1F2937',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  // Estilos para verificación
+  verificationCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    borderLeftWidth: 4,
+    borderLeftColor: '#1976D2',
+  },
+  verificationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  verificationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1976D2',
+    marginLeft: 8,
+  },
+  verificationDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 20,
+  },
+  uploadSection: {
+    marginBottom: 20,
+  },
+  valueInputContainer: {
+    marginTop: 16,
+  },
+  valueLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  valueInput: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    color: '#374151',
+  },
+  buttonContainer: {
+    gap: 12,
+  },
+  verifyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1976D2',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#1976D2',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  verifyButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  verifyButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  noPaymentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  noPaymentButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#FF9800',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  editSection: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FF9800',
+  },
+  editHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  editSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF9800',
+    marginLeft: 8,
+  },
+  editDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  paymentSupportSection: {
+    marginBottom: 16,
+  },
+  paymentSupportLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  paymentSupportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  paymentSupportText: {
+    color: '#1976D2',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  verifyPaymentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  verifyPaymentButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  rejectPaymentButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F44336',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#F44336',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  rejectPaymentButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  assignTechnicianButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#4CAF50',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  assignTechnicianButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  quotationInfo: {
+    backgroundColor: '#F3F4F6',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  quotationInfoLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 4,
+  },
+  quotationInfoValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1976D2',
+  },
+  technicianInfo: {
+    backgroundColor: '#E3F2FD',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
+  },
+  technicianInfoLabel: {
+    fontSize: 14,
+    color: '#1976D2',
+    marginBottom: 4,
+  },
+  technicianInfoValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1976D2',
   },
 });

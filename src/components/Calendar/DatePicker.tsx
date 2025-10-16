@@ -4,14 +4,11 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  Modal,
-  Dimensions,
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
 
 interface DatePickerProps {
   value: string;
@@ -30,7 +27,7 @@ export default function DatePicker({
   minimumDate,
   maximumDate,
 }: DatePickerProps) {
-  const [isVisible, setIsVisible] = useState(false);
+  const [showPicker, setShowPicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date>(() => {
     if (value) {
       const [year, month, day] = value.split('-');
@@ -39,26 +36,30 @@ export default function DatePicker({
     return new Date();
   });
 
+
   const formatDate = (dateString: string) => {
     if (!dateString) return placeholder;
     
-    const [year, month, day] = dateString.split('-');
-    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
-    
-    const formattedDate = date.toLocaleDateString('es-CO', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-    
-    return formattedDate;
+    try {
+      const [year, month, day] = dateString.split('-');
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      
+      const formattedDate = date.toLocaleDateString('es-CO', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      return formattedDate;
+    } catch (error) {
+      console.error('Error formateando fecha:', error);
+      return dateString; // Devolver la fecha original si hay error
+    }
   };
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
-    if (Platform.OS === 'android') {
-      setIsVisible(false);
-    }
+    setShowPicker(false);
     
     if (selectedDate) {
       setSelectedDate(selectedDate);
@@ -69,12 +70,8 @@ export default function DatePicker({
 
   const openCalendar = () => {
     if (!disabled) {
-      setIsVisible(true);
+      setShowPicker(true);
     }
-  };
-
-  const closeCalendar = () => {
-    setIsVisible(false);
   };
 
   return (
@@ -101,44 +98,15 @@ export default function DatePicker({
         />
       </TouchableOpacity>
 
-      {isVisible && (
-        <Modal
-          visible={isVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={closeCalendar}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Seleccionar Fecha</Text>
-                <TouchableOpacity onPress={closeCalendar} style={styles.closeButton}>
-                  <MaterialIcons name="close" size={24} color="#666" />
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.pickerContainer}>
-                <DateTimePicker
-                  value={selectedDate}
-                  mode="date"
-                  display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                  onChange={handleDateChange}
-                  minimumDate={minimumDate ? new Date(minimumDate) : undefined}
-                  maximumDate={maximumDate ? new Date(maximumDate) : undefined}
-                />
-              </View>
-
-              <View style={styles.modalFooter}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
-                  onPress={closeCalendar}
-                >
-                  <Text style={styles.cancelButtonText}>Cancelar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+      {showPicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={handleDateChange}
+          minimumDate={minimumDate ? new Date(minimumDate + 'T00:00:00') : undefined}
+          maximumDate={maximumDate ? new Date(maximumDate + 'T23:59:59') : undefined}
+        />
       )}
     </View>
   );
@@ -177,57 +145,5 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#9CA3AF',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '80%',
-    minHeight: '60%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1976D2',
-  },
-  closeButton: {
-    padding: 4,
-  },
-  pickerContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,
-    alignItems: 'center',
-  },
-  modalFooter: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-  },
-  cancelButton: {
-    backgroundColor: '#F5F5F5',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
   },
 });

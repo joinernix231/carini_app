@@ -242,10 +242,10 @@ export default function ClienteList() {
     const renderClienteItem = useCallback(({ item }: { item: Cliente }) => (
         <ClienteCard
             cliente={item}
-            onPress={(id) => goToDetail(id)}
-            onDelete={(id, name) => handleDelete(id, name)}
+            onPress={goToDetail}
+            onDelete={handleDelete}
         />
-    ), [goToDetail, handleDelete, navigation]);
+    ), [goToDetail, handleDelete]);
 
     // Loading state
     if (loading && !refreshing && clientes.length === 0) {

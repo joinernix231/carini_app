@@ -119,23 +119,39 @@ function TecnicoCardComponent({ item, onPress, onDelete }: Props) {
                 )}
 
                 {/* Información adicional del técnico */}
-                <View style={styles.contactRow}>
-                    <View style={styles.contactItem}>
-                        <Ionicons name="hammer-outline" size={16} color="#6B7280" />
-                        <Text style={styles.contactText} numberOfLines={1}>
-                            Soporte Técnico y Mantenimiento
-                        </Text>
+                {item.specialty && (
+                    <View style={styles.contactRow}>
+                        <View style={styles.contactItem}>
+                            <Ionicons name="hammer-outline" size={16} color="#6B7280" />
+                            <Text style={styles.contactText} numberOfLines={1}>
+                                {item.specialty}
+                            </Text>
+                        </View>
                     </View>
-                </View>
+                )}
 
-                <View style={styles.contactRow}>
-                    <View style={styles.contactItem}>
-                        <Ionicons name="time-outline" size={16} color="#6B7280" />
-                        <Text style={styles.contactText} numberOfLines={1}>
-                            Disponible para servicios
-                        </Text>
+                {item.blood_type && (
+                    <View style={styles.contactRow}>
+                        <View style={styles.contactItem}>
+                            <Ionicons name="heart-outline" size={16} color="#6B7280" />
+                            <Text style={styles.contactText} numberOfLines={1}>
+                                RH: {item.blood_type}
+                            </Text>
+                        </View>
                     </View>
-                </View>
+                )}
+
+                {item.contract_type && (
+                    <View style={styles.contactRow}>
+                        <View style={styles.contactItem}>
+                            <Ionicons name="briefcase-outline" size={16} color="#6B7280" />
+                            <Text style={styles.contactText} numberOfLines={1}>
+                                {item.contract_type === 'full_time' ? 'Tiempo completo' : 
+                                 item.contract_type === 'part_time' ? 'Medio tiempo' : 'Contratista'}
+                            </Text>
+                        </View>
+                    </View>
+                )}
             </View>
 
             {/* Línea separadora */}

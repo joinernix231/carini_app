@@ -8,18 +8,23 @@ import {
   Alert,
   StatusBar,
   Dimensions,
-  SafeAreaView
+  ActivityIndicator
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTecnico } from '../../hooks/tecnico/useTecnico';
+import AlertError from '../../components/AlertError';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 
 type RootStackParamList = {
   MisMantenimientos: undefined;
   MiPerfil: undefined;
+  MiCarnet: undefined;
+  Parafiscales: undefined;
 };
 
 type MenuOption = {
@@ -48,11 +53,28 @@ const options: MenuOption[] = [
     bgColor: '#E0F2F1',
     description: 'Información personal'
   },
+  {
+    icon: 'badge',
+    label: 'Mi Carnet',
+    screen: 'MiCarnet',
+    color: '#1E40AF',
+    bgColor: '#EFF6FF',
+    description: 'Carnet digital'
+  },
+  {
+    icon: 'assignment',
+    label: 'Parafiscales',
+    screen: 'Parafiscales',
+    color: '#10B981',
+    bgColor: '#D1FAE5',
+    description: 'EPS, ARL, Pensión'
+  },
 ];
 
 export default function TecnicoDashboard() {
   const { navigate } = useSmartNavigation();
   const { user, logout } = useAuth();
+  const { tecnico, loading, error } = useTecnico();
 
   const renderItem = ({ item }: { item: MenuOption }) => (
       <TouchableOpacity
@@ -86,6 +108,35 @@ export default function TecnicoDashboard() {
     return 'Buenas noches';
   };
 
+  // Mostrar loading
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
+        <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#fff" />
+            <Text style={styles.loadingText}>Cargando información del técnico...</Text>
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
+  // Mostrar error
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
+        <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
+          <View style={styles.errorContainer}>
+            <AlertError message={error} />
+          </View>
+        </LinearGradient>
+      </SafeAreaView>
+    );
+  }
+
   return (
       <SafeAreaView style={styles.safeArea}>
         <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
@@ -94,11 +145,17 @@ export default function TecnicoDashboard() {
             {/* Header */}
             <View style={styles.header}>
               <View style={styles.avatarContainer}>
-                <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
+                {tecnico?.photo ? (
+                  <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
+                ) : (
+                  <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
+                )}
               </View>
               <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.title}>{user?.name ?? 'Técnico'}</Text>
-              <Text style={styles.subtitle}>Panel de Control Técnico</Text>
+              <Text style={styles.title}>{tecnico?.specialty || user?.name || 'Técnico'}</Text>
+              <Text style={styles.subtitle}>
+                {tecnico?.specialty ? `${tecnico.specialty} - Panel de Control` : 'Panel de Control Técnico'}
+              </Text>
             </View>
             {/* Menu Grid */}
             <View style={styles.contentContainer}>
@@ -275,5 +332,23 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginLeft: 10,
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#fff',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: 20,
   },
 });

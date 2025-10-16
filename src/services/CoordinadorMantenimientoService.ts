@@ -2,7 +2,7 @@ import API from './api';
 
 // Tipos para el sistema de mantenimientos
 export type MaintenanceType = 'preventive' | 'corrective';
-export type MaintenanceStatus = 'pending' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
+export type MaintenanceStatus = 'pending' | 'quoted' | 'payment_uploaded' | 'approved' | 'rejected' | 'assigned' | 'in_progress' | 'completed' | 'cancelled';
 export type PaymentStatus = null | false | true;
 export type ShiftType = 'AM' | 'PM';
 
@@ -48,8 +48,8 @@ export interface CoordinadorMantenimiento {
   spare_parts: string | null;
   is_paid: PaymentStatus;
   created_at: string;
-  device: MaintenanceDevice;
-  client: MaintenanceClient;
+  device: MaintenanceDevice | MaintenanceDevice[]; // El endpoint puede devolver arreglo
+  client: MaintenanceClient | null; // Puede venir null según endpoint
   description: string | null;
   photo: string | null;
 }
@@ -67,6 +67,7 @@ export interface AsignarMantenimientoPayload {
   shift: ShiftType;
   value?: number;
   spare_parts?: string[];
+  technician_id?: number;
 }
 
 // Tipos para estadísticas
@@ -146,7 +147,134 @@ export const asignarTecnicoCoordinador = async (
   }
 };
 
+export const uploadPriceSupport = async (
+  maintenanceId: number,
+  priceSupportUrl: string | null,
+  token: string,
+  options?: {
+    is_paid?: boolean | null;
+    value?: number | null;
+  }
+): Promise<any> => {
+  try {
+    const payload: any = {};
+    
+    if (priceSupportUrl) {
+      payload.price_support = priceSupportUrl;
+    }
+    
+    if (options?.is_paid !== undefined) {
+      payload.is_paid = options.is_paid;
+    }
+    
+    if (options?.value !== undefined) {
+      payload.value = options.value;
+    }
+    
+    const response = await API.put(
+      `/api/uploadPrice/${maintenanceId}`,
+      payload,
+      authHeaders(token)
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error uploading price support:', error);
+    throw error;
+  }
+};
+
+// Nuevo servicio para mantenimientos sin cotización (paso 2)
+export const getMantenimientosSinCotizacion = async (token: string): Promise<CoordinadorMantenimiento[]> => {
+  try {
+    const response = await API.get('/api/maintenancesNotPrice', authHeaders(token));
+    return response.data.data;
+  } catch (error: any) {
+    console.error('Error fetching mantenimientos sin cotización:', error);
+    throw error;
+  }
+};
+
+// Nuevo servicio para mantenimientos aprobados (paso 4)
+export const getMantenimientosAprobados = async (token: string): Promise<CoordinadorMantenimiento[]> => {
+  try {
+    const response = await API.get('/api/maintenancesApproved', authHeaders(token));
+    return response.data.data;
+  } catch (error: any) {
+    console.error('Error fetching mantenimientos aprobados:', error);
+    throw error;
+  }
+};
+
+// Servicio para mantenimientos por estado de pago
+export interface MantenimientosByPaymentStatus {
+  paid_pending_review: CoordinadorMantenimiento[]; // is_paid = false
+  pending_payment: CoordinadorMantenimiento[];     // is_paid = null
+}
+
+export const getMantenimientosByPaymentStatus = async (token: string): Promise<MantenimientosByPaymentStatus> => {
+  try {
+    const response = await API.get('/api/maintenancesByPaymentStatus', authHeaders(token));
+    
+    const allMantenimientos = response.data.data || [];
+    
+    // Separar según is_paid
+    const paidPendingReview = allMantenimientos.filter((m: any) => m.is_paid === false);
+    const pendingPayment = allMantenimientos.filter((m: any) => m.is_paid === null);
+    
+    return {
+      paid_pending_review: paidPendingReview,
+      pending_payment: pendingPayment
+    };
+  } catch (error: any) {
+    console.error('Error fetching mantenimientos by payment status:', error);
+    throw error;
+  }
+};
+
+// Servicio para actualizar cotización
+export const updateQuotation = async (
+  maintenanceId: number,
+  token: string,
+  options: {
+    is_paid?: boolean | null;
+    value?: number | null;
+    price_support?: string | null;
+  }
+): Promise<any> => {
+  try {
+    const payload: any = {};
+    
+    if (options.is_paid !== undefined) {
+      payload.is_paid = options.is_paid;
+    }
+    
+    if (options.value !== undefined) {
+      payload.value = options.value;
+    }
+    
+    if (options.price_support !== undefined) {
+      payload.price_support = options.price_support;
+    }
+    
+    const response = await API.put(
+      `/api/maintenance/${maintenanceId}/update-quotation`,
+      payload,
+      authHeaders(token)
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error updating quotation:', error);
+    throw error;
+  }
+};
+
 export const CoordinadorMantenimientoService = {
   getMantenimientosSinAsignarCoordinador,
+  getMantenimientosAsignadosCoordinador,
+  getMantenimientosSinCotizacion,
+  getMantenimientosAprobados,
+  getMantenimientosByPaymentStatus,
   asignarTecnicoCoordinador,
+  uploadPriceSupport,
+  updateQuotation,
 };

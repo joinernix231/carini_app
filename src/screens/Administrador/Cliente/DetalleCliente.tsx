@@ -36,7 +36,10 @@ export default function DetalleCliente() {
     const route = useRoute();
     const navigation = useNavigation<any>();
     const { navigate } = useSmartNavigation();
-    const { id } = route.params as RouteParams;
+    
+    // Asegurar que el ID sea un número
+    const routeParams = route.params as RouteParams;
+    const id = typeof routeParams?.id === 'number' ? routeParams.id : parseInt(String(routeParams?.id || '0'));
 
     const {
         cliente,

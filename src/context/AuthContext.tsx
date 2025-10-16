@@ -59,10 +59,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const isValid = await UserService.validateToken(storedToken);
         
         if (isValid) {
-          console.log('✅ AuthContext - Token válido, restaurando sesión');
+          console.log('✅ AuthContext - Token válido, obteniendo datos actualizados...');
           setToken(storedToken);
-          setUser(storedUserData as User);
           API.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
+          
+          // Obtener datos actualizados del endpoint /api/me
+          try {
+            const response = await API.get('/api/me');
+            if (response.data.success && response.data.data) {
+              const userData = response.data.data;
+              const updatedUser: User = {
+                id: userData.id,
+                name: userData.name,
+                email: userData.email,
+                role: userData.role,
+                phone: userData.phone || '',
+                address: userData.address || '',
+                city: userData.city || '',
+                identifier: userData.identifier || '',
+                legal_representative: userData.legal_representative || '',
+                client_type: userData.client_type || 'persona',
+                policy_accepted: userData.policy_accepted
+              };
+              
+              // Guardar datos actualizados
+              await StorageService.saveUserData(updatedUser as StoredUserData);
+              setUser(updatedUser);
+              console.log('✅ AuthContext - Datos actualizados obtenidos del /api/me');
+            } else {
+              // Si no se pueden obtener datos actualizados, usar los guardados
+              setUser(storedUserData as User);
+            }
+          } catch (meError) {
+            console.log('⚠️ AuthContext - Error obteniendo datos de /api/me, usando datos guardados');
+            setUser(storedUserData as User);
+          }
         } else {
           console.log('🔄 AuthContext - Token expirado, intentando renovar automáticamente...');
           
@@ -170,7 +201,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (!token) throw new Error('No hay token de autenticación');
 
     await API.post('api/acceptPolicy');
-    setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
+    
+    // Actualizar datos del usuario obteniendo la información actualizada
+    try {
+      const response = await API.get('/api/me');
+      if (response.data.success && response.data.data) {
+        const userData = response.data.data;
+        const updatedUser: User = {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          role: userData.role,
+          phone: userData.phone || '',
+          address: userData.address || '',
+          city: userData.city || '',
+          identifier: userData.identifier || '',
+          legal_representative: userData.legal_representative || '',
+          client_type: userData.client_type || 'persona',
+          policy_accepted: userData.policy_accepted
+        };
+        
+        // Guardar datos actualizados
+        await StorageService.saveUserData(updatedUser as StoredUserData);
+        setUser(updatedUser);
+        console.log('✅ AuthContext - Política aceptada y datos actualizados');
+      } else {
+        // Fallback: actualizar solo el campo policy_accepted
+        setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
+      }
+    } catch (error) {
+      console.error('❌ AuthContext - Error actualizando datos después de aceptar política:', error);
+      // Fallback: actualizar solo el campo policy_accepted
+      setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
+    }
   };
 
   return (

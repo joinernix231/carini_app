@@ -1,9 +1,10 @@
 // src/hooks/useDeviceAssociation.ts
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { Equipo } from '../types/equipo/equipo';
 import { EquipoService } from '../services/EquipoService';
 import { useAuth } from '../context/AuthContext';
 import { useError } from '../context/ErrorContext';
+import { logger } from '../utils/logger';
 
 export function useDeviceAssociation() {
     const { token } = useAuth();
@@ -11,32 +12,63 @@ export function useDeviceAssociation() {
     
     const [devices, setDevices] = useState<Equipo[]>([]);
     const [loadingDevices, setLoadingDevices] = useState<boolean>(false);
+    
+    // Ref para evitar llamadas duplicadas
+    const loadingRef = useRef<boolean>(false);
+    const mountedRef = useRef<boolean>(true);
+    
+    // Cleanup al desmontar
+    useEffect(() => {
+        return () => {
+            mountedRef.current = false;
+        };
+    }, []);
 
     const loadDevices = useCallback(async () => {
-        console.log('🔍 useDeviceAssociation - loadDevices called, token:', token ? 'present' : 'missing');
+        // Evitar llamadas duplicadas
+        if (loadingRef.current || !mountedRef.current) {
+            return;
+        }
+        
+        logger.debug('useDeviceAssociation - loadDevices called, token:', token ? 'present' : 'missing');
         
         if (!token) {
-            console.log('❌ useDeviceAssociation - No token available');
+            logger.warn('useDeviceAssociation - No token available');
             return;
         }
 
         try {
-            setLoadingDevices(true);
-            console.log('🔍 useDeviceAssociation - Calling EquipoService.getAll with token');
+            loadingRef.current = true;
+            if (mountedRef.current) {
+                setLoadingDevices(true);
+            }
+            
+            logger.api('useDeviceAssociation - Calling EquipoService.getAll with token');
             const response = await EquipoService.getAll(token, 1);
-            console.log('✅ useDeviceAssociation - Devices loaded:', response.data.length);
-            setDevices(response.data);
+            
+            if (mountedRef.current) {
+                logger.debug('useDeviceAssociation - Devices loaded:', response.data.length);
+                setDevices(response.data);
+            }
         } catch (error: any) {
-            console.error('❌ useDeviceAssociation - Error cargando dispositivos:', error);
-            showError(error);
+            if (mountedRef.current) {
+                logger.error('useDeviceAssociation - Error cargando dispositivos:', error);
+                showError(error);
+            }
         } finally {
-            setLoadingDevices(false);
+            loadingRef.current = false;
+            if (mountedRef.current) {
+                setLoadingDevices(false);
+            }
         }
     }, [token, showError]);
 
-    return {
+    // Memoizar el valor de retorno para evitar re-renders innecesarios
+    const returnValue = useMemo(() => ({
         devices,
         loadingDevices,
         loadDevices,
-    };
+    }), [devices, loadingDevices, loadDevices]);
+
+    return returnValue;
 }

@@ -26,7 +26,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 type RootStackParamList = {
   AsignarTecnico: { mantenimientoId: number };
-  MantenimientosSinAsignar: undefined;
+  DetalleMantenimiento: { mantenimientoId: number };
   CoordinadorDashboard: undefined;
 };
 
@@ -51,9 +51,7 @@ export default function AsignarTecnicoScreen() {
   // Formulario de asignación
   const [fechaMantenimiento, setFechaMantenimiento] = useState('');
   const [turno, setTurno] = useState<'AM' | 'PM'>('AM');
-  const [valor, setValor] = useState('');
-  const [repuestos, setRepuestos] = useState('');
-  const [repuestosArray, setRepuestosArray] = useState<string[]>([]);
+  // Eliminados: valor y repuestos
 
   const fetchData = useCallback(async () => {
     if (!token) return;
@@ -98,16 +96,7 @@ export default function AsignarTecnicoScreen() {
     setTecnicosFiltrados(filtrados);
   }, [tecnicos]);
 
-  const agregarRepuesto = useCallback(() => {
-    if (repuestos.trim()) {
-      setRepuestosArray(prev => [...prev, repuestos.trim()]);
-      setRepuestos('');
-    }
-  }, [repuestos]);
-
-  const quitarRepuesto = useCallback((index: number) => {
-    setRepuestosArray(prev => prev.filter((_, i) => i !== index));
-  }, []);
+  // Eliminado: manejo de repuestos
 
   const validarFormulario = useCallback(() => {
     if (!tecnicoSeleccionado) {
@@ -118,12 +107,8 @@ export default function AsignarTecnicoScreen() {
       Alert.alert('Error', 'Debe seleccionar una fecha');
       return false;
     }
-    if (repuestosArray.length === 0) {
-      Alert.alert('Error', 'Debe agregar al menos un repuesto');
-      return false;
-    }
     return true;
-  }, [tecnicoSeleccionado, fechaMantenimiento, repuestosArray]);
+  }, [tecnicoSeleccionado, fechaMantenimiento]);
 
   const handleAsignar = useCallback(async () => {
     if (!validarFormulario()) return;
@@ -142,8 +127,6 @@ export default function AsignarTecnicoScreen() {
               const payload: AsignarMantenimientoPayload = {
                 date_maintenance: fechaMantenimiento,
                 shift: turno,
-                value: valor ? parseInt(valor) : undefined,
-                spare_parts: repuestosArray,
                 technician_id: tecnicoSeleccionado!.id,
               };
 
@@ -157,7 +140,7 @@ export default function AsignarTecnicoScreen() {
                 [
                   {
                     text: 'OK',
-                    onPress: () => navigation.navigate('MantenimientosSinAsignar'),
+                    onPress: () => navigation.navigate('DetalleMantenimiento', { mantenimientoId }),
                   },
                 ]
               );
@@ -171,7 +154,7 @@ export default function AsignarTecnicoScreen() {
         },
       ]
     );
-  }, [tecnicoSeleccionado, fechaMantenimiento, turno, valor, repuestosArray, validarFormulario, navigation, showError]);
+  }, [tecnicoSeleccionado, fechaMantenimiento, turno, validarFormulario, navigation, showError]);
 
   const getDisponibilidadColor = (disponibilidad: string) => {
     switch (disponibilidad) {
@@ -250,6 +233,27 @@ export default function AsignarTecnicoScreen() {
             <Text style={styles.detailText}>{item.address}</Text>
           </View>
         )}
+        {item.specialty && (
+          <View style={styles.detailRow}>
+            <MaterialIcons name="engineering" size={16} color="#666" />
+            <Text style={styles.detailText}>{item.specialty}</Text>
+          </View>
+        )}
+        {item.blood_type && (
+          <View style={styles.detailRow}>
+            <MaterialIcons name="bloodtype" size={16} color="#666" />
+            <Text style={styles.detailText}>RH: {item.blood_type}</Text>
+          </View>
+        )}
+        {item.contract_type && (
+          <View style={styles.detailRow}>
+            <MaterialIcons name="work" size={16} color="#666" />
+            <Text style={styles.detailText}>
+              {item.contract_type === 'full_time' ? 'Tiempo Completo' : 
+               item.contract_type === 'part_time' ? 'Medio Tiempo' : 'Contratista'}
+            </Text>
+          </View>
+        )}
       </View>
 
       {tecnicoSeleccionado?.id === item.id && (
@@ -324,48 +328,7 @@ export default function AsignarTecnicoScreen() {
             </View>
           </View>
 
-          {/* Valor (Opcional) */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Valor (Opcional)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Ej: 50000"
-              value={valor}
-              onChangeText={setValor}
-              keyboardType="numeric"
-              placeholderTextColor="#999"
-            />
-          </View>
-
-          {/* Repuestos */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Repuestos *</Text>
-            <View style={styles.repuestosInputContainer}>
-              <TextInput
-                style={[styles.input, styles.repuestosInput]}
-                placeholder="Ej: filtro, aceite, bujías"
-                value={repuestos}
-                onChangeText={setRepuestos}
-                placeholderTextColor="#999"
-              />
-              <TouchableOpacity style={styles.agregarButton} onPress={agregarRepuesto}>
-                <MaterialIcons name="add" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            
-            {repuestosArray.length > 0 && (
-              <View style={styles.repuestosList}>
-                {repuestosArray.map((repuesto, index) => (
-                  <View key={index} style={styles.repuestoItem}>
-                    <Text style={styles.repuestoText}>{repuesto}</Text>
-                    <TouchableOpacity onPress={() => quitarRepuesto(index)}>
-                      <MaterialIcons name="close" size={16} color="#F44336" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </View>
-            )}
-          </View>
+          {/* Eliminados: Valor y Repuestos */}
         </View>
 
         <View style={styles.searchContainer}>
@@ -435,7 +398,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: '#1976D2',
   },
   headerTitle: {
@@ -453,12 +416,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     margin: 16,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   sectionTitle: {
     fontSize: 18,
@@ -493,7 +456,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E0E0E0',
     alignItems: 'center',
@@ -568,14 +531,14 @@ const styles = StyleSheet.create({
   },
   tecnicoCard: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 10,
+    elevation: 4,
   },
   tecnicoCardSelected: {
     borderWidth: 2,

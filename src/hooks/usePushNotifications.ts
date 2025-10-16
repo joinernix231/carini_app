@@ -61,12 +61,9 @@ export const usePushNotifications = () => {
       const success = await pushNotificationService.registerToken(user.id, token);
       if (success) {
         console.log('✅ Token registrado correctamente');
-      } else {
-        console.error('❌ Error registrando token');
       }
       return success;
     } catch (error) {
-      console.error('❌ Error registrando token:', error);
       return false;
     }
   }, [user?.id, token]);

@@ -20,12 +20,12 @@ const { width } = Dimensions.get('window');
 
 type RootStackParamList = {
   VerMantenimientos: undefined;
-  AsignarTecnicos: undefined;
   TecnicoList: undefined;
   EquipoList: undefined;
   AsignarEquipos: undefined;
   MantenimientosSinAsignar: undefined;
   MantenimientosAsignados: undefined;
+  MantenimientosRechazados: undefined;
 };
 
 type MenuOption = {
@@ -39,20 +39,36 @@ type MenuOption = {
 
 const options: MenuOption[] = [
   {
-    icon: 'engineering',
+    icon: 'payment',
+    label: 'Pagos',
+    screen: 'MantenimientosMain' as any,
+    color: '#FF9800',
+    bgColor: '#FFF3E0',
+    description: 'Gestionar pagos de mantenimientos'
+  },
+  {
+    icon: 'assignment-turned-in',
+    label: 'Sin Cotización',
+    screen: 'MantenimientosSinCotizacion' as any,
+    color: '#FF7043',
+    bgColor: '#FFF3E0',
+    description: 'Enviar cotización al cliente'
+  },
+  {
+    icon: 'list-alt',
     label: 'Mantenimientos',
+    screen: 'Mantenimientos' as any,
+    color: '#1976D2',
+    bgColor: '#E3F2FD',
+    description: 'Ver todos con filtros'
+  },
+  {
+    icon: 'engineering',
+    label: 'Asignados',
     screen: 'MantenimientosAsignados',
     color: '#1E88E5',
     bgColor: '#E3F2FD',
-    description: 'Ver asignados'
-  },
-  {
-    icon: 'assignment-ind',
-    label: 'Por Programar',
-    screen: 'MantenimientosSinAsignar',
-    color: '#FF7043',
-    bgColor: '#FFF3E0',
-    description: 'Asignar técnicos'
+    description: 'Ver en progreso'
   },
   {
     icon: 'people',
@@ -233,7 +249,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   label: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: 'bold',
     color: '#2c3e50',
     textAlign: 'center',
