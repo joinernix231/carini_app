@@ -48,7 +48,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       }
       return null;
     } catch (error) {
-      console.error('Error picking image:', error);
+      // Error log removed
       showError(error, 'Error al seleccionar la imagen');
       setState(prev => ({
         ...prev,
@@ -77,7 +77,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       }
       return null;
     } catch (error) {
-      console.error('Error taking photo:', error);
+      // Error log removed
       showError(error, 'Error al tomar la foto');
       setState(prev => ({
         ...prev,
@@ -124,7 +124,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
         return encryptedName;
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
+      // Error log removed
       showError(error, 'Error al subir la imagen');
       setState(prev => ({
         ...prev,

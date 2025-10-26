@@ -93,7 +93,7 @@ export function useSmartDataFetch<T>(
         } catch (err: any) {
             if (!isMountedRef.current) return null;
 
-            console.error('useSmartDataFetch - fetch error', err);
+            // Error log removed
             setError(err.message || 'Error cargando datos');
             setLoading(false);
             throw err;

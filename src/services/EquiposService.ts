@@ -18,7 +18,7 @@ export const getEquiposVinculados = async (token: string) => {
   
   // Asegurar que devices es un array
   if (!Array.isArray(devices)) {
-    console.error('❌ EquiposService - devices is not an array:', devices);
+    // Error log removed
     return [];
   }
   

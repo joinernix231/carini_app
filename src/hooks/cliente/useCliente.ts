@@ -35,7 +35,7 @@ export function useCliente(id: number) {
 
             setCliente(data);
         } catch (err: any) {
-            console.error('useCliente - fetch error', err);
+            // Error log removed
             if (!mountedRef.current) return;
             
             // Usar el sistema de errores global
@@ -61,11 +61,11 @@ export function useCliente(id: number) {
             try {
                 console.log('🔍 useCliente - Calling ClienteService.update');
                 const updated = await ClienteService.update(id, payload, token);
-                console.log('✅ useCliente - Update successful, new cliente:', updated);
+                // Log removed
                 setCliente(updated);
                 return updated;
             } catch (err: any) {
-                console.error('❌ useCliente - Error updating cliente:', err);
+                // Error log removed
                 showError(err, 'Error al actualizar el cliente');
                 setError(err.message || 'Error actualizando cliente');
                 throw err;

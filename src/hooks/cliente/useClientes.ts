@@ -67,7 +67,7 @@ export function useClientes({
                 await forceUpdate();
                 return true;
             } catch (err: any) {
-                console.error('removeCliente error', err);
+                // Error log removed
                 showError(err, 'Error al eliminar el cliente');
                 return false;
             }

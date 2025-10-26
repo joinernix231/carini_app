@@ -70,7 +70,7 @@ export default function EditarCoordinador() {
                 },
             ]);
         } catch (error: any) {
-            console.error('Error actualizando coordinador:', error);
+            // Error log removed
             showError(error, 'Error al actualizar el coordinador');
         }
     }, [id, updateCoordinador, navigation, showError]);

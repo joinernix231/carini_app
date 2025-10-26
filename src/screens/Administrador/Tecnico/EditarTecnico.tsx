@@ -55,7 +55,7 @@ export default function EditarTecnico() {
                 setArlPdf(data.arl_pdf || null);
                 setPensionPdf(data.pension_pdf || null);
             } catch (err: any) {
-                console.error('Error cargando técnico:', err);
+                // Error log removed
                 Alert.alert('Error', 'No se pudo cargar el técnico');
                 navigation.goBack();
             } finally {
@@ -74,7 +74,7 @@ export default function EditarTecnico() {
                 { text: 'OK', onPress: () => navigation.replace('DetalleTecnico', { id: updated.id }) },
             ]);
         } catch (err: any) {
-            console.error('Error actualizando técnico:', err);
+            // Error log removed
             Alert.alert('Error', err?.response?.data?.message || 'No se pudo actualizar el técnico');
         }
     };
@@ -85,7 +85,7 @@ export default function EditarTecnico() {
             setUpdatingDocs(true);
             await TecnicoService.update(id, payload, token);
         } catch (err: any) {
-            console.error('Error actualizando documento/foto:', err);
+            // Error log removed
             Alert.alert('Error', 'No se pudo actualizar el documento/foto');
         } finally {
             setUpdatingDocs(false);

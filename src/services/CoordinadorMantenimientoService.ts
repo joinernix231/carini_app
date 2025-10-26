@@ -134,7 +134,7 @@ export const asignarTecnicoCoordinador = async (
       authHeaders(token)
     );
     
-    console.log('✅ Respuesta de asignación:', response.data);
+    // Log removed
     return response.data;
   } catch (error: any) {
     console.error('❌ Error asignando técnico (coordinador):', error);
@@ -178,7 +178,7 @@ export const uploadPriceSupport = async (
     );
     return response.data;
   } catch (error: any) {
-    console.error('Error uploading price support:', error);
+    // Error log removed
     throw error;
   }
 };
@@ -189,7 +189,7 @@ export const getMantenimientosSinCotizacion = async (token: string): Promise<Coo
     const response = await API.get('/api/maintenancesNotPrice', authHeaders(token));
     return response.data.data;
   } catch (error: any) {
-    console.error('Error fetching mantenimientos sin cotización:', error);
+    // Error log removed
     throw error;
   }
 };
@@ -200,7 +200,7 @@ export const getMantenimientosAprobados = async (token: string): Promise<Coordin
     const response = await API.get('/api/maintenancesApproved', authHeaders(token));
     return response.data.data;
   } catch (error: any) {
-    console.error('Error fetching mantenimientos aprobados:', error);
+    // Error log removed
     throw error;
   }
 };
@@ -226,7 +226,7 @@ export const getMantenimientosByPaymentStatus = async (token: string): Promise<M
       pending_payment: pendingPayment
     };
   } catch (error: any) {
-    console.error('Error fetching mantenimientos by payment status:', error);
+    // Error log removed
     throw error;
   }
 };
@@ -263,7 +263,7 @@ export const updateQuotation = async (
     );
     return response.data;
   } catch (error: any) {
-    console.error('Error updating quotation:', error);
+    // Error log removed
     throw error;
   }
 };

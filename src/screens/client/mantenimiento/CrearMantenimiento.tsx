@@ -101,7 +101,7 @@ export default function CrearMantenimiento() {
         setEquipos(listaEquipos);
 
       } catch (error) {
-        console.error('Error al cargar datos:', error);
+        // Error log removed
         Alert.alert('Error', 'Hubo un problema cargando los datos.');
       }
     };
@@ -149,7 +149,7 @@ export default function CrearMantenimiento() {
                 setFoto(resultado.assets[0]);
             }
         } catch (error) {
-            console.error('Error al seleccionar imagen:', error);
+            // Error log removed
             Alert.alert('Error', 'Hubo un problema al seleccionar la imagen.');
         }
     };
@@ -171,17 +171,17 @@ export default function CrearMantenimiento() {
             return;
           }
 
-          console.log('Subiendo imagen:', nombreImagen);
+          // Log removed
           const uploadResult = await uploadImage(uri, nombreImagen!, token!);
 
           if (uploadResult) {
-            console.log('Imagen subida exitosamente:', uploadResult);
+            // Log removed
           } else {
             Alert.alert('Advertencia', 'No se pudo subir la imagen, pero se continuará con el registro.');
             nombreImagen = undefined;
           }
         } catch (uploadError) {
-          console.error('Error al subir imagen:', uploadError);
+          // Error log removed
           const shouldContinue = await new Promise((resolve) => {
             Alert.alert(
                 'Error de imagen',
@@ -222,7 +222,7 @@ export default function CrearMantenimiento() {
         })),
       };
 
-      console.log('Enviando payload:', payload);
+      // Log removed
       await createMantenimiento(payload, token!);
 
       setSelectedDevices([]);
@@ -246,7 +246,7 @@ export default function CrearMantenimiento() {
         ]);
       }
     } catch (error: any) {
-      console.error('Error al crear mantenimiento:', error);
+      // Error log removed
       showError(error, 'Ocurrió un error al registrar el mantenimiento.');
     } finally {
       setLoading(false);

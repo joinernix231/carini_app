@@ -89,7 +89,7 @@ export function useSmartListFetch<T>(
         if (!force && isDataFresh(cacheKey)) {
             const cached = cacheRef.current.get(cacheKey);
             if (cached && isMountedRef.current) {
-                console.log('✅ useSmartListFetch - Using cached data');
+                // Log removed
                 setItems(cached.data);
                 setPagination(cached.pagination);
                 setPage(pageToFetch);
@@ -102,7 +102,7 @@ export function useSmartListFetch<T>(
         // Evitar llamadas duplicadas muy rápidas
         const now = Date.now();
         if (!force && (now - lastFetchRef.current) < 1000) {
-            console.log('⏰ useSmartListFetch - Too soon, using cached data');
+            // Log removed
             const cached = cacheRef.current.get(cacheKey);
             return cached;
         }
@@ -143,7 +143,7 @@ export function useSmartListFetch<T>(
         } catch (err: any) {
             if (!isMountedRef.current) return null;
 
-            console.error('useSmartListFetch - fetch error', err);
+            // Error log removed
             if (isMountedRef.current) {
                 setError(err.message || 'Error cargando datos');
                 setLoading(false);

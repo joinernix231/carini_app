@@ -40,7 +40,7 @@ export const useClienteDashboard = () => {
       
       setData(mockData);
     } catch (error) {
-      console.error('Error cargando datos del dashboard:', error);
+      // Error log removed
       showError('Error cargando datos del dashboard');
     } finally {
       setLoading(false);

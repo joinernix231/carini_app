@@ -137,7 +137,7 @@ export default function MantenimientosScreen() {
       setHasMore(page < response.last_page);
       setCurrentPage(page);
     } catch (err: any) {
-      console.error('Error fetching mantenimientos:', err);
+      // Error log removed
       showError(err, 'Error al cargar los mantenimientos');
       setError('Error al cargar los mantenimientos');
       if (reset) {
@@ -519,7 +519,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeContainer: {
-    width: 40,
+    width: 60,
     alignItems: 'flex-end',
   },
   headerTitle: { 
@@ -539,7 +539,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    minWidth: 36,
+    minWidth: 48,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.3)',

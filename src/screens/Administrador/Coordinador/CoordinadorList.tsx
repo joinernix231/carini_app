@@ -80,7 +80,7 @@ export default function CoordinadorList() {
                                 }
                             } catch (error) {
                                 // El error se maneja automáticamente por el sistema global
-                                console.error('Error eliminando coordinador:', error);
+                                // Error log removed
                             }
                         },
                     },

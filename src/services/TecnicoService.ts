@@ -129,7 +129,7 @@ async function getAvailableTechnicians(
         const response = await API.get(url, authHeaders(token));
         return response.data.data || [];
     } catch (error: any) {
-        console.error('Error fetching available technicians:', error);
+        // Error log removed
         throw error;
     }
 }

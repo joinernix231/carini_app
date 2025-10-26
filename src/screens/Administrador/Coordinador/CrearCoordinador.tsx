@@ -63,7 +63,7 @@ export default function CrearCoordinador() {
                 },
             ]);
         } catch (error: any) {
-            console.error('Error creando coordinador:', error);
+            // Error log removed
             showError(error, 'Error al crear el coordinador');
         }
     };

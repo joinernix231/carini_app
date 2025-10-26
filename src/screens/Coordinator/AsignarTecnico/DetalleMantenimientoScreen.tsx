@@ -138,7 +138,7 @@ export default function DetalleMantenimientoScreen() {
       if (canOpen) {
         // Abrir el PDF
         await Linking.openURL(pdfUrl);
-        console.log('✅ PDF abierto exitosamente');
+        // Log removed
       } else {
         Alert.alert(
           'Error',
@@ -147,7 +147,7 @@ export default function DetalleMantenimientoScreen() {
         );
       }
     } catch (error) {
-      console.error('❌ Error al abrir PDF:', error);
+      // Error log removed
       Alert.alert(
         'Error',
         'No se pudo abrir el soporte de pago. Inténtalo de nuevo.',

@@ -4,7 +4,6 @@
     "slug": "carini",
     "version": "1.0.0",
     "newArchEnabled": false,
-    "hostType": "lan",
     "android": {
       "package": "com.carini.app",
       "versionCode": 1,
@@ -19,6 +18,9 @@
         "projectId": "1f589531-42a1-4b68-90c0-6ef5c6a52c96"
       }
     },
-    "owner": "joinernix2"
+    "owner": "joinernix2",
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

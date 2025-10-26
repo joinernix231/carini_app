@@ -51,7 +51,7 @@ export default function AcceptPolicyScreen({ navigation }) {
                 setLoading(false);
 
               } catch (error) {
-                console.error('Error al aceptar políticas:', error);
+                // Error log removed
                 setLoading(false);
                 Alert.alert(
                     'Error',

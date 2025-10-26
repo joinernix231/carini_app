@@ -74,7 +74,7 @@ export function useCoordinador(
             // el caller debe decidir navegar atrás
             return true;
         } catch (err: any) {
-            console.error('removeCoordinador error', err);
+            // Error log removed
             showError(err, 'Error al eliminar el coordinador');
             const msg = err?.response?.data?.message || err.message || 'Error eliminando Coordinador';
             setError(msg);

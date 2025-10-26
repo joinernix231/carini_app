@@ -41,7 +41,7 @@ export const useMe = () => {
       console.log('📡 useMe - Headers generados:', headers);
       
       const response = await API.get<TecnicoResponse>('/api/me', headers);
-      console.log('✅ useMe - Respuesta recibida:', response.data);
+      // Log removed
 
       if (response.data.success && response.data.data) {
         const userData = response.data.data;
@@ -67,7 +67,7 @@ export const useMe = () => {
     } catch (err) {
       const errorMessage = ErrorService.getErrorMessage(err);
       setError(errorMessage);
-      console.error('❌ useMe - Error al obtener información del usuario:', err);
+      // Error log removed
       throw err;
     } finally {
       setLoading(false);
@@ -142,7 +142,7 @@ export const useCarnetInfo = () => {
     } catch (err) {
       const errorMessage = ErrorService.getErrorMessage(err);
       setError(errorMessage);
-      console.error('❌ useCarnetInfo - Error al obtener información del carnet:', err);
+      // Error log removed
       throw err;
     } finally {
       setLoading(false);
@@ -218,7 +218,7 @@ export const useParafiscales = () => {
     } catch (err) {
       const errorMessage = ErrorService.getErrorMessage(err);
       setError(errorMessage);
-      console.error('❌ useParafiscales - Error al obtener parafiscales:', err);
+      // Error log removed
       throw err;
     } finally {
       setLoading(false);

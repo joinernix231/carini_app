@@ -28,13 +28,39 @@ export default function EditarEquipo() {
 
     const handleSubmit = async (values: EquipoFormValues) => {
         try {
+            // Función para extraer solo el nombre del archivo de una URL
+            const extractFileName = (url: string | null): string | null => {
+                if (!url) return null;
+                
+                // Si es una URL completa, extraer solo el nombre del archivo
+                if (url.includes('/')) {
+                    const urlParts = url.split('/');
+                    const fileName = urlParts[urlParts.length - 1];
+                    
+                    // Remover la extensión del archivo
+                    if (fileName.includes('.')) {
+                        const nameParts = fileName.split('.');
+                        return nameParts[0];
+                    }
+                    return fileName;
+                }
+                
+                // Si ya es solo un nombre, remover la extensión si existe
+                if (url.includes('.')) {
+                    const nameParts = url.split('.');
+                    return nameParts[0];
+                }
+                
+                return url;
+            };
+
             const payload = {
                 model: values.model.trim(),
                 brand: values.brand.trim(),
                 description: values.description && values.description.trim() ? values.description.trim() : null,
                 type: values.type && values.type.trim() ? values.type.trim() : null,
-                photo: values.photo,
-                PDF: values.PDF,
+                photo: extractFileName(values.photo),
+                PDF: extractFileName(values.PDF),
             };
 
             await updateEquipo(payload);
@@ -54,7 +80,7 @@ export default function EditarEquipo() {
                 },
             ]);
         } catch (error: any) {
-            console.error('Error actualizando equipo:', error);
+            // Error log removed
             showError(error, 'No se pudo actualizar el equipo');
         }
     };

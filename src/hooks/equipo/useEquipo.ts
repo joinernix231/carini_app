@@ -33,7 +33,7 @@ export function useEquipo(id: number) {
 
             setEquipo(data);
         } catch (err: any) {
-            console.error('useEquipo - fetch error', err);
+            // Error log removed
             if (!mountedRef.current) return;
             setError(err.message || 'Error cargando equipo');
         } finally {

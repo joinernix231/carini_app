@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeContainer: {
-    width: 40,
+    width: 60,
     alignItems: 'flex-end',
   },
   headerTitle: { 
@@ -252,9 +252,9 @@ const styles = StyleSheet.create({
   totalBadge: {
     backgroundColor: 'rgba(255,255,255,0.25)',
     borderRadius: 20,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    minWidth: 36,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    minWidth: 56,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: 'rgba(255,255,255,0.3)',

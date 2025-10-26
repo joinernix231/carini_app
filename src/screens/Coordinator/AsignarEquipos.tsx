@@ -50,7 +50,7 @@ export default function AsignarEquipo() {
       });
       setClientes(res.data.data);
     } catch (e) {
-      console.error(e);
+      // Error log removed
     }
   };
 

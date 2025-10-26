@@ -54,7 +54,7 @@ export class MantenimientosService {
 
       return response.data;
     } catch (error: any) {
-      console.error('Error fetching mantenimientos:', error);
+      // Error log removed
       throw error;
     }
   }
@@ -142,7 +142,7 @@ export class MantenimientosService {
         rechazados: allMantenimientos.filter(m => m.status === 'rejected').length,
       };
     } catch (error: any) {
-      console.error('Error fetching mantenimientos stats:', error);
+      // Error log removed
       throw error;
     }
   }

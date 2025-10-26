@@ -27,7 +27,7 @@ export const usePushNotifications = () => {
       
       const success = await pushNotificationService.initialize();
       if (!success) {
-        console.error('❌ Error inicializando notificaciones');
+        // Error log removed
         return false;
       }
 
@@ -40,10 +40,10 @@ export const usePushNotifications = () => {
       }
 
       setIsInitialized(true);
-      console.log('✅ Notificaciones inicializadas correctamente');
+      // Log removed
       return true;
     } catch (error) {
-      console.error('❌ Error inicializando notificaciones:', error);
+      // Error log removed
       return false;
     }
   }, [user, token]);
@@ -53,14 +53,14 @@ export const usePushNotifications = () => {
    */
   const registerToken = useCallback(async () => {
     if (!user?.id || !token) {
-      console.warn('⚠️ No hay usuario o token para registrar');
+      // Warning log removed
       return false;
     }
 
     try {
       const success = await pushNotificationService.registerToken(user.id, token);
       if (success) {
-        console.log('✅ Token registrado correctamente');
+        // Log removed
       }
       return success;
     } catch (error) {
@@ -79,13 +79,13 @@ export const usePushNotifications = () => {
     try {
       const success = await pushNotificationService.unregisterToken(token);
       if (success) {
-        console.log('✅ Token desregistrado correctamente');
+        // Log removed
       } else {
-        console.error('❌ Error desregistrando token');
+        // Error log removed
       }
       return success;
     } catch (error) {
-      console.error('❌ Error desregistrando token:', error);
+      // Error log removed
       return false;
     }
   }, [token]);
@@ -96,9 +96,9 @@ export const usePushNotifications = () => {
   const sendLocalNotification = useCallback(async (title: string, body: string, data?: any) => {
     try {
       await pushNotificationService.sendLocalNotification(title, body, data);
-      console.log('✅ Notificación local enviada');
+      // Log removed
     } catch (error) {
-      console.error('❌ Error enviando notificación local:', error);
+      // Error log removed
     }
   }, []);
 
@@ -111,7 +111,7 @@ export const usePushNotifications = () => {
       console.log('🔔 Notificaciones habilitadas:', enabled);
       return enabled;
     } catch (error) {
-      console.error('❌ Error verificando permisos:', error);
+      // Error log removed
       return false;
     }
   }, []);
@@ -121,7 +121,7 @@ export const usePushNotifications = () => {
    */
   const getUserNotifications = useCallback(async () => {
     if (!token) {
-      console.warn('⚠️ No hay token para obtener notificaciones');
+      // Warning log removed
       return [];
     }
 
@@ -130,7 +130,7 @@ export const usePushNotifications = () => {
       setNotifications(userNotifications);
       return userNotifications;
     } catch (error) {
-      console.error('❌ Error obteniendo notificaciones:', error);
+      // Error log removed
       return [];
     }
   }, [token]);
@@ -140,7 +140,7 @@ export const usePushNotifications = () => {
    */
   const markAsRead = useCallback(async (notificationId: string) => {
     if (!token) {
-      console.warn('⚠️ No hay token para marcar como leída');
+      // Warning log removed
       return false;
     }
 
@@ -157,7 +157,7 @@ export const usePushNotifications = () => {
       }
       return success;
     } catch (error) {
-      console.error('❌ Error marcando como leída:', error);
+      // Error log removed
       return false;
     }
   }, [token]);
@@ -167,7 +167,7 @@ export const usePushNotifications = () => {
    */
   const markAllAsRead = useCallback(async () => {
     if (!token) {
-      console.warn('⚠️ No hay token para marcar todas como leídas');
+      // Warning log removed
       return false;
     }
 
@@ -180,7 +180,7 @@ export const usePushNotifications = () => {
       }
       return success;
     } catch (error) {
-      console.error('❌ Error marcando todas como leídas:', error);
+      // Error log removed
       return false;
     }
   }, [token]);

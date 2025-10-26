@@ -47,7 +47,7 @@ export default function NotificationsScreen() {
       setLoading(true);
       await getUserNotifications();
     } catch (error) {
-      console.error('Error cargando notificaciones:', error);
+      // Error log removed
       Alert.alert('Error', 'No se pudieron cargar las notificaciones');
     } finally {
       setLoading(false);
@@ -64,7 +64,7 @@ export default function NotificationsScreen() {
     try {
       await markAsRead(notificationId);
     } catch (error) {
-      console.error('Error marcando como leída:', error);
+      // Error log removed
       Alert.alert('Error', 'No se pudo marcar la notificación como leída');
     }
   };
@@ -73,7 +73,7 @@ export default function NotificationsScreen() {
     try {
       await markAllAsRead();
     } catch (error) {
-      console.error('Error marcando todas como leídas:', error);
+      // Error log removed
       Alert.alert('Error', 'No se pudieron marcar todas las notificaciones como leídas');
     }
   };

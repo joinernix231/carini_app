@@ -34,10 +34,10 @@ export const AuthService = {
                 password
             });
 
-            console.log('✅ AuthService - Login exitoso');
+            // Log removed
             return response.data;
         } catch (error: any) {
-            console.error('❌ AuthService - Error en login:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error en el login');
         }
     },
@@ -55,9 +55,9 @@ export const AuthService = {
             };
 
             await StorageService.saveCredentials(credentials);
-            console.log('✅ AuthService - Credenciales guardadas');
+            // Log removed
         } catch (error) {
-            console.error('❌ AuthService - Error guardando credenciales:', error);
+            // Error log removed
             throw new Error('Error guardando credenciales');
         }
     },
@@ -78,7 +78,7 @@ export const AuthService = {
                 password
             };
         } catch (error) {
-            console.error('❌ AuthService - Error obteniendo credenciales:', error);
+            // Error log removed
             return null;
         }
     },
@@ -92,17 +92,17 @@ export const AuthService = {
             
             const credentials = await this.getStoredCredentials();
             if (!credentials) {
-                console.log('ℹ️ AuthService - No hay credenciales guardadas');
+                // Log removed
                 return null;
             }
 
             // Intentar login automático
             const loginResponse = await this.login(credentials.email, credentials.password);
             
-            console.log('✅ AuthService - Token renovado automáticamente');
+            // Log removed
             return loginResponse;
         } catch (error) {
-            console.error('❌ AuthService - Error renovando token:', error);
+            // Error log removed
             return null;
         }
     },
@@ -113,9 +113,9 @@ export const AuthService = {
     async clearCredentials(): Promise<void> {
         try {
             await StorageService.clearCredentials();
-            console.log('✅ AuthService - Credenciales limpiadas');
+            // Log removed
         } catch (error) {
-            console.error('❌ AuthService - Error limpiando credenciales:', error);
+            // Error log removed
         }
     }
 };

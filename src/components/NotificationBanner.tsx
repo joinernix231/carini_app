@@ -1,122 +1,130 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Animated,
+  TouchableOpacity,
   Dimensions,
+  useColorScheme,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import * as Notifications from 'expo-notifications';
-
-const { width } = Dimensions.get('window');
+import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../context/AuthContext';
 
 interface NotificationBannerProps {
   onPress?: () => void;
   onDismiss?: () => void;
-  autoHide?: boolean;
-  duration?: number;
 }
 
-const NotificationBanner: React.FC<NotificationBannerProps> = ({
-  onPress,
-  onDismiss,
-  autoHide = true,
-  duration = 5000,
-}) => {
-  const [notification, setNotification] = useState<Notifications.Notification | null>(null);
+const { width } = Dimensions.get('window');
+
+export default function NotificationBanner({ onPress, onDismiss }: NotificationBannerProps) {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const navigation = useNavigation();
+  const { user } = useAuth();
+  
+  const [notification, setNotification] = useState<any>(null);
   const [visible, setVisible] = useState(false);
-  const slideAnim = new Animated.Value(-100);
+  const [slideAnim] = useState(new Animated.Value(-100));
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     // Listener para notificaciones recibidas
     const subscription = Notifications.addNotificationReceivedListener(notification => {
       console.log('📱 Banner - Notificación recibida:', notification);
+      
+      // Evitar duplicados y procesamiento múltiple
+      if (visible || isProcessingRef.current) {
+        return;
+      }
+      
+      isProcessingRef.current = true;
       setNotification(notification);
-      showBanner();
+      setVisible(true);
+      
+      // Animar entrada más rápido
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 200, // Más rápido
+        useNativeDriver: true,
+      }).start();
+
+      // Auto-dismiss después de 4 segundos
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
+        dismissBanner();
+      }, 4000);
     });
 
-    return () => subscription.remove();
-  }, []);
+    return () => {
+      subscription.remove();
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [slideAnim, visible]);
 
-  const showBanner = () => {
-    setVisible(true);
-    Animated.timing(slideAnim, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-
-    if (autoHide) {
-      setTimeout(() => {
-        hideBanner();
-      }, duration);
+  const dismissBanner = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
     }
-  };
-
-  const hideBanner = () => {
+    
     Animated.timing(slideAnim, {
       toValue: -100,
-      duration: 300,
+      duration: 200, // Más rápido
       useNativeDriver: true,
     }).start(() => {
       setVisible(false);
       setNotification(null);
+      isProcessingRef.current = false;
+      onDismiss?.();
     });
   };
 
   const handlePress = () => {
-    if (onPress) {
-      onPress();
+    // Navegar según el tipo de notificación y el rol del usuario
+    if (notification?.request?.content?.data) {
+      const data = notification.request.content.data;
+      
+      if (data.type === 'maintenance_created' && data.maintenance_id) {
+        // Navegar al detalle del mantenimiento según el rol
+        const mantenimientoId = data.maintenance_id;
+        
+        if (user?.role === 'cliente') {
+          navigation.navigate('DetalleMantenimiento' as never, { 
+            mantenimientoId: mantenimientoId 
+          } as never);
+        } else if (user?.role === 'coordinador') {
+          navigation.navigate('DetalleMantenimiento' as never, { 
+            mantenimientoId: mantenimientoId 
+          } as never);
+        } else if (user?.role === 'tecnico') {
+          navigation.navigate('DetalleMantenimiento' as never, { 
+            mantenimientoId: mantenimientoId 
+          } as never);
+        }
+        
+        console.log('🧭 Navegando al mantenimiento:', mantenimientoId, 'para rol:', user?.role);
+      }
     }
-    hideBanner();
-  };
-
-  const handleDismiss = () => {
-    if (onDismiss) {
-      onDismiss();
-    }
-    hideBanner();
+    
+    onPress?.();
+    dismissBanner();
   };
 
   if (!visible || !notification) {
     return null;
   }
 
-  const getNotificationIcon = (type?: string) => {
-    switch (type) {
-      case 'maintenance':
-        return 'build';
-      case 'assignment':
-        return 'assignment';
-      case 'alert':
-        return 'warning';
-      case 'success':
-        return 'check-circle';
-      default:
-        return 'notifications';
-    }
-  };
-
-  const getNotificationColor = (type?: string) => {
-    switch (type) {
-      case 'maintenance':
-        return '#FF7043';
-      case 'assignment':
-        return '#2196F3';
-      case 'alert':
-        return '#F44336';
-      case 'success':
-        return '#4CAF50';
-      default:
-        return '#0077b6';
-    }
-  };
-
-  const notificationType = notification.request.content.data?.type;
-  const icon = getNotificationIcon(notificationType);
-  const color = getNotificationColor(notificationType);
+  const { title, body, data } = notification.request.content;
 
   return (
     <Animated.View
@@ -124,93 +132,105 @@ const NotificationBanner: React.FC<NotificationBannerProps> = ({
         styles.container,
         {
           transform: [{ translateY: slideAnim }],
+          backgroundColor: isDark ? '#1F2937' : '#ffffff',
+          borderColor: isDark ? '#374151' : '#E5E7EB',
         },
       ]}
     >
       <TouchableOpacity
-        style={[styles.banner, { borderLeftColor: color }]}
+        style={styles.content}
         onPress={handlePress}
         activeOpacity={0.8}
       >
-        <View style={styles.content}>
-          <View style={[styles.iconContainer, { backgroundColor: color }]}>
-            <MaterialIcons name={icon as any} size={24} color="#fff" />
-          </View>
-          
-          <View style={styles.textContainer}>
-            <Text style={styles.title} numberOfLines={1}>
-              {notification.request.content.title}
-            </Text>
-            <Text style={styles.body} numberOfLines={2}>
-              {notification.request.content.body}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.dismissButton}
-            onPress={handleDismiss}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <MaterialIcons name="close" size={20} color="#666" />
-          </TouchableOpacity>
+        <View style={styles.iconContainer}>
+          <Ionicons
+            name="notifications"
+            size={24}
+            color={isDark ? '#3B82F6' : '#3B82F6'}
+          />
         </View>
+        
+        <View style={styles.textContainer}>
+          <Text
+            style={[styles.title, isDark && { color: '#ffffff' }]}
+            numberOfLines={1}
+          >
+            {title}
+          </Text>
+          <Text
+            style={[styles.body, isDark && { color: '#D1D5DB' }]}
+            numberOfLines={2}
+          >
+            {body}
+          </Text>
+        </View>
+        
+        <TouchableOpacity
+          style={styles.dismissButton}
+          onPress={dismissBanner}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name="close"
+            size={20}
+            color={isDark ? '#9CA3AF' : '#6B7280'}
+          />
+        </TouchableOpacity>
       </TouchableOpacity>
     </Animated.View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    top: 50,
+    top: 0,
     left: 0,
     right: 0,
     zIndex: 1000,
-    paddingHorizontal: 16,
-  },
-  banner: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    borderBottomWidth: 1,
     elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
   },
   content: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingTop: 50, // Espacio para la barra de estado
   },
   iconContainer: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: '#EFF6FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   textContainer: {
     flex: 1,
+    marginRight: 8,
   },
   title: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#000',
+    color: '#1F2937',
     marginBottom: 2,
   },
   body: {
     fontSize: 14,
-    color: '#666',
+    color: '#6B7280',
     lineHeight: 18,
   },
   dismissButton: {
-    padding: 4,
-    marginLeft: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
-
-export default NotificationBanner;
-
-

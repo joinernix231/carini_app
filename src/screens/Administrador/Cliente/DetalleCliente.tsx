@@ -74,7 +74,7 @@ export default function DetalleCliente() {
                             Alert.alert('Éxito', 'Cliente eliminado', [{ text: 'OK', onPress: () => navigation.navigate('ClienteList') }]);
                         } catch (err) {
                             // El error se maneja automáticamente por el sistema global
-                            console.error('Error eliminando cliente:', err);
+                            // Error log removed
                         }
                     },
                 },
@@ -99,7 +99,7 @@ export default function DetalleCliente() {
                             Alert.alert('Éxito', `Estado cambiado a ${next === 'active' ? 'Activo' : 'Inactivo'}`);
                         } catch (err) {
                             // El error se maneja automáticamente por el sistema global
-                            console.error('Error cambiando estado:', err);
+                            // Error log removed
                         }
                     },
                 },
@@ -172,14 +172,7 @@ export default function DetalleCliente() {
                         </Text>
                     </View>
                 </View>
-
-                <View style={styles.headerActions}>
-                    <TouchableOpacity onPress={() => {
-                        Alert.alert('Compartir', `Cliente: ${displayName}\nEmail: ${displayEmail}`);
-                    }} accessibilityLabel="Compartir cliente">
-                        <MaterialIcons name="share" size={22} color="#ffffff" />
-                    </TouchableOpacity>
-                </View>
+                
             </View>
 
             <ScrollView

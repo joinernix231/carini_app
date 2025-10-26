@@ -67,7 +67,7 @@ export default function DetalleMantenimiento() {
       console.log('🔧 Spare parts:', data.spare_parts);
       setMantenimiento(data);
     } catch (error) {
-      console.error('Error al obtener mantenimiento:', error);
+      // Error log removed
       Alert.alert('Error', 'No se pudo cargar la información del mantenimiento.');
     } finally {
       setLoading(false);
@@ -129,7 +129,7 @@ export default function DetalleMantenimiento() {
 
       await Share.share({ message });
     } catch (error) {
-      console.error('Error al compartir:', error);
+      // Error log removed
     }
   };
 
@@ -153,7 +153,7 @@ export default function DetalleMantenimiento() {
         [{ text: 'OK' }]
       );
     } catch (error: any) {
-      console.error('Error al subir soporte de pago:', error);
+      // Error log removed
       showError(error, 'Error al subir el soporte de pago');
     } finally {
       setUploadingPaymentSupport(false);

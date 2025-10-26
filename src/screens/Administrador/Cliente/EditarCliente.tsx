@@ -90,7 +90,7 @@ export default function EditarCliente() {
                 { cancelable: false }
             );
         } catch (error: any) {
-            console.error('Error actualizando cliente:', error);
+            // Error log removed
             showError(error, 'No se pudo actualizar el cliente. Inténtalo nuevamente.');
         } finally {
             setIsSubmitting(false);

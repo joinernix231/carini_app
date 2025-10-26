@@ -37,7 +37,7 @@ export const ErrorProvider = ({ children }: { children: React.ReactNode }) => {
                 // Redirigir a login si es necesario
                 if (ErrorService.shouldRedirectToLogin(errorType)) {
                   // Aquí podrías implementar la navegación al login
-                  console.log('Redirigir a login');
+                  // Log removed
                 }
               },
             },
@@ -55,7 +55,7 @@ export const ErrorProvider = ({ children }: { children: React.ReactNode }) => {
       setCurrentError(errorMessage);
       
     } catch (err) {
-      console.error('Error al procesar error:', err);
+      // Error log removed
       showToast('Error inesperado', 'error');
     }
   }, []);

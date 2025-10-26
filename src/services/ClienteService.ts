@@ -115,32 +115,16 @@ export interface ClienteMantenimiento {
 
 // Métodos específicos para el dashboard del cliente
 export class ClienteDashboardService {
-    /**
-     * Obtiene las estadísticas del dashboard del cliente
-     */
-    static async getDashboardStats(token: string): Promise<ClienteDashboardStats> {
-        try {
-            console.log('🔍 ClienteDashboardService - Obteniendo estadísticas del dashboard');
-            const response = await API.get('/api/cliente/dashboard/stats', authHeaders(token));
-            console.log('✅ ClienteDashboardService - Estadísticas obtenidas:', response.data);
-            return response.data;
-        } catch (error: any) {
-            console.error('❌ ClienteDashboardService - Error obteniendo estadísticas:', error);
-            throw new Error(error.response?.data?.message || 'Error obteniendo estadísticas del dashboard');
-        }
-    }
 
     /**
      * Obtiene los equipos del cliente
      */
     static async getEquipos(token: string): Promise<ClienteEquipo[]> {
         try {
-            console.log('🔍 ClienteDashboardService - Obteniendo equipos del cliente');
             const response = await API.get('/api/cliente/equipos', authHeaders(token));
-            console.log('✅ ClienteDashboardService - Equipos obtenidos:', response.data);
             return response.data;
         } catch (error: any) {
-            console.error('❌ ClienteDashboardService - Error obteniendo equipos:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo equipos del cliente');
         }
     }
@@ -152,28 +136,14 @@ export class ClienteDashboardService {
         try {
             console.log('🔍 ClienteDashboardService - Obteniendo mantenimientos del cliente');
             const response = await API.get('/api/cliente/mantenimientos', authHeaders(token));
-            console.log('✅ ClienteDashboardService - Mantenimientos obtenidos:', response.data);
+            // Log removed
             return response.data;
         } catch (error: any) {
-            console.error('❌ ClienteDashboardService - Error obteniendo mantenimientos:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo mantenimientos del cliente');
         }
     }
 
-    /**
-     * Obtiene el historial de mantenimientos del cliente
-     */
-    static async getHistorialMantenimientos(token: string, limit: number = 10): Promise<ClienteMantenimiento[]> {
-        try {
-            console.log('🔍 ClienteDashboardService - Obteniendo historial de mantenimientos');
-            const response = await API.get(`/api/cliente/mantenimientos/historial?limit=${limit}`, authHeaders(token));
-            console.log('✅ ClienteDashboardService - Historial obtenido:', response.data);
-            return response.data;
-        } catch (error: any) {
-            console.error('❌ ClienteDashboardService - Error obteniendo historial:', error);
-            throw new Error(error.response?.data?.message || 'Error obteniendo historial de mantenimientos');
-        }
-    }
 
     /**
      * Obtiene notificaciones del cliente
@@ -182,10 +152,10 @@ export class ClienteDashboardService {
         try {
             console.log('🔍 ClienteDashboardService - Obteniendo notificaciones');
             const response = await API.get('/api/cliente/notificaciones', authHeaders(token));
-            console.log('✅ ClienteDashboardService - Notificaciones obtenidas:', response.data);
+            // Log removed
             return response.data;
         } catch (error: any) {
-            console.error('❌ ClienteDashboardService - Error obteniendo notificaciones:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo notificaciones');
         }
     }

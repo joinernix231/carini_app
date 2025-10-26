@@ -62,14 +62,14 @@ export default function GestionarDocumentos() {
             });
 
             if (response.data.success) {
-                console.log(`✅ ${field} actualizado correctamente`);
+                // Log removed
                 // Refrescar datos
                 await refetch();
             } else {
                 throw new Error(response.data.message || 'Error actualizando datos');
             }
         } catch (error: any) {
-            console.error(`❌ Error actualizando ${field}:`, error);
+            // Error log removed
             Alert.alert('Error', `No se pudo actualizar ${field}. Inténtalo más tarde.`);
         } finally {
             setUpdating(false);

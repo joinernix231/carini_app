@@ -97,7 +97,7 @@ export default function CrearCliente() {
                 { cancelable: false }
             );
         } catch (error: any) {
-            console.error('Error creando cliente:', error);
+            // Error log removed
             showError(error, 'No se pudo crear el cliente. Inténtalo nuevamente.');
         } finally {
             setIsSubmitting(false);

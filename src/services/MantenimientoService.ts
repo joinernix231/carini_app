@@ -65,7 +65,7 @@ export const getFechasDisponiblesTecnicos = async (token: string) => {
     const response = await API.get('/api/availableDates', {
         headers: { Authorization: `Bearer ${token}` },
     });
-    console.log(response.data);
+    // Log removed
     return response.data;
 };
 
@@ -73,7 +73,7 @@ export const getMantenimientosSinAsignar = async (token: string) => {
   const response = await API.get('/api/maintenancesNotAssigned', {
       headers: { Authorization: `Bearer ${token}` },
   });
-  console.log(response.data);
+  // Log removed
   return response.data;
 };
 

@@ -4,7 +4,7 @@ import { ApiError } from '../types/ErrorTypes';
 import { logger } from '../utils/logger';
 
 const API = axios.create({
-     baseURL: 'http://192.168.2.46:8600/',
+     baseURL: 'http://192.168.2.3:8500/',
     timeout: 5000,
 });
 

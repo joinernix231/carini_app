@@ -77,7 +77,7 @@ export function useTecnico(
             // el caller debe decidir navegar atrás
             return true;
         } catch (err: any) {
-            console.error('removeTecnico error', err);
+            // Error log removed
             showError(err, 'Error al eliminar el técnico');
             const msg = err?.response?.data?.message || err.message || 'Error eliminando técnico';
             setError(msg);

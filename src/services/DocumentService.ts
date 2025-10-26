@@ -53,7 +53,7 @@ export class DocumentService {
         url: response.data.url || response.data.data?.url,
       };
     } catch (error: any) {
-      console.error('Error uploading document:', error);
+      // Error log removed
       return {
         success: false,
         message: error?.response?.data?.message || 'Error al subir el documento',
@@ -93,7 +93,7 @@ export class DocumentService {
         url: response.data.url || response.data.data?.url,
       };
     } catch (error: any) {
-      console.error('Error uploading image:', error);
+      // Error log removed
       return {
         success: false,
         message: error?.response?.data?.message || 'Error al subir la imagen',

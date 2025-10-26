@@ -26,7 +26,7 @@ export function useMantenimientosAsignados() {
       const data = await getMantenimientosAsignadosCoordinador(token);
       setMantenimientos(data);
     } catch (err: any) {
-      console.error('Error al cargar mantenimientos asignados:', err);
+      // Error log removed
       showError(err, 'Error al cargar los mantenimientos asignados');
       setError(err?.response?.data?.message || err.message || 'Error al cargar mantenimientos');
       setMantenimientos([]);

@@ -69,7 +69,7 @@ export function useCoordinadores({
                 setPagination(CoordinadorService.mapToPaginationData(resp));
                 setPage(pageToFetch);
             } catch (err: any) {
-                console.error('useCoordinadores - fetch error', err);
+                // Error log removed
                 if (!mountedRef.current) return;
                 
                 // Usar el sistema de errores global
@@ -134,7 +134,7 @@ export function useCoordinadores({
                 await fetchCoordinadores(page, false);
                 return true;
             } catch (err: any) {
-                console.error('removeCoordinador error', err);
+                // Error log removed
                 showError(err, 'Error al eliminar el coordinador');
                 setError(err.message || 'Error eliminando coordinador'); // <- Corregido mensaje
                 return false;

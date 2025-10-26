@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
     View,
     Text,
@@ -12,13 +12,16 @@ import {
     RefreshControl,
     Image,
     Linking,
+    Modal,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../../components/BackButton';
 import { useEquipo } from '../../../hooks/equipo/useEquipo';
 import { Equipo } from '../../../types/equipo/equipo';
+import { useAuth } from '../../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
@@ -46,6 +49,8 @@ export default function DetalleEquipo() {
         changeStatus,
         removeEquipo,
     } = useEquipo(id);
+    const [imageModalVisible, setImageModalVisible] = useState(false);
+    const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
     const displayName = equipo?.serial ?? 'Equipo';
     const displayInfo = equipo ? `${equipo.brand} ${equipo.model}` : '-';
@@ -91,22 +96,7 @@ export default function DetalleEquipo() {
             Alert.alert('Error', 'No hay documento PDF disponible para este equipo');
             return;
         }
-        
-        Alert.alert(
-            'Ver Documento PDF',
-            '¿Deseas abrir el documento PDF en el navegador?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Abrir',
-                    onPress: () => {
-                        Linking.openURL(equipo.PDF!).catch(() => {
-                            Alert.alert('Error', 'No se pudo abrir el documento PDF');
-                        });
-                    },
-                },
-            ]
-        );
+        setPdfModalVisible(true);
     }, [equipo?.PDF]);
 
     const handleViewPhoto = useCallback(() => {
@@ -114,21 +104,7 @@ export default function DetalleEquipo() {
             Alert.alert('Error', 'No hay imagen disponible para este equipo');
             return;
         }
-        
-        Alert.alert(
-            'Ver Imagen',
-            '¿Deseas ver la imagen en pantalla completa?',
-            [
-                { text: 'Cancelar', style: 'cancel' },
-                {
-                    text: 'Ver',
-                    onPress: () => {
-                        // Aquí podrías implementar un modal de imagen a pantalla completa
-                        Alert.alert('Imagen', `URL de la imagen: ${equipo.photo}`);
-                    },
-                },
-            ]
-        );
+        setImageModalVisible(true);
     }, [equipo?.photo]);
 
     if (loading) {
@@ -204,7 +180,12 @@ export default function DetalleEquipo() {
                         <Text style={styles.sectionTitle}>Imagen del equipo</Text>
                         <View style={styles.card}>
                             <TouchableOpacity onPress={handleViewPhoto} style={styles.imageContainer}>
-                                <Image source={{ uri: equipo.photo }} style={styles.equipoImage} />
+                                <Image 
+                                    source={{ uri: equipo.photo }} 
+                                    style={styles.equipoImage}
+                                    onError={() => {}}
+                                    onLoad={() => {}}
+                                />
                                 <View style={styles.imageOverlay}>
                                     <MaterialIcons name="zoom-in" size={24} color="#fff" />
                                     <Text style={styles.imageOverlayText}>Toca para ampliar</Text>
@@ -249,6 +230,90 @@ export default function DetalleEquipo() {
                     </View>
                 </View>
             </ScrollView>
+
+            {/* Modal para imagen ampliada */}
+            <Modal
+                visible={imageModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setImageModalVisible(false)}
+            >
+                <View style={styles.imageModalContainer}>
+                    <TouchableOpacity 
+                        style={styles.imageModalOverlay}
+                        activeOpacity={1}
+                        onPress={() => setImageModalVisible(false)}
+                    >
+                        <View style={styles.imageModalContent}>
+                            <TouchableOpacity 
+                                style={styles.imageModalCloseButton}
+                                onPress={() => setImageModalVisible(false)}
+                            >
+                                <Ionicons name="close" size={24} color="#fff" />
+                            </TouchableOpacity>
+                            <Image 
+                                source={{ uri: equipo?.photo || undefined }} 
+                                style={styles.imageModalImage}
+                                resizeMode="contain"
+                            />
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+
+            {/* Modal para PDF */}
+            <Modal
+                visible={pdfModalVisible}
+                animationType="slide"
+                onRequestClose={() => setPdfModalVisible(false)}
+            >
+                <View style={styles.pdfModalContainer}>
+                    <View style={styles.pdfModalHeader}>
+                        <TouchableOpacity 
+                            style={styles.pdfModalCloseButton}
+                            onPress={() => setPdfModalVisible(false)}
+                        >
+                            <Ionicons name="close" size={24} color="#fff" />
+                        </TouchableOpacity>
+                        <Text style={styles.pdfModalTitle}>Manual del Equipo</Text>
+                    </View>
+                    <View style={styles.pdfViewerContainer}>
+                        {equipo?.PDF ? (
+                            <WebView
+                                source={{ 
+                                    uri: `https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(equipo.PDF)}`
+                                }}
+                                style={styles.pdfViewer}
+                                onLoadStart={() => {}}
+                                onLoadEnd={() => {}}
+                                onError={(error) => {
+                                    Alert.alert('Error', 'No se pudo cargar el PDF. Verifica tu conexión.');
+                                }}
+                                startInLoadingState={true}
+                                renderLoading={() => (
+                                    <View style={styles.loadingContainer}>
+                                        <ActivityIndicator size="large" color="#0EA5E9" />
+                                        <Text style={styles.loadingText}>Cargando PDF...</Text>
+                                    </View>
+                                )}
+                                javaScriptEnabled={true}
+                                domStorageEnabled={true}
+                                allowsInlineMediaPlayback={true}
+                                mediaPlaybackRequiresUserAction={false}
+                                onShouldStartLoadWithRequest={(request) => {
+                                    // Solo permitir URLs de Google Docs Viewer
+                                    const isGoogleDocs = request.url.includes('docs.google.com');
+                                    return isGoogleDocs;
+                                }}
+                            />
+                        ) : (
+                            <View style={styles.loadingContainer}>
+                                <Text style={styles.loadingText}>No hay PDF disponible</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -370,4 +435,80 @@ const styles = StyleSheet.create({
     errorText: { color: '#6B7280', marginTop: 8, textAlign: 'center' },
     retryButton: { marginTop: 16, backgroundColor: '#0EA5E9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
     retryButtonText: { color: '#fff', fontWeight: '700' },
+
+    // Modal de imagen
+    imageModalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageModalOverlay: {
+        flex: 1,
+        width: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageModalContent: {
+        width: '90%',
+        height: '80%',
+        position: 'relative',
+    },
+    imageModalCloseButton: {
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        zIndex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    imageModalImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 12,
+    },
+
+    // Modal de PDF
+    pdfModalContainer: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    pdfModalHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        backgroundColor: '#0EA5E9',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+    },
+    pdfModalCloseButton: {
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 20,
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    pdfModalTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#fff',
+        flex: 1,
+        textAlign: 'center',
+        marginRight: 40, // Para centrar considerando el botón de cerrar
+    },
+    pdfViewerContainer: {
+        flex: 1,
+        backgroundColor: '#F8F9FA',
+    },
+    pdfViewer: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
 });

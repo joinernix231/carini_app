@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const isValid = await UserService.validateToken(storedToken);
         
         if (isValid) {
-          console.log('✅ AuthContext - Token válido, obteniendo datos actualizados...');
+          // Log removed
           setToken(storedToken);
           API.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
           
@@ -85,13 +85,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               // Guardar datos actualizados
               await StorageService.saveUserData(updatedUser as StoredUserData);
               setUser(updatedUser);
-              console.log('✅ AuthContext - Datos actualizados obtenidos del /api/me');
+              // Log removed
             } else {
               // Si no se pueden obtener datos actualizados, usar los guardados
               setUser(storedUserData as User);
             }
           } catch (meError) {
-            console.log('⚠️ AuthContext - Error obteniendo datos de /api/me, usando datos guardados');
+            // Log removed
             setUser(storedUserData as User);
           }
         } else {
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           const refreshResult = await AuthService.refreshToken();
           
           if (refreshResult?.success && refreshResult.data) {
-            console.log('✅ AuthContext - Token renovado automáticamente');
+            // Log removed
             const { token: newToken, user: newUser } = refreshResult.data;
             
             // Guardar nuevos datos
@@ -112,15 +112,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(newUser as User);
             API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
           } else {
-            console.log('❌ AuthContext - No se pudo renovar token, limpiando datos');
+            // Log removed
             await StorageService.clearAuthData();
           }
         }
       } else {
-        console.log('ℹ️ AuthContext - No hay datos de autenticación guardados');
+        // Log removed
       }
     } catch (error) {
-      console.error('❌ AuthContext - Error inicializando autenticación:', error);
+      // Error log removed
       // En caso de error, limpiar datos
       await StorageService.clearAuthData();
     } finally {
@@ -147,10 +147,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Configurar token en todas las peticiones de Axios
       API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
 
-      console.log('✅ AuthContext - Login exitoso');
+      // Log removed
       return userData;
     } catch (error) {
-      console.error('❌ AuthContext - Error en login:', error);
+      // Error log removed
       showError(error);
       throw error;
     }
@@ -168,9 +168,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setToken(null);
       delete API.defaults.headers.common['Authorization'];
       
-      console.log('✅ AuthContext - Sesión cerrada');
+      // Log removed
     } catch (error) {
-      console.error('❌ AuthContext - Error cerrando sesión:', error);
+      // Error log removed
       // Aún así limpiar el estado local
       setUser(null);
       setToken(null);
@@ -189,9 +189,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       await StorageService.saveUserData(userProfile as StoredUserData);
       setUser(userProfile as User);
       
-      console.log('✅ AuthContext - Datos del usuario actualizados');
+      // Log removed
     } catch (error) {
-      console.error('❌ AuthContext - Error actualizando datos del usuario:', error);
+      // Error log removed
       // Si hay error, podría ser que el token expiró
       await logout();
     }
@@ -224,13 +224,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Guardar datos actualizados
         await StorageService.saveUserData(updatedUser as StoredUserData);
         setUser(updatedUser);
-        console.log('✅ AuthContext - Política aceptada y datos actualizados');
+        // Log removed
       } else {
         // Fallback: actualizar solo el campo policy_accepted
         setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
       }
     } catch (error) {
-      console.error('❌ AuthContext - Error actualizando datos después de aceptar política:', error);
+      // Error log removed
       // Fallback: actualizar solo el campo policy_accepted
       setUser((prev) => prev ? { ...prev, policy_accepted: true } : prev);
     }

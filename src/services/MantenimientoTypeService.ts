@@ -5,7 +5,7 @@ export const getTiposMantenimiento = async (token: string) => {
   const response = await API.get('/api/maintenanceTypes', {
     headers: { Authorization: `Bearer ${token}` },
   });
-  console.log(response.data.data);
+  // Log removed
   return response.data.data;
 };
 

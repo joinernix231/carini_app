@@ -42,7 +42,7 @@ export const useClienteEquipos = () => {
       
       setEquipos(listaEquipos);
     } catch (error) {
-      console.error('Error cargando equipos:', error);
+      // Error log removed
       showError('Error cargando equipos');
     } finally {
       setLoading(false);
@@ -54,7 +54,7 @@ export const useClienteEquipos = () => {
       setRefreshing(true);
       await loadEquipos();
     } catch (error) {
-      console.error('Error refrescando equipos:', error);
+      // Error log removed
     } finally {
       setRefreshing(false);
     }

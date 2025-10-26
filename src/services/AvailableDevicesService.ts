@@ -27,7 +27,7 @@ export const AvailableDevicesService = {
             
             // Asegurar que devices es un array
             if (!Array.isArray(devices)) {
-                console.error('❌ AvailableDevicesService - devices is not an array:', devices);
+                // Error log removed
                 return [];
             }
             
@@ -39,7 +39,7 @@ export const AvailableDevicesService = {
             
             return mappedDevices;
         } catch (error: any) {
-            console.error('❌ AvailableDevicesService - Error obteniendo dispositivos:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo dispositivos disponibles');
         }
     }

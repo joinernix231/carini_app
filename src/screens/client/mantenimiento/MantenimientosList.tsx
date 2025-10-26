@@ -132,11 +132,11 @@ export default function MantenimientosList() {
 
         setMantenimientos(formattedData);
       } else {
-        console.warn('Datos no válidos recibidos:', data);
+        // Warning log removed
         setMantenimientos([]);
       }
     } catch (error) {
-      console.error('Error al cargar mantenimientos:', error);
+      // Error log removed
       showError(error, 'Error al cargar los mantenimientos');
       setMantenimientos([]);
     } finally {
@@ -165,7 +165,7 @@ export default function MantenimientosList() {
 
                 Alert.alert('Éxito', 'Mantenimiento eliminado correctamente');
               } catch (error) {
-                console.error('Error al eliminar:', error);
+                // Error log removed
                 showError(error, 'Error al eliminar el mantenimiento');
               }
             },
@@ -179,7 +179,7 @@ export default function MantenimientosList() {
     try {
       await fetchMantenimientos(false);
     } catch (error) {
-      console.error('Error al actualizar:', error);
+      // Error log removed
     } finally {
       setRefreshing(false);
     }

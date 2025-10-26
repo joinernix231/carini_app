@@ -10,7 +10,7 @@ export function useSmartNavigation() {
       console.log(`🧭 Navegando a: ${screen}`, params);
       (navigation as any).navigate(screen, params);
     } catch (error) {
-      console.error('Error en navegación:', error);
+      // Error log removed
     }
   }, [navigation]);
 
@@ -20,7 +20,7 @@ export function useSmartNavigation() {
       console.log(`🔄 Reemplazando navegación a: ${screen}`, params);
       (navigation as any).replace(screen, params);
     } catch (error) {
-      console.error('Error en navegación con reemplazo:', error);
+      // Error log removed
     }
   }, [navigation]);
 
@@ -33,7 +33,7 @@ export function useSmartNavigation() {
         routes: [{ name: screen, params }],
       });
     } catch (error) {
-      console.error('Error en navegación con reset:', error);
+      // Error log removed
     }
   }, [navigation]);
 
@@ -41,23 +41,23 @@ export function useSmartNavigation() {
   const goBack = useCallback(() => {
     try {
       if ((navigation as any).canGoBack()) {
-        console.log('⬅️ Volviendo a pantalla anterior');
+        // Log removed
         (navigation as any).goBack();
       } else {
-        console.log('⚠️ No hay pantalla anterior a la que volver');
+        // Log removed
       }
     } catch (error) {
-      console.error('Error al volver:', error);
+      // Error log removed
     }
   }, [navigation]);
 
   // Volver a una pantalla específica
   const goBackTo = useCallback((screen: string) => {
     try {
-      console.log(`⬅️ Volviendo a: ${screen}`);
+      // Log removed
       (navigation as any).navigate(screen);
     } catch (error) {
-      console.error('Error al volver a pantalla específica:', error);
+      // Error log removed
       goBack();
     }
   }, [navigation, goBack]);

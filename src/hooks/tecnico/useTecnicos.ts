@@ -69,7 +69,7 @@ export function useTecnicos({
                 setPagination(TecnicoService.mapToPaginationData(resp));
                 setPage(pageToFetch);
             } catch (err: any) {
-                console.error('useTecnicos - fetch error', err);
+                // Error log removed
                 if (!mountedRef.current) return;
                 showError(err, 'Error al cargar la lista de técnicos');
                 setTecnicos([]);
@@ -132,7 +132,7 @@ export function useTecnicos({
                 await fetchTecnicos(page, false);
                 return true;
             } catch (err: any) {
-                console.error('removeTecnico error', err);
+                // Error log removed
                 showError(err, 'Error al eliminar el técnico');
                 setError(err.message || 'Error eliminando técnico');
                 return false;

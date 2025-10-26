@@ -57,7 +57,7 @@ export default function CrearEquipo() {
                 },
             ]);
         } catch (error: any) {
-            console.error('Error creando equipo:', error);
+            // Error log removed
             showError(error, 'No se pudo crear el equipo');
         }
     };

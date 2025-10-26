@@ -2,6 +2,8 @@ import { Stack } from 'expo-router';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
+import { View } from 'react-native';
+import NotificationBanner from '../src/components/NotificationBanner';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,5 +26,10 @@ export default function RootLayout() {
     return null;
   }
 
-  return <Stack />;
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack />
+      <NotificationBanner />
+    </View>
+  );
 } 

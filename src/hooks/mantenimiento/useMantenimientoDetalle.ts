@@ -71,7 +71,7 @@ export function useMantenimientoDetalle(mantenimientoId: number) {
       const data = await getMantenimientoById(mantenimientoId, token);
       setMantenimiento(data);
     } catch (err: any) {
-      console.error('Error al cargar mantenimiento:', err);
+      // Error log removed
       showError(err, 'Error al cargar los detalles del mantenimiento');
       setError(err?.response?.data?.message || err.message || 'Error al cargar mantenimiento');
       setMantenimiento(null);
@@ -99,13 +99,13 @@ export function useMantenimientoDetalle(mantenimientoId: number) {
     try {
       console.log('🔍 Verificando pago para mantenimiento:', mantenimientoId);
       const response = await verifyMaintenancePayment(mantenimientoId, token);
-      console.log('✅ Respuesta de verificación:', response);
+      // Log removed
       
       // Refrescar los datos después de verificar
       await fetchMantenimiento();
       return { success: true, message: 'El pago ha sido verificado exitosamente.' };
     } catch (error: any) {
-      console.error('❌ Error verifying payment:', error);
+      // Error log removed
       showError(error, 'Error al verificar el pago');
       throw error;
     }

@@ -59,7 +59,7 @@ export default function ClienteDevicesScreen() {
             const clientDevices = await ClientDeviceService.getClientDevices(clientId, token);
             setDevices(clientDevices);
         } catch (err: any) {
-            console.error('Error cargando dispositivos:', err);
+            // Error log removed
             setError(err.message);
             showError(err);
         } finally {
@@ -99,7 +99,7 @@ export default function ClienteDevicesScreen() {
             setShowAssociateModal(false);
             await loadClientDevices();
         } catch (err: any) {
-            console.error('Error asociando dispositivo:', err);
+            // Error log removed
             showError(err);
             throw err; // Re-throw para que el modal maneje el error
         } finally {
@@ -123,7 +123,7 @@ export default function ClienteDevicesScreen() {
                             Alert.alert('Éxito', 'Dispositivo desasociado correctamente');
                             await loadClientDevices();
                         } catch (err: any) {
-                            console.error('Error desasociando dispositivo:', err);
+                            // Error log removed
                             showError(err);
                         }
                     }

@@ -150,7 +150,7 @@ export default function MisEquipos() {
             setEquipos(data);
             setFilteredEquipos(data);
         } catch (error: any) {
-            console.error('Error fetching equipos', error);
+            // Error log removed
             Alert.alert('Error', 'No se pudieron cargar los equipos.');
             setEquipos([]);
             setFilteredEquipos([]);

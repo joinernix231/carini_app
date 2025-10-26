@@ -19,10 +19,10 @@ export const ClientDeviceService = {
             // Los dispositivos vienen en el detalle del cliente
             const clientDevices = response.data.data.client_devices || [];
             
-            console.log('✅ ClientDeviceService - Dispositivos obtenidos:', clientDevices.length);
+            // Log removed
             return clientDevices;
         } catch (error: any) {
-            console.error('❌ ClientDeviceService - Error obteniendo dispositivos:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo dispositivos del cliente');
         }
     },
@@ -39,15 +39,15 @@ export const ClientDeviceService = {
             console.log('🔍 ClientDeviceService - Asociando dispositivo:', payload);
             
             const response = await API.post(
-                `/api/clients/${clientId}/devices`, 
+                `/api/admin/clients/${clientId}/devices`, 
                 payload, 
                 authHeaders(token)
             );
             
-            console.log('✅ ClientDeviceService - Dispositivo asociado exitosamente');
+            // Log removed
             return response.data;
         } catch (error: any) {
-            console.error('❌ ClientDeviceService - Error asociando dispositivo:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error asociando dispositivo al cliente');
         }
     },
@@ -64,14 +64,14 @@ export const ClientDeviceService = {
             console.log('🔍 ClientDeviceService - Desasociando dispositivo:', deviceId);
             
             const response = await API.delete(
-                `/api/clients/${clientId}/devices/${deviceId}`, 
+                `/api/admin/clients/${clientId}/devices/${deviceId}`, 
                 authHeaders(token)
             );
             
-            console.log('✅ ClientDeviceService - Dispositivo desasociado exitosamente');
+            // Log removed
             return response.data;
         } catch (error: any) {
-            console.error('❌ ClientDeviceService - Error desasociando dispositivo:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error desasociando dispositivo del cliente');
         }
     },
@@ -94,10 +94,10 @@ export const ClientDeviceService = {
                 authHeaders(token)
             );
             
-            console.log('✅ ClientDeviceService - Dispositivo actualizado exitosamente');
+            // Log removed
             return response.data.data;
         } catch (error: any) {
-            console.error('❌ ClientDeviceService - Error actualizando dispositivo:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error actualizando dispositivo del cliente');
         }
     }

@@ -11,8 +11,10 @@ import {
   Linking,
   StatusBar,
   Dimensions,
+  Modal,
 } from 'react-native';
-import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
+import { WebView } from 'react-native-webview';
 import { useRoute } from '@react-navigation/native';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { getEquipoVinculado } from '../../../services/EquipoClienteService';
@@ -61,6 +63,7 @@ export default function DetalleEquipo() {
   const [equipo, setEquipo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [imageLoading, setImageLoading] = useState(true);
+  const [pdfModalVisible, setPdfModalVisible] = useState(false);
 
   useEffect(() => {
     if (token && deviceId) fetchDetalle();
@@ -71,7 +74,7 @@ export default function DetalleEquipo() {
       const data = await getEquipoVinculado(token!, deviceId);
       setEquipo(data);
     } catch (error) {
-      console.error('Error cargando equipo', error);
+      // Error log removed
       Alert.alert('Error', 'No se pudo cargar el detalle del equipo.');
     } finally {
       setLoading(false);
@@ -90,10 +93,7 @@ export default function DetalleEquipo() {
       return;
     }
 
-    Linking.openURL(uri).catch((err) => {
-      console.error('Error al abrir el PDF:', err);
-      Alert.alert('Error', 'No se pudo abrir el manual. Verifica tu conexión a internet.');
-    });
+    setPdfModalVisible(true);
   };
 
   const solicitarMantenimiento = () => {
@@ -276,6 +276,44 @@ export default function DetalleEquipo() {
             </View>
           </View>
         </ScrollView>
+
+        {/* Modal para PDF */}
+        <Modal
+          visible={pdfModalVisible}
+          animationType="slide"
+          onRequestClose={() => setPdfModalVisible(false)}
+        >
+          <View style={styles.pdfModalContainer}>
+            <View style={styles.pdfModalHeader}>
+              <TouchableOpacity 
+                style={styles.pdfModalCloseButton}
+                onPress={() => setPdfModalVisible(false)}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.pdfModalTitle}>Manual del Equipo</Text>
+            </View>
+            <View style={styles.pdfViewerContainer}>
+              <WebView
+                source={{ uri: equipo?.device?.pdf_url }}
+                style={styles.pdfViewer}
+                onLoadStart={() => console.log('📄 Cargando PDF...')}
+                onLoadEnd={() => console.log('✅ PDF cargado')}
+                onError={(error) => {
+                  // Error log removed
+                  Alert.alert('Error', 'No se pudo cargar el PDF. Verifica tu conexión.');
+                }}
+                startInLoadingState={true}
+                renderLoading={() => (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0077b6" />
+                    <Text style={styles.loadingText}>Cargando PDF...</Text>
+                  </View>
+                )}
+              />
+            </View>
+          </View>
+        </Modal>
       </SafeAreaView>
   );
 }
@@ -563,5 +601,57 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#7f8c8d',
     textAlign: 'center',
+  },
+
+  // Modal de PDF
+  pdfModalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  pdfModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#0077b6',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  pdfModalCloseButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pdfModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
+    flex: 1,
+    textAlign: 'center',
+    marginRight: 40, // Para centrar considerando el botón de cerrar
+  },
+  pdfViewerContainer: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  pdfViewer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '500',
   },
 });

@@ -68,7 +68,7 @@ export function useEquipos({
                 setPagination(EquipoService.mapToPaginationData(resp));
                 setPage(pageToFetch);
             } catch (err: any) {
-                console.error('useEquipos - fetch error', err);
+                // Error log removed
                 if (!mountedRef.current) return;
                 setEquipos([]);
                 setPagination(null);
@@ -130,7 +130,7 @@ export function useEquipos({
                 await fetchEquipos(page, false);
                 return true;
             } catch (err: any) {
-                console.error('removeEquipo error', err);
+                // Error log removed
                 showError(err, 'Error al eliminar el equipo');
                 setError(err.message || 'Error eliminando equipo');
                 return false;

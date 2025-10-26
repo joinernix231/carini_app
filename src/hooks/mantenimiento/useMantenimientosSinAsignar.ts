@@ -36,7 +36,7 @@ export function useMantenimientosSinAsignar() {
       setMantenimientos(data);
     } catch (err: any) {
       if (!mountedRef.current) return;
-      console.error('Error fetching mantenimientos:', err);
+      // Error log removed
       showError(err, 'Error al cargar los mantenimientos');
       setError('Error al cargar los mantenimientos');
       setMantenimientos([]);
@@ -63,7 +63,7 @@ export function useMantenimientosSinAsignar() {
       
       return result;
     } catch (err: any) {
-      console.error('Error asignando técnico:', err);
+      // Error log removed
       showError(err, 'Error al asignar el técnico');
       throw err;
     }

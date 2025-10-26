@@ -78,7 +78,7 @@ export default function TecnicoListScreen() {
                                 }
                             } catch (error) {
                                 // El error se maneja automáticamente por el sistema global
-                                console.error('Error eliminando técnico:', error);
+                                // Error log removed
                             }
                         },
                     },

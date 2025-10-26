@@ -85,7 +85,7 @@ export default function AgregarEquipo() {
             console.log('🔍 AgregarEquipo - Datos recibidos:', data);
             
             if (Array.isArray(data)) {
-                console.log('✅ AgregarEquipo - Datos es array, normalizando...');
+                // Log removed
                 const normalized: Device[] = data.map((d: any) => ({
                     id: d.id ?? d.device?.id ?? 0,
                     model: d.model ?? d.device?.model ?? 'N/A',
@@ -94,16 +94,16 @@ export default function AgregarEquipo() {
                     type: d.type ?? d.device?.type ?? 'device',
                     manufactured_at: d.manufactured_at ?? d.device?.manufactured_at,
                 }));
-                console.log('✅ AgregarEquipo - Dispositivos normalizados:', normalized.length);
+                // Log removed
                 setDevices(normalized);
                 setFilteredDevices(normalized);
             } else {
-                console.log('❌ AgregarEquipo - Datos no es array:', typeof data, data);
+                // Log removed
                 setDevices([]);
                 setFilteredDevices([]);
             }
         } catch (err) {
-            console.error('❌ AgregarEquipo - Error cargando dispositivos:', err);
+            // Error log removed
             showError(err, 'No se pudo cargar la lista de dispositivos.');
             setDevices([]);
         } finally {
@@ -154,7 +154,7 @@ export default function AgregarEquipo() {
                 },
             ]);
         } catch (error: any) {
-            console.error('Error vinculando equipo:', error?.response?.data ?? error);
+            // Error log removed
             showError(error, 'No se pudo vincular el equipo');
         } finally {
             setSubmitting(false);

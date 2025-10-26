@@ -81,11 +81,11 @@ export const UserProfileService = {
       
       const response = await API.get('/api/me', authHeaders(token));
       
-      console.log('✅ UserProfileService - Perfil obtenido:', response.data);
+      // Log removed
       
       return response.data.data;
     } catch (error: any) {
-      console.error('❌ UserProfileService - Error obteniendo perfil:', error);
+      // Error log removed
       throw new Error(error.response?.data?.message || 'Error obteniendo perfil del usuario');
     }
   },
@@ -102,11 +102,11 @@ export const UserProfileService = {
       
       const response = await API.put('/api/user/profile', updates, authHeaders(token));
       
-      console.log('✅ UserProfileService - Perfil actualizado:', response.data);
+      // Log removed
       
       return response.data.data;
     } catch (error: any) {
-      console.error('❌ UserProfileService - Error actualizando perfil:', error);
+      // Error log removed
       throw new Error(error.response?.data?.message || 'Error actualizando perfil del usuario');
     }
   },
@@ -123,11 +123,11 @@ export const UserProfileService = {
       
       const response = await API.put('/api/profile', profileData, authHeaders(token));
       
-      console.log('✅ UserProfileService - Perfil actualizado exitosamente:', response.data);
+      // Log removed
       
       return response.data;
     } catch (error: any) {
-      console.error('❌ UserProfileService - Error actualizando perfil:', error);
+      // Error log removed
       throw new Error(error.response?.data?.message || 'Error actualizando perfil del usuario');
     }
   }

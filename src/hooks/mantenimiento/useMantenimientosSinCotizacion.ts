@@ -36,7 +36,7 @@ export function useMantenimientosSinCotizacion() {
       setMantenimientos(data);
     } catch (err: any) {
       if (!mountedRef.current) return;
-      console.error('Error fetching mantenimientos sin cotización:', err);
+      // Error log removed
       showError(err, 'Error al cargar los mantenimientos sin cotización');
       setError('Error al cargar los mantenimientos sin cotización');
       setMantenimientos([]);

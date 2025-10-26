@@ -82,7 +82,7 @@ export default function ClienteList() {
                                 }
                             } catch (error) {
                                 // El error se maneja automáticamente por el sistema global
-                                console.error('Error eliminando cliente:', error);
+                                // Error log removed
                             }
                         },
                     },

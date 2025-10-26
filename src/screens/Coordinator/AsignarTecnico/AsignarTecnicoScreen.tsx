@@ -74,7 +74,7 @@ export default function AsignarTecnicoScreen() {
         setTecnicosFiltrados([]);
       }
     } catch (err: any) {
-      console.error('Error cargando técnicos:', err);
+      // Error log removed
       showError(err, 'Error al cargar los técnicos');
     } finally {
       setLoading(false);
@@ -145,7 +145,7 @@ export default function AsignarTecnicoScreen() {
                 ]
               );
             } catch (err: any) {
-              console.error('Error asignando técnico:', err);
+              // Error log removed
               showError(err, 'Error al asignar el técnico');
             } finally {
               setAsignando(false);

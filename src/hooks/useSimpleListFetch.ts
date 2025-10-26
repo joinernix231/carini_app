@@ -83,7 +83,7 @@ export function useSimpleListFetch<T>(
         } catch (err: any) {
             if (!isMountedRef.current) return null;
 
-            console.error('useSimpleListFetch - fetch error', err);
+            // Error log removed
             if (isMountedRef.current) {
                 setError(err.message || 'Error cargando datos');
                 setLoading(false);

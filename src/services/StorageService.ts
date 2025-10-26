@@ -28,9 +28,9 @@ export const StorageService = {
     async saveToken(token: string): Promise<void> {
         try {
             await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
-            console.log('✅ StorageService - Token guardado');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error guardando token:', error);
+            // Error log removed
             throw new Error('Error guardando token de autenticación');
         }
     },
@@ -43,7 +43,7 @@ export const StorageService = {
             const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
             return token;
         } catch (error) {
-            console.error('❌ StorageService - Error obteniendo token:', error);
+            // Error log removed
             return null;
         }
     },
@@ -55,9 +55,9 @@ export const StorageService = {
         try {
             await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
             await AsyncStorage.setItem(STORAGE_KEYS.LOGIN_TIMESTAMP, Date.now().toString());
-            console.log('✅ StorageService - Datos de usuario guardados');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error guardando datos de usuario:', error);
+            // Error log removed
             throw new Error('Error guardando datos de usuario');
         }
     },
@@ -70,7 +70,7 @@ export const StorageService = {
             const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
             return userData ? JSON.parse(userData) : null;
         } catch (error) {
-            console.error('❌ StorageService - Error obteniendo datos de usuario:', error);
+            // Error log removed
             return null;
         }
     },
@@ -83,7 +83,7 @@ export const StorageService = {
             const timestamp = await AsyncStorage.getItem(STORAGE_KEYS.LOGIN_TIMESTAMP);
             return timestamp ? parseInt(timestamp) : null;
         } catch (error) {
-            console.error('❌ StorageService - Error obteniendo timestamp:', error);
+            // Error log removed
             return null;
         }
     },
@@ -97,7 +97,7 @@ export const StorageService = {
             const userData = await this.getUserData();
             return !!(token && userData);
         } catch (error) {
-            console.error('❌ StorageService - Error verificando login:', error);
+            // Error log removed
             return false;
         }
     },
@@ -112,9 +112,9 @@ export const StorageService = {
                 STORAGE_KEYS.USER_DATA,
                 STORAGE_KEYS.LOGIN_TIMESTAMP
             ]);
-            console.log('✅ StorageService - Datos de autenticación limpiados');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error limpiando datos:', error);
+            // Error log removed
             throw new Error('Error cerrando sesión');
         }
     },
@@ -140,7 +140,7 @@ export const StorageService = {
                 loginTimestamp
             };
         } catch (error) {
-            console.error('❌ StorageService - Error obteniendo datos de autenticación:', error);
+            // Error log removed
             return {
                 token: null,
                 userData: null,
@@ -155,9 +155,9 @@ export const StorageService = {
     async saveCredentials(credentials: StoredCredentials): Promise<void> {
         try {
             await AsyncStorage.setItem(STORAGE_KEYS.CREDENTIALS, JSON.stringify(credentials));
-            console.log('✅ StorageService - Credenciales guardadas');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error guardando credenciales:', error);
+            // Error log removed
             throw new Error('Error guardando credenciales');
         }
     },
@@ -170,7 +170,7 @@ export const StorageService = {
             const credentials = await AsyncStorage.getItem(STORAGE_KEYS.CREDENTIALS);
             return credentials ? JSON.parse(credentials) : null;
         } catch (error) {
-            console.error('❌ StorageService - Error obteniendo credenciales:', error);
+            // Error log removed
             return null;
         }
     },
@@ -181,9 +181,9 @@ export const StorageService = {
     async clearCredentials(): Promise<void> {
         try {
             await AsyncStorage.removeItem(STORAGE_KEYS.CREDENTIALS);
-            console.log('✅ StorageService - Credenciales limpiadas');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error limpiando credenciales:', error);
+            // Error log removed
         }
     },
 
@@ -198,9 +198,9 @@ export const StorageService = {
                 STORAGE_KEYS.LOGIN_TIMESTAMP,
                 STORAGE_KEYS.CREDENTIALS
             ]);
-            console.log('✅ StorageService - Todos los datos de autenticación limpiados');
+            // Log removed
         } catch (error) {
-            console.error('❌ StorageService - Error limpiando todos los datos:', error);
+            // Error log removed
             throw new Error('Error cerrando sesión');
         }
     }

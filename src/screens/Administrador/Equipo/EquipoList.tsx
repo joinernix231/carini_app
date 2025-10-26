@@ -82,7 +82,7 @@ export default function EquipoList() {
                                 }
                             } catch (error) {
                                 // El error se maneja automáticamente por el sistema global
-                                console.error('Error eliminando equipo:', error);
+                                // Error log removed
                             }
                         },
                     },

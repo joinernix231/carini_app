@@ -53,7 +53,7 @@ export default function DatePicker({
       
       return formattedDate;
     } catch (error) {
-      console.error('Error formateando fecha:', error);
+      // Error log removed
       return dateString; // Devolver la fecha original si hay error
     }
   };

@@ -53,7 +53,7 @@ export default function UserProfileModal({
       setProfile(profileData);
     } catch (err: any) {
       setError(err.message || 'Error cargando perfil');
-      console.error('Error loading profile:', err);
+      // Error log removed
     } finally {
       setLoading(false);
     }
@@ -201,7 +201,7 @@ export default function UserProfileModal({
       setShowEditForm(false);
       await loadProfile(); // Recargar el perfil
     } catch (error: any) {
-      console.error('Error actualizando perfil:', error);
+      // Error log removed
       Alert.alert('Error', error.message || 'Error al actualizar el perfil');
     } finally {
       setEditLoading(false);

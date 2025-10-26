@@ -76,7 +76,7 @@ export default function DetalleTecnicoScreen() {
                             }
                         } catch (err) {
                             // El error se maneja automáticamente por el sistema global
-                            console.error('Error eliminando técnico:', err);
+                            // Error log removed
                         }
                     },
                 },
@@ -100,7 +100,7 @@ export default function DetalleTecnicoScreen() {
                             Alert.alert('Éxito', `Estado cambiado a ${next === 'active' ? 'Activo' : 'Inactivo'}`);
                         } catch (err) {
                             // El error se maneja automáticamente por el sistema global
-                            console.error('Error cambiando estado:', err);
+                            // Error log removed
                         }
                     },
                 },

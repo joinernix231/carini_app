@@ -6,11 +6,18 @@ import API from './api';
 
 // Configurar el comportamiento de las notificaciones
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
+  handleNotification: async (notification) => {
+    console.log('🔔 Notificación recibida en primer plano:', notification);
+    
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: true,
+      // Configuración adicional para mejor visualización
+      priority: Notifications.AndroidNotificationPriority.HIGH,
+      vibrate: true,
+    };
+  },
 });
 
 export interface PushToken {
@@ -42,29 +49,29 @@ export class PushNotificationService {
       
       // Verificar si es un dispositivo físico
       if (!Device.isDevice) {
-        console.warn('⚠️ Las notificaciones push solo funcionan en dispositivos físicos');
+        // Warning log removed
         return false;
       }
 
       // Solicitar permisos
       const hasPermission = await this.requestPermissions();
       if (!hasPermission) {
-        console.error('❌ Permisos de notificación denegados');
+        // Error log removed
         return false;
       }
 
       // Obtener token de push
       const token = await this.getPushToken();
       if (!token) {
-        console.error('❌ No se pudo obtener el token de push');
+        // Error log removed
         return false;
       }
 
       this.pushToken = token;
-      console.log('✅ Servicio de notificaciones inicializado correctamente');
+      // Log removed
       return true;
     } catch (error) {
-      console.error('❌ Error inicializando notificaciones:', error);
+      // Error log removed
       return false;
     }
   }
@@ -84,7 +91,7 @@ export class PushNotificationService {
 
       return finalStatus === 'granted';
     } catch (error) {
-      console.error('❌ Error solicitando permisos:', error);
+      // Error log removed
       return false;
     }
   }
@@ -99,7 +106,7 @@ export class PushNotificationService {
       });
       return token.data;
     } catch (error) {
-      console.error('❌ Error obteniendo token:', error);
+      // Error log removed
       return null;
     }
   }
@@ -130,7 +137,7 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Token registrado correctamente');
+        // Log removed
         return true;
       } else {
         return false;
@@ -157,14 +164,14 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Token desregistrado correctamente');
+        // Log removed
         return true;
       } else {
-        console.error('❌ Error desregistrando token:', response.data.message);
+        // Error log removed
         return false;
       }
     } catch (error) {
-      console.error('❌ Error desregistrando token:', error);
+      // Error log removed
       return false;
     }
   }
@@ -181,14 +188,14 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Tokens obtenidos correctamente');
+        // Log removed
         return response.data.data.tokens;
       } else {
-        console.error('❌ Error obteniendo tokens:', response.data.message);
+        // Error log removed
         return [];
       }
     } catch (error) {
-      console.error('❌ Error obteniendo tokens:', error);
+      // Error log removed
       return [];
     }
   }
@@ -205,14 +212,14 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Notificaciones obtenidas correctamente');
+        // Log removed
         return response.data.data.notifications;
       } else {
-        console.error('❌ Error obteniendo notificaciones:', response.data.message);
+        // Error log removed
         return [];
       }
     } catch (error) {
-      console.error('❌ Error obteniendo notificaciones:', error);
+      // Error log removed
       return [];
     }
   }
@@ -229,14 +236,14 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Notificación marcada como leída');
+        // Log removed
         return true;
       } else {
-        console.error('❌ Error marcando como leída:', response.data.message);
+        // Error log removed
         return false;
       }
     } catch (error) {
-      console.error('❌ Error marcando como leída:', error);
+      // Error log removed
       return false;
     }
   }
@@ -253,14 +260,14 @@ export class PushNotificationService {
       });
 
       if (response.data.success) {
-        console.log('✅ Todas las notificaciones marcadas como leídas');
+        // Log removed
         return true;
       } else {
-        console.error('❌ Error marcando todas como leídas:', response.data.message);
+        // Error log removed
         return false;
       }
     } catch (error) {
-      console.error('❌ Error marcando todas como leídas:', error);
+      // Error log removed
       return false;
     }
   }
@@ -272,14 +279,40 @@ export class PushNotificationService {
     // Listener para notificaciones recibidas
     Notifications.addNotificationReceivedListener(notification => {
       console.log('📱 Notificación recibida:', notification);
-      // Aquí puedes manejar la notificación recibida
+      // Solo log, no mostrar notificación adicional para evitar duplicados
     });
 
     // Listener para notificaciones tocadas
     Notifications.addNotificationResponseReceivedListener(response => {
       console.log('👆 Notificación tocada:', response);
+      
       // Aquí puedes manejar la navegación cuando el usuario toca la notificación
+      const data = response.notification.request.content.data;
+      if (data && data.screen) {
+        // Navegar a la pantalla específica si está definida en los datos
+        console.log('🧭 Navegando a:', data.screen);
+      }
     });
+  }
+
+  /**
+   * Mostrar notificación mejorada
+   */
+  private async showEnhancedNotification(title: string, body: string, data?: any) {
+    try {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: `🔔 ${title}`,
+          body: body,
+          data: data,
+          sound: 'default',
+          priority: Notifications.AndroidNotificationPriority.HIGH,
+        },
+        trigger: null, // Mostrar inmediatamente
+      });
+    } catch (error) {
+      // Error log removed
+    }
   }
 
   /**
@@ -295,9 +328,9 @@ export class PushNotificationService {
         },
         trigger: null, // Enviar inmediatamente
       });
-      console.log('✅ Notificación local enviada');
+      // Log removed
     } catch (error) {
-      console.error('❌ Error enviando notificación local:', error);
+      // Error log removed
     }
   }
 
@@ -316,7 +349,7 @@ export class PushNotificationService {
       const { status } = await Notifications.getPermissionsAsync();
       return status === 'granted';
     } catch (error) {
-      console.error('❌ Error verificando permisos:', error);
+      // Error log removed
       return false;
     }
   }

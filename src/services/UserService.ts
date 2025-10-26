@@ -31,10 +31,10 @@ export const UserService = {
                 }
             });
 
-            console.log('✅ UserService - Perfil obtenido:', response.data);
+            // Log removed
             return response.data.data;
         } catch (error: any) {
-            console.error('❌ UserService - Error obteniendo perfil:', error);
+            // Error log removed
             throw new Error(error.response?.data?.message || 'Error obteniendo perfil del usuario');
         }
     },
@@ -49,7 +49,7 @@ export const UserService = {
             await this.getProfile(token);
             return true;
         } catch (error) {
-            console.log('❌ UserService - Token inválido');
+            // Log removed
             return false;
         }
     }

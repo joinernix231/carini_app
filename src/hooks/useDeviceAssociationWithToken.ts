@@ -20,7 +20,7 @@ export function useDeviceAssociationWithToken(token: string | null) {
             const devices = await AvailableDevicesService.getAvailableDevices(token);
             setDevices(devices);
         } catch (error: any) {
-            console.error('❌ useDeviceAssociationWithToken - Error cargando dispositivos:', error);
+            // Error log removed
             showError(error);
         } finally {
             setLoadingDevices(false);

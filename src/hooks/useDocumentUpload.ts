@@ -51,7 +51,7 @@ export function useDocumentUpload(options: DocumentUploadOptions = {}) {
       }
       return null;
     } catch (error) {
-      console.error('Error picking document:', error);
+      // Error log removed
       showError(error, 'Error al seleccionar el documento');
       setState(prev => ({
         ...prev,
@@ -83,7 +83,7 @@ export function useDocumentUpload(options: DocumentUploadOptions = {}) {
       };
       
       const response = await DocumentService.uploadDocument(file, token, (progress) => {
-        console.log(`Upload progress: ${progress}%`);
+        // Upload progress tracking
       });
       
       if (response.success && response.url) {
@@ -103,7 +103,7 @@ export function useDocumentUpload(options: DocumentUploadOptions = {}) {
         return encryptedName;
       }
     } catch (error) {
-      console.error('Error uploading document:', error);
+      // Error log removed
       showError(error, 'Error al subir el documento');
       setState(prev => ({
         ...prev,

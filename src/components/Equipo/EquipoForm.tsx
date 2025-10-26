@@ -142,7 +142,7 @@ export default function EquipoForm({ initialValues, onSubmit, submitLabel = 'Agr
 
             await onSubmit({ ...values, photo: uploadedImageName, PDF: uploadedDocumentUrl });
         } catch (error) {
-            console.error('Error submitting form:', error);
+            // Error log removed
         } finally {
             setIsSubmitting(false);
         }
@@ -261,6 +261,7 @@ export default function EquipoForm({ initialValues, onSubmit, submitLabel = 'Agr
                     <View style={styles.card}>
                         <ImageUploader
                             title="Imagen del Equipo"
+                            initialImageUri={initialValues.photo}
                             onImageUploaded={(imageName) => setUploadedImageName(imageName)}
                             imageName="devices/equipo"
                         />
@@ -269,6 +270,7 @@ export default function EquipoForm({ initialValues, onSubmit, submitLabel = 'Agr
                     <View style={styles.card}>
                         <DocumentUploader
                             title="Manual del Equipo"
+                            initialDocumentUri={initialValues.PDF}
                             onDocumentUploaded={(url) => setUploadedDocumentUrl(url)}
                             customDocumentName="manual_equipo"
                         />
