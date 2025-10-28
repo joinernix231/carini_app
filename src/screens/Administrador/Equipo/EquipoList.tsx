@@ -21,6 +21,7 @@ import { useEquipos } from '../../../hooks/equipo/useEquipos';
 import { Equipo } from '../../../types/equipo/equipo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useError } from '../../../context/ErrorContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -33,8 +34,7 @@ type RootStackParamList = {
 
 export default function EquipoList() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const { isDark, colors } = useTheme();
 
     const {
         equipos,
@@ -222,8 +222,8 @@ export default function EquipoList() {
     // Loading state
     if (loading && !refreshing && equipos.length === 0) {
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-                <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+                <StatusBar barStyle="dark-content" />
                 {renderHeader}
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#3B82F6" />
@@ -238,8 +238,8 @@ export default function EquipoList() {
     // Error state
     if (error) {
         return (
-            <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-                <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+                <StatusBar barStyle="dark-content" />
                 {renderHeader}
                 <View style={styles.errorContainer}>
                     <View style={styles.errorIcon}>
@@ -267,8 +267,8 @@ export default function EquipoList() {
 
     // Main render
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle="dark-content" />
             <FlatList
                 data={equipos}
                 keyExtractor={(item: Equipo) => `equipo_${item.id}`}

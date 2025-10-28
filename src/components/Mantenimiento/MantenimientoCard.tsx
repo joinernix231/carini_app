@@ -24,6 +24,28 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
   const [expanded, setExpanded] = useState(false);
   const [animation] = useState(new Animated.Value(0));
 
+  const getLockedMessage = () => {
+    if (item.status === 'completed') {
+      return 'Completado - No editable';
+    }
+    if (item.status === 'cancelled') {
+      return 'Cancelado - No editable';
+    }
+    if (item.status === 'assigned') {
+      return 'Asignado - No editable';
+    }
+    if (item.status === 'in_progress') {
+      return 'En progreso - No editable';
+    }
+    if (item.status === 'quoted') {
+      return 'Cotizado - No editable';
+    }
+    if (item.status === 'payment_uploaded') {
+      return 'Pago cargado - No editable';
+    }
+    return 'No editable';
+  };
+
   const toggleExpanded = () => {
     const toValue = expanded ? 0 : 1;
     Animated.timing(animation, {
@@ -41,6 +63,8 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
       in_progress: 'En progreso',
       completed: 'Completado',
       cancelled: 'Cancelado',
+      payment_uploaded: 'Pago cargado',
+      quoted: 'Cotizado',
     };
     return traducciones[estadoIngles] || estadoIngles;
   };
@@ -49,38 +73,50 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
     switch (estado) {
       case 'Pendiente':
         return {
-          color: '#FF9500',
-          bgColor: '#FFF4E6',
+          color: '#F59E0B',
+          bgColor: '#FEF3C7',
           icon: 'time-outline' as const,
         };
       case 'Asignado':
         return {
-          color: '#007AFF',
-          bgColor: '#E6F3FF',
+          color: '#3B82F6',
+          bgColor: '#DBEAFE',
           icon: 'person-outline' as const,
         };
       case 'En progreso':
         return {
-          color: '#34C759',
-          bgColor: '#E6F7E6',
+          color: '#8B5CF6',
+          bgColor: '#EDE9FE',
           icon: 'play-outline' as const,
         };
       case 'Completado':
         return {
-          color: '#34C759',
-          bgColor: '#E6F7E6',
+          color: '#10B981',
+          bgColor: '#D1FAE5',
           icon: 'checkmark-circle-outline' as const,
         };
       case 'Cancelado':
         return {
-          color: '#FF3B30',
-          bgColor: '#FFE6E6',
+          color: '#EF4444',
+          bgColor: '#FEE2E2',
           icon: 'close-circle-outline' as const,
+        };
+      case 'Pago cargado':
+        return {
+          color: '#06B6D4',
+          bgColor: '#CFFAFE',
+          icon: 'receipt-outline' as const,
+        };
+      case 'Cotizado':
+        return {
+          color: '#EC4899',
+          bgColor: '#FCE7F3',
+          icon: 'pricetag-outline' as const,
         };
       default:
         return {
-          color: '#8E8E93',
-          bgColor: '#F2F2F7',
+          color: '#6B7280',
+          bgColor: '#F3F4F6',
           icon: 'help-circle-outline' as const,
         };
     }
@@ -212,7 +248,7 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
 
             <Animated.View style={[styles.devicesList, { maxHeight }]}>
               {item.devices.map((device, index) => (
-                <View key={device.id} style={styles.deviceItem}>
+                <View key={`${item.id}-device-${index}`} style={styles.deviceItem}>
                   <View style={styles.deviceInfo}>
                     <Text style={styles.deviceModel}>{device.model}</Text>
                     <Text style={styles.deviceDetails}>
@@ -235,18 +271,27 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
 
         {/* Footer con acciones */}
         <View style={styles.cardFooter}>
-          {onDelete && (
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={onDelete}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
-              <Text style={styles.deleteText}>Eliminar</Text>
-            </TouchableOpacity>
+          {onDelete ? (
+            <>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={onDelete}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <MaterialIcons name="delete-outline" size={20} color="#FF3B30" />
+                <Text style={styles.deleteText}>Eliminar</Text>
+              </TouchableOpacity>
+              <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
+            </>
+          ) : (
+            <View style={styles.completedFooter}>
+              <View style={styles.completedBadge}>
+                <Ionicons name="lock-closed" size={14} color="#6B7280" />
+                <Text style={styles.completedText}>{getLockedMessage()}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
+            </View>
           )}
-
-          <Ionicons name="chevron-forward" size={20} color="#C0C0C0" />
         </View>
       </View>
     </TouchableOpacity>
@@ -429,5 +474,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#FF3B30',
     marginLeft: 4,
+  },
+  completedFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flex: 1,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  completedText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginLeft: 6,
+    fontWeight: '500',
   },
 });

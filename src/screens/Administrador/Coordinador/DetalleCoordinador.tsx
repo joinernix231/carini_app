@@ -145,23 +145,23 @@ export default function DetalleCoordinador() {
     // UI
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#7C3AED" />
+            <StatusBar barStyle="dark-content" backgroundColor="#F3F4F6" />
 
             <LinearGradient
-                colors={['#7C3AED', '#A855F7', '#C084FC']}
+                colors={['#F3F4F6', '#E5E7EB', '#D1D5DB']}
                 style={styles.header}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
                 <View style={styles.headerRow}>
-                    <BackButton color="#fff" />
+                    <BackButton color="#6B7280" />
                     <View style={styles.headerCenter}>
                         <View style={styles.avatar}>
-                            <Ionicons name="person-circle-outline" size={44} color="#fff" />
+                            <Ionicons name="person-circle-outline" size={44} color="#8B5CF6" />
                         </View>
 
-                        <Text style={styles.title}>{displayName}</Text>
-                        <Text style={styles.subtitle}>{displayEmail}</Text>
+                        <Text style={[styles.title, { color: '#1F2937' }]}>{displayName}</Text>
+                        <Text style={[styles.subtitle, { color: '#6B7280' }]}>{displayEmail}</Text>
 
                         <View style={[styles.statusBadge, { backgroundColor: coordinador?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)' }]}>
                             <Text style={[styles.statusText, { color: coordinador?.status === 'active' ? '#10B981' : '#EF4444' }]}>
@@ -175,7 +175,7 @@ export default function DetalleCoordinador() {
                             // quick share
                             Alert.alert('Compartir', `Coordinador: ${displayName}\nEmail: ${displayEmail}`);
                         }} accessibilityLabel="Compartir coordinador">
-                            <MaterialIcons name="share" size={22} color="#ffffff" />
+                            <MaterialIcons name="share" size={22} color="#6B7280" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -296,12 +296,12 @@ const styles = StyleSheet.create({
         width: 88,
         height: 88,
         borderRadius: 44,
-        backgroundColor: 'rgba(255,255,255,0.18)',
+        backgroundColor: '#F3E8FF',
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 12,
         borderWidth: 3,
-        borderColor: 'rgba(255,255,255,0.3)'
+        borderColor: '#E9D5FF'
     },
     title: {
         color: '#fff',
