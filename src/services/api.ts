@@ -4,7 +4,7 @@ import { ApiError } from '../types/ErrorTypes';
 import { logger } from '../utils/logger';
 
 const API = axios.create({
-     baseURL: 'http://192.168.2.3:8500/',
+     baseURL: 'https://cariniservice-production.up.railway.app/',
     timeout: 5000,
 });
 

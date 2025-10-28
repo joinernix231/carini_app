@@ -21,6 +21,7 @@ import { useCoordinadores } from "../../../hooks/coordinador/useCoordinadores";
 import { Coordinador } from '../../../types/coordinador/coordinador';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useError } from '../../../context/ErrorContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -32,8 +33,7 @@ type RootStackParamList = {
 
 export default function CoordinadorList() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const { isDark, colors } = useTheme();
 
     const {
         coordinadores,
@@ -286,8 +286,8 @@ export default function CoordinadorList() {
 
     // Main render
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle="dark-content" />
             <FlatList
                 data={coordinadores}
                 keyExtractor={(item: Coordinador) => `coordinador_${item.id}`}

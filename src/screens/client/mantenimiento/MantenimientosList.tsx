@@ -206,11 +206,12 @@ export default function MantenimientosList() {
   };
 
   const renderItem = ({ item }: { item: MantenimientoListItem }) => {
+    const canDelete = item.status === 'pending';
     return (
       <MantenimientoCard
         item={item}
         onPress={() => navigate('DetalleMantenimiento', { id: item.id })}
-        onDelete={() => eliminarMantenimiento(item.id)}
+        onDelete={canDelete ? () => eliminarMantenimiento(item.id) : undefined}
       />
     );
   };
