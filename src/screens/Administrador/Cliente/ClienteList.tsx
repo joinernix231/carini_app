@@ -22,6 +22,7 @@ import { useClientes } from '../../../hooks/cliente/useClientes';
 import { Cliente } from '../../../types/cliente/cliente';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useError } from '../../../context/ErrorContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -34,8 +35,7 @@ type RootStackParamList = {
 
 export default function ClienteList() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const { isDark, colors } = useTheme();
 
     const {
         clientes,
@@ -295,8 +295,8 @@ export default function ClienteList() {
 
     // Main render
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle="dark-content" />
             <FlatList
                 data={clientes}
                 keyExtractor={(item: Cliente) => `cliente_${item.id}`}

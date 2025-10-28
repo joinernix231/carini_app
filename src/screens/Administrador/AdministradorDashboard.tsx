@@ -12,6 +12,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -86,6 +87,7 @@ const options: MenuOption[] = [
 export default function AdminDashboard() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuth();
+  const { colors } = useTheme();
 
   const renderItem = ({ item }: { item: MenuOption }) => (
     <TouchableOpacity

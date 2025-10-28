@@ -14,6 +14,7 @@ import {
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import BackButton from '../../../components/BackButton';
 import { useCliente } from '../../../hooks/cliente/useCliente';
 import { Cliente } from '../../../types/cliente/cliente';
@@ -155,25 +156,39 @@ export default function DetalleCliente() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" backgroundColor="#0EA5E9" />
+            <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
 
-            <View style={styles.header}>
-                <BackButton color="#fff" />
-                <View style={styles.headerCenter}>
-                    <View style={styles.avatar}>
-                        <Ionicons name="business-outline" size={44} color="#fff" />
+            <LinearGradient
+                colors={['#F3F4F6', '#E5E7EB', '#D1D5DB']}
+                style={styles.header}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+            >
+                <View style={styles.headerRow}>
+                    <BackButton color="#6B7280" />
+                    <View style={styles.headerCenter}>
+                        <View style={styles.avatar}>
+                            <Ionicons name="business-outline" size={44} color="#3B82F6" />
+                        </View>
+
+                        <Text style={[styles.title, { color: '#1F2937' }]}>{displayName}</Text>
+
+                        <View style={[styles.statusBadge, { backgroundColor: cliente?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.15)' }]}>
+                            <Text style={[styles.statusText, { color: cliente?.status === 'active' ? '#9ef01a' : '#EF4444' }]}>
+                                {cliente?.status === 'active' ? 'Activo' : 'Inactivo'}
+                            </Text>
+                        </View>
                     </View>
 
-                    <Text style={styles.title}>{displayName}</Text>
-
-                    <View style={[styles.statusBadge, { backgroundColor: cliente?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.15)' }]}>
-                        <Text style={[styles.statusText, { color: cliente?.status === 'active' ? '#9ef01a' : '#EF4444' }]}>
-                            {cliente?.status === 'active' ? 'Activo' : 'Inactivo'}
-                        </Text>
+                    <View style={styles.headerActions}>
+                        <TouchableOpacity onPress={() => {
+                            Alert.alert('Compartir', `Cliente: ${displayName}`);
+                        }} accessibilityLabel="Compartir cliente">
+                            <MaterialIcons name="share" size={22} color="#6B7280" />
+                        </TouchableOpacity>
                     </View>
                 </View>
-                
-            </View>
+            </LinearGradient>
 
             <ScrollView
                 style={styles.scrollContainer}
@@ -288,10 +303,11 @@ const ActionButton = ({ icon, label, color, onPress, disabled }: { icon: string;
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFB' },
-    header: { paddingTop: 12, paddingBottom: 18, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', backgroundColor: '#0EA5E9' },
+    header: { paddingTop: 12, paddingBottom: 24, paddingHorizontal: 16 },
+    headerRow: { flexDirection: 'row', alignItems: 'center' },
     headerCenter: { flex: 1, alignItems: 'center' },
     headerActions: { width: 44, alignItems: 'flex-end' },
-    avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: 'rgba(255,255,255,0.18)', justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+    avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E0F2FE', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#BFDBFE' },
     title: { color: '#fff', fontSize: 20, fontWeight: '700' },
     subtitle: { color: 'rgba(255,255,255,0.95)', marginTop: 4 },
     statusBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },

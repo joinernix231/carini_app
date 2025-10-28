@@ -32,11 +32,13 @@ interface MaintenanceStatus {
 }
 
 const STATUS_CONFIG: Record<string, MaintenanceStatus> = {
-  pending: { color: '#ff9f00', backgroundColor: '#fff3cd', icon: 'schedule' },
-  assigned: { color: '#0077b6', backgroundColor: '#cce7ff', icon: 'assignment-ind' },
-  in_progress: { color: '#007200', backgroundColor: '#d4edda', icon: 'build' },
-  completed: { color: '#28a745', backgroundColor: '#d1ecf1', icon: 'check-circle' },
-  canceled: { color: '#dc3545', backgroundColor: '#f8d7da', icon: 'cancel' },
+  pending: { color: '#F59E0B', backgroundColor: '#FEF3C7', icon: 'schedule' },
+  assigned: { color: '#3B82F6', backgroundColor: '#DBEAFE', icon: 'assignment-ind' },
+  in_progress: { color: '#8B5CF6', backgroundColor: '#EDE9FE', icon: 'build' },
+  completed: { color: '#10B981', backgroundColor: '#D1FAE5', icon: 'check-circle' },
+  canceled: { color: '#EF4444', backgroundColor: '#FEE2E2', icon: 'cancel' },
+  payment_uploaded: { color: '#06B6D4', backgroundColor: '#CFFAFE', icon: 'receipt' },
+  quoted: { color: '#EC4899', backgroundColor: '#FCE7F3', icon: 'request-quote' },
 };
 
 export default function DetalleMantenimiento() {
@@ -87,6 +89,8 @@ export default function DetalleMantenimiento() {
       in_progress: 'En progreso',
       completed: 'Completado',
       canceled: 'Cancelado',
+      payment_uploaded: 'Pago cargado',
+      quoted: 'Cotizado',
     };
     return traducciones[estadoIngles] || estadoIngles;
   };
@@ -112,6 +116,24 @@ export default function DetalleMantenimiento() {
           { text: 'Cancelar', style: 'cancel' },
           { text: 'Llamar', onPress: () => Linking.openURL(`tel:${phone}`) },
         ]
+    );
+  };
+
+  const handleViewPDF = (pdfUrl: string) => {
+    Alert.alert(
+      'Ver cotización PDF',
+      '¿Deseas abrir la cotización en PDF?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Abrir PDF', 
+          onPress: () => {
+            Linking.openURL(pdfUrl).catch(() => {
+              Alert.alert('Error', 'No se pudo abrir el PDF. Verifica tu conexión a internet.');
+            });
+          }
+        },
+      ]
     );
   };
 
@@ -206,7 +228,7 @@ export default function DetalleMantenimiento() {
         <View style={styles.header}>
           <BackButton color="#fff" size={24} style={{ marginRight: 10 }} />
           <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Mantenimiento {mantenimiento.device.model}</Text>
+            <Text style={styles.headerTitle}>Mantenimiento #{mantenimiento.id}</Text>
             <Text style={styles.headerSubtitle}>{traducirTipo(mantenimiento.type)}</Text>
           </View>
           <View style={styles.headerActions}>
@@ -219,13 +241,18 @@ export default function DetalleMantenimiento() {
           </View>
         </View>
 
-        {/* Estado prominente */}
+        {/* Estado prominente mejorado */}
         <View style={styles.statusContainer}>
           <View style={[styles.statusBadge, { backgroundColor: statusConfig.backgroundColor }]}>
-            <MaterialIcons name={statusConfig.icon as any} size={24} color={statusConfig.color} />
-            <Text style={[styles.statusText, { color: statusConfig.color }]}>
-              {traducirEstado(mantenimiento.status)}
-            </Text>
+            <View style={[styles.statusIconContainer, { backgroundColor: statusConfig.color }]}>
+              <MaterialIcons name={statusConfig.icon as any} size={22} color="#FFFFFF" />
+            </View>
+            <View style={styles.statusTextContainer}>
+              <Text style={styles.statusLabel}>Estado actual</Text>
+              <Text style={[styles.statusText, { color: statusConfig.color }]}>
+                {traducirEstado(mantenimiento.status)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -298,19 +325,76 @@ export default function DetalleMantenimiento() {
               </View>
           )}
 
-          {/* Equipo */}
-          <View style={styles.infoRow}>
-            <View style={styles.iconContainer}>
-              <MaterialIcons name="precision-manufacturing" size={20} color="#0077b6" />
+          {/* Sección de Cotización */}
+          {mantenimiento.status === 'quoted' && mantenimiento.value && (
+            <View style={styles.quotationContainer}>
+              <View style={styles.quotationHeader}>
+                <MaterialIcons name="request-quote" size={24} color="#EC4899" />
+                <Text style={styles.quotationTitle}>Cotización</Text>
+              </View>
+              
+              <View style={styles.quotationCard}>
+                <View style={styles.quotationInfo}>
+                  <Text style={styles.quotationLabel}>Valor cotizado</Text>
+                  <Text style={styles.quotationValue}>
+                    ${parseFloat(mantenimiento.value).toLocaleString('es-CO')} COP
+                  </Text>
+                </View>
+                
+                {mantenimiento.price_support && (
+                  <TouchableOpacity 
+                    style={styles.pdfButton}
+                    onPress={() => handleViewPDF(mantenimiento.price_support)}
+                    activeOpacity={0.8}
+                  >
+                    <MaterialIcons name="picture-as-pdf" size={20} color="#FFFFFF" />
+                    <Text style={styles.pdfButtonText}>Ver cotización PDF</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Equipo</Text>
-              <Text style={styles.infoValue}>{mantenimiento.device?.model || 'Sin modelo'}</Text>
-              {mantenimiento.device?.serial && (
-                  <Text style={styles.infoSubvalue}>Serie: {mantenimiento.device.serial}</Text>
-              )}
+          )}
+
+          {/* Equipos */}
+          {mantenimiento.device && mantenimiento.device.length > 0 && (
+            <View style={styles.devicesContainer}>
+              <View style={styles.devicesHeader}>
+                <MaterialIcons name="precision-manufacturing" size={20} color="#0077b6" />
+                <Text style={styles.devicesTitle}>Equipos ({mantenimiento.device.length})</Text>
+              </View>
+              
+              {mantenimiento.device.map((device: any, index: number) => (
+                <View key={`maintenance-${mantenimiento.id}-device-${index}`} style={styles.deviceCard}>
+                  <View style={styles.deviceHeader}>
+                    <MaterialIcons name="hardware" size={18} color="#0077b6" />
+                    <Text style={styles.deviceModel}>{device.model || 'Sin modelo'}</Text>
+                  </View>
+                  <View style={styles.deviceInfo}>
+                    <Text style={styles.deviceLabel}>Marca:</Text>
+                    <Text style={styles.deviceValue}>{device.brand || '-'}</Text>
+                  </View>
+                  <View style={styles.deviceInfo}>
+                    <Text style={styles.deviceLabel}>Tipo:</Text>
+                    <Text style={styles.deviceValue}>{device.type || '-'}</Text>
+                  </View>
+                  <View style={styles.deviceInfo}>
+                    <Text style={styles.deviceLabel}>Serie:</Text>
+                    <Text style={styles.deviceValue}>{device.serial || '-'}</Text>
+                  </View>
+                  <View style={styles.deviceInfo}>
+                    <Text style={styles.deviceLabel}>Dirección:</Text>
+                    <Text style={styles.deviceValue}>{device.address || '-'}</Text>
+                  </View>
+                  {device.pivot_description && (
+                    <View style={styles.deviceDescription}>
+                      <Text style={styles.deviceDescriptionLabel}>Descripción:</Text>
+                      <Text style={styles.deviceDescriptionText}>{device.pivot_description}</Text>
+                    </View>
+                  )}
+                </View>
+              ))}
             </View>
-          </View>
+          )}
 
           {/* Técnico */}
           <View style={styles.infoRow}>
@@ -605,38 +689,77 @@ const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statusIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  statusTextContainer: {
+    flex: 1,
+  },
+  statusLabel: {
+    fontSize: 11,
+    fontWeight: '500',
+    color: '#6B7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
   },
   statusText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
+    letterSpacing: 0.3,
   },
   progressContainer: {
     paddingHorizontal: 20,
     marginBottom: 20,
+    backgroundColor: '#FFFFFF',
+    marginHorizontal: 16,
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 1,
   },
   progressBar: {
-    height: 4,
-    backgroundColor: '#e9ecef',
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#0077b6',
-    borderRadius: 2,
+    backgroundColor: '#3B82F6',
+    borderRadius: 3,
   },
   progressLabels: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 8,
+    marginTop: 12,
   },
   progressLabel: {
-    fontSize: 12,
-    color: '#666',
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
   },
   mainInfo: {
     paddingHorizontal: 20,
@@ -717,6 +840,142 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: '#555',
     lineHeight: 22,
+  },
+  quotationContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  quotationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  quotationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginLeft: 8,
+  },
+  quotationCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 3,
+    borderLeftWidth: 4,
+    borderLeftColor: '#EC4899',
+  },
+  quotationInfo: {
+    marginBottom: 16,
+  },
+  quotationLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  quotationValue: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#EC4899',
+    letterSpacing: 0.5,
+  },
+  pdfButton: {
+    backgroundColor: '#EC4899',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    shadowColor: '#EC4899',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  pdfButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  devicesContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+  },
+  devicesHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 8,
+  },
+  devicesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  deviceCard: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#0077b6',
+  },
+  deviceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  deviceModel: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0077b6',
+  },
+  deviceInfo: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  deviceLabel: {
+    fontSize: 13,
+    color: '#6B7280',
+    width: 80,
+    fontWeight: '500',
+  },
+  deviceValue: {
+    fontSize: 13,
+    color: '#1F2937',
+    flex: 1,
+    fontWeight: '400',
+  },
+  deviceDescription: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deviceDescriptionLabel: {
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  deviceDescriptionText: {
+    fontSize: 13,
+    color: '#374151',
+    lineHeight: 18,
   },
   imageSection: {
     backgroundColor: '#fff',

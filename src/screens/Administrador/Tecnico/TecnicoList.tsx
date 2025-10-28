@@ -22,6 +22,7 @@ import { useTecnicos } from '../../../hooks/tecnico/useTecnicos';
 import { Tecnico } from '../../../types/tecnico/tecnico';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useError } from '../../../context/ErrorContext';
+import { useTheme } from '../../../context/ThemeContext';
 
 
 const { width } = Dimensions.get('window');
@@ -34,8 +35,7 @@ type RootStackParamList = {
 
 export default function TecnicoListScreen() {
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-    const colorScheme = useColorScheme();
-    const isDark = colorScheme === 'dark';
+    const { isDark, colors } = useTheme();
 
     const {
         tecnicos,
@@ -230,8 +230,8 @@ export default function TecnicoListScreen() {
     }
 
     return (
-        <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
-            <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <StatusBar barStyle="dark-content" />
             <FlatList
                 data={tecnicos}
                 keyExtractor={(item: Tecnico) => `tecnico_${item.id}`}

@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ErrorProvider } from './src/context/ErrorContext';
+import { ThemeProvider } from './src/context/ThemeContext';
 import AuthLoadingScreen from './src/components/AuthLoadingScreen';
 import NotificationBanner from './src/components/NotificationBanner';
 import { usePushNotifications } from './src/hooks/usePushNotifications';
@@ -35,18 +36,20 @@ function AppContent() {
     <NavigationContainer>
       <AppNavigator />
       <NotificationBanner />
-      <StatusBar style="auto" />
+      <StatusBar style="dark" backgroundColor="#ffffff" />
     </NavigationContainer>
   );
 }
 
 export default function App() {
   return (
-    <ErrorProvider>
-      <AuthProvider>
-        <AppContent />
-      </AuthProvider>
-    </ErrorProvider>
+    <ThemeProvider>
+      <ErrorProvider>
+        <AuthProvider>
+          <AppContent />
+        </AuthProvider>
+      </ErrorProvider>
+    </ThemeProvider>
   );
 }
 
