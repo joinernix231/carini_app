@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { View, ActivityIndicator, Text, StyleSheet } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../context/AuthContext';
+import { useActiveMaintenance } from '../hooks/useActiveMaintenance';
 import { logger } from '../utils/logger';
 
 // Importar pantallas críticas (no lazy)
@@ -44,6 +47,9 @@ import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleManteni
 import MiPerfil from '../screens/client/MiPerfil/MiPerfil';
 import MiCarnet from '../screens/Tecnico/MiCarnet';
 import Parafiscales from '../screens/Tecnico/Parafiscales';
+import DetalleMantenimientoTecnico from '../screens/Tecnico/DetalleMantenimiento';
+import IniciarMantenimiento from '../screens/Tecnico/IniciarMantenimiento';
+import MantenimientoEnProgreso from '../screens/Tecnico/MantenimientoEnProgreso';
 import MantenimientosMainScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosMainScreen';
 import MantenimientosSinCotizacionScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosSinCotizacionScreen';
 import MantenimientosAprobadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosAprobadosScreen';
@@ -95,7 +101,8 @@ export function ClienteNavigator() {
   );
 }
 
-export function TecnicoNavigator() {
+// Componente interno del stack del técnico
+function TecnicoStackNavigator() {
   return (
     <TecnicoStack.Navigator 
       screenOptions={commonScreenOptions}
@@ -103,13 +110,53 @@ export function TecnicoNavigator() {
     >
       <TecnicoStack.Screen name="TecnicoDashboard" component={LazyTecnicoDashboard} />
       <TecnicoStack.Screen name="MisMantenimientos" component={LazyMisMantenimientos} />
-      <TecnicoStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoScreen} />
+      <TecnicoStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoTecnico} />
+      <TecnicoStack.Screen name="IniciarMantenimiento" component={IniciarMantenimiento} />
+      <TecnicoStack.Screen name="MantenimientoEnProgreso" component={MantenimientoEnProgreso} />
       <TecnicoStack.Screen name="MiPerfil" component={MiPerfil} />
       <TecnicoStack.Screen name="MiCarnet" component={MiCarnet} />
       <TecnicoStack.Screen name="Parafiscales" component={Parafiscales} />
       <TecnicoStack.Screen name="GestionarDocumentos" component={LazyGestionarDocumentos} />
     </TecnicoStack.Navigator>
   );
+}
+
+// Wrapper del TecnicoNavigator con verificación de mantenimiento activo
+export function TecnicoNavigator() {
+  const navigation = useNavigation();
+  const { hasActiveMaintenance, activeMaintenance, isLoading } = useActiveMaintenance();
+
+  useEffect(() => {
+    if (!isLoading && hasActiveMaintenance && activeMaintenance) {
+      console.log('🚨 REDIRIGIENDO A MANTENIMIENTO ACTIVO:', activeMaintenance.id);
+      
+      // Redirigir automáticamente al mantenimiento en progreso
+      // Usar setTimeout para asegurar que la navegación está lista
+      setTimeout(() => {
+        (navigation as any).reset({
+          index: 0,
+          routes: [
+            {
+              name: 'MantenimientoEnProgreso',
+              params: { maintenanceId: activeMaintenance.id },
+            },
+          ],
+        });
+      }, 100);
+    }
+  }, [isLoading, hasActiveMaintenance, activeMaintenance, navigation]);
+
+  // Mostrar loading mientras verifica
+  if (isLoading) {
+    return (
+      <View style={loadingStyles.container}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={loadingStyles.text}>Verificando mantenimientos activos...</Text>
+      </View>
+    );
+  }
+
+  return <TecnicoStackNavigator />;
 }
 
 export function CoordinadorNavigator() {
@@ -180,6 +227,22 @@ export function AdministradorNavigator() {
     </AdministradorStack.Navigator>
   );
 }
+
+// Estilos para pantalla de loading
+const loadingStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8F9FA',
+  },
+  text: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '600',
+  },
+});
 
 // Componente principal que decide qué navegador usar
 export function RoleBasedNavigator() {

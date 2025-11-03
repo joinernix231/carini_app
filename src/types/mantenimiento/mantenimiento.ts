@@ -1,6 +1,7 @@
 // src/types/mantenimiento/mantenimiento.ts
 export interface Device {
   id: number;
+  client_device_id: number;
   model: string;
   brand: string;
   type: string;

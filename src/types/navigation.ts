@@ -15,6 +15,9 @@ export type ClienteStackParamList = {
 export type TecnicoStackParamList = {
   TecnicoDashboard: undefined;
   MisMantenimientos: undefined;
+  DetalleMantenimiento: { maintenanceId: number };
+  IniciarMantenimiento: { maintenanceId: number };
+  MantenimientoEnProgreso: { maintenanceId: number };
   MiPerfil: undefined;
   MiCarnet: undefined;
   Parafiscales: undefined;

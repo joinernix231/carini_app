@@ -1,7 +1,7 @@
 // src/hooks/useImageUpload.ts
 import { useState, useCallback } from 'react';
 import * as ImagePicker from 'expo-image-picker';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { uploadImage as uploadImageService } from '../services/UploadImage';
 import { useAuth } from '../context/AuthContext';
 import { useError } from '../context/ErrorContext';
@@ -31,6 +31,34 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
 
   const pickImage = useCallback(async () => {
     try {
+      // Solicitar permisos de galería antes de acceder a ella
+      const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (status !== 'granted') {
+        if (canAskAgain) {
+          // El usuario negó, pero aún podemos volver a preguntar
+          Alert.alert(
+            'Permisos requeridos',
+            'Necesitamos acceso a la galería para seleccionar fotos de los equipos.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Intentar de nuevo', onPress: () => pickImage() }
+            ]
+          );
+        } else {
+          // El usuario negó permanentemente
+          Alert.alert(
+            'Permiso denegado',
+            'Debes habilitar el acceso a la galería desde los ajustes de tu dispositivo.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }
+            ]
+          );
+        }
+        return null;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ['images'],
         allowsEditing: options.allowsEditing ?? true,
@@ -48,7 +76,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       }
       return null;
     } catch (error) {
-      // Error log removed
+      console.error('Error en pickImage:', error);
       showError(error, 'Error al seleccionar la imagen');
       setState(prev => ({
         ...prev,
@@ -60,6 +88,34 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
 
   const takePhoto = useCallback(async () => {
     try {
+      // Solicitar permisos de cámara antes de usar la cámara
+      const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (status !== 'granted') {
+        if (canAskAgain) {
+          // El usuario negó, pero aún podemos volver a preguntar
+          Alert.alert(
+            'Permisos requeridos',
+            'Necesitamos acceso a la cámara para tomar fotos de los equipos.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Intentar de nuevo', onPress: () => takePhoto() }
+            ]
+          );
+        } else {
+          // El usuario negó permanentemente
+          Alert.alert(
+            'Permiso denegado',
+            'Debes habilitar el acceso a la cámara desde los ajustes de tu dispositivo.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Abrir ajustes', onPress: () => Linking.openSettings() }
+            ]
+          );
+        }
+        return null;
+      }
+
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['images'],
         allowsEditing: options.allowsEditing ?? true,
@@ -77,7 +133,7 @@ export function useImageUpload(options: ImageUploadOptions = {}) {
       }
       return null;
     } catch (error) {
-      // Error log removed
+      console.error('Error en takePhoto:', error);
       showError(error, 'Error al tomar la foto');
       setState(prev => ({
         ...prev,

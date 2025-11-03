@@ -7,467 +7,350 @@ import {
   FlatList,
   StatusBar,
   RefreshControl,
-  Alert,
   Modal,
-  TextInput,
-  Image,
   ScrollView,
+  ActivityIndicator,
+  BackHandler,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as ImagePicker from 'expo-image-picker';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
+import { useTecnicoMantenimientos } from '../../hooks/useTecnicoMantenimientos';
+import { MaintenanceCard } from '../../components/Tecnico/Maintenance';
+import TecnicoMantenimientosService, { 
+  TecnicoMaintenance, 
+  MaintenanceStatus,
+  Client
+} from '../../services/TecnicoMantenimientosService';
+import BackButton from '../../components/BackButton';
 
-type MaintenanceStatus = 'pending' | 'in_progress' | 'completed';
-type MaintenanceType = 'preventivo' | 'correctivo';
-type TimeSlot = 'AM' | 'PM';
-
-interface Maintenance {
-  id: string;
-  client: {
-    name: string;
-    company: string;
-    address: string;
-    phone: string;
-  };
-  equipment: {
-    type: 'lavadora' | 'secadora';
-    brand: string;
-    model: string;
-    serial: string;
-  };
-  type: MaintenanceType;
-  date: string;
-  timeSlot: TimeSlot;
-  status: MaintenanceStatus;
-  description?: string;
-  createdAt: string;
-}
-
-const mockMaintenances: Maintenance[] = [
-  {
-    id: '1',
-    client: {
-      name: 'Hotel Gran Plaza',
-      company: 'Hoteles Plaza S.A.',
-      address: 'Calle 72 #10-25, Bogotá',
-      phone: '+57 1 234-5678'
-    },
-    equipment: {
-      type: 'lavadora',
-      brand: 'Whirlpool',
-      model: 'WFW5620HW',
-      serial: 'WP2024001'
-    },
-    type: 'preventivo',
-    date: '2025-09-06',
-    timeSlot: 'AM',
-    status: 'pending',
-    description: 'Mantenimiento preventivo programado',
-    createdAt: '2025-09-05T08:00:00Z'
-  },
-  {
-    id: '2',
-    client: {
-      name: 'Lavandería Express',
-      company: 'Servicios de Lavado Ltda.',
-      address: 'Carrera 15 #45-67, Bogotá',
-      phone: '+57 1 987-6543'
-    },
-    equipment: {
-      type: 'secadora',
-      brand: 'LG',
-      model: 'DLEX3570V',
-      serial: 'LG2024002'
-    },
-    type: 'correctivo',
-    date: '2025-09-06',
-    timeSlot: 'PM',
-    status: 'in_progress',
-    description: 'Problema con el sistema de calentamiento',
-    createdAt: '2025-09-05T10:30:00Z'
-  },
-  {
-    id: '3',
-    client: {
-      name: 'Clínica San Rafael',
-      company: 'IPS San Rafael',
-      address: 'Avenida 68 #25-30, Bogotá',
-      phone: '+57 1 555-0123'
-    },
-    equipment: {
-      type: 'lavadora',
-      brand: 'Samsung',
-      model: 'WF45R6100AC',
-      serial: 'SM2024003'
-    },
-    type: 'preventivo',
-    date: '2025-09-05',
-    timeSlot: 'AM',
-    status: 'completed',
-    description: 'Mantenimiento preventivo completado',
-    createdAt: '2025-09-04T09:15:00Z'
-  }
-];
+type FilterType = 'all' | MaintenanceStatus;
+type DateFilterType = 'all' | 'today' | 'week' | 'month' | 'custom';
 
 export default function MisMantenimientos() {
-  const { goBack } = useSmartNavigation();
-  const [maintenances, setMaintenances] = useState<Maintenance[]>(mockMaintenances);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedMaintenance, setSelectedMaintenance] = useState<Maintenance | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [completionModalVisible, setCompletionModalVisible] = useState(false);
-  const [comments, setComments] = useState('');
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [filterStatus, setFilterStatus] = useState<MaintenanceStatus | 'all'>('all');
+  const { navigate } = useSmartNavigation();
+  const { 
+    maintenances, 
+    loading, 
+    refreshing, 
+    refreshMaintenances, 
+    applyFilters 
+  } = useTecnicoMantenimientos();
+  
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [filterStatus, setFilterStatus] = useState<FilterType>('all');
+  const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
 
-  const onRefresh = async () => {
-    setRefreshing(true);
-    // Simular carga de datos
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1000);
-  };
+  // Manejar el botón físico de "atrás" de Android
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Navegar al Dashboard del técnico en lugar de salir de la app
+        navigate('TecnicoDashboard');
+        return true; // Previene el comportamiento por defecto
+      };
 
-  const getStatusColor = (status: MaintenanceStatus) => {
-    switch (status) {
-      case 'pending': return '#FF9800';
-      case 'in_progress': return '#2196F3';
-      case 'completed': return '#4CAF50';
-      default: return '#757575';
-    }
-  };
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
-  const getStatusText = (status: MaintenanceStatus) => {
-    switch (status) {
-      case 'pending': return 'Pendiente';
-      case 'in_progress': return 'En Progreso';
-      case 'completed': return 'Completado';
-      default: return 'Desconocido';
-    }
-  };
-
-  const getEquipmentIcon = (type: 'lavadora' | 'secadora') => {
-    return type === 'lavadora' ? 'local-laundry-service' : 'dry-cleaning';
-  };
-
-  const getMaintenanceTypeColor = (type: MaintenanceType) => {
-    return type === 'preventivo' ? '#4CAF50' : '#FF5722';
-  };
-
-  const filteredMaintenances = maintenances.filter(m => 
-    filterStatus === 'all' || m.status === filterStatus
+      return () => subscription.remove();
+    }, [navigate])
   );
 
-  const startMaintenance = (maintenance: Maintenance) => {
-    Alert.alert(
-      'Iniciar Mantenimiento',
-      `¿Deseas iniciar el mantenimiento en ${maintenance.client.name}?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Iniciar',
-          onPress: () => {
-            setMaintenances(prev =>
-              prev.map(m =>
-                m.id === maintenance.id ? { ...m, status: 'in_progress' } : m
-              )
-            );
-          }
-        }
-      ]
+  const onRefresh = async () => {
+    await refreshMaintenances();
+  };
+
+  const handleFilterChange = async (status: FilterType) => {
+    setFilterStatus(status);
+    // Aplicar filtros al backend
+    const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
+    await applyFilters(
+      status === 'all' ? 'all' : status as MaintenanceStatus,
+      dateFilterValue
     );
   };
 
-  const openCompletionModal = (maintenance: Maintenance) => {
-    setSelectedMaintenance(maintenance);
-    setCompletionModalVisible(true);
-    setComments('');
-    setPhotos([]);
+  const handleDateFilterChange = (filter: DateFilterType) => {
+    setDateFilter(filter);
   };
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+  const applyAdvancedFilters = async () => {
+    setFilterModalVisible(false);
+    // Aplicar filtros al backend
+    const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
+    await applyFilters(
+      filterStatus === 'all' ? 'all' : filterStatus as MaintenanceStatus,
+      dateFilterValue
+    );
+  };
 
-    if (!result.canceled && result.assets[0]) {
-      setPhotos(prev => [...prev, result.assets[0].uri]);
+  const resetFilters = async () => {
+    setDateFilter('all');
+    setFilterStatus('all');
+    await applyFilters('all', undefined);
+  };
+
+  const getStatusConfig = (status: MaintenanceStatus) => {
+    switch (status) {
+      case 'assigned':
+        return {
+          color: '#007AFF',
+          bgColor: '#E6F3FF',
+          icon: 'document-text-outline' as const,
+          label: 'Asignado'
+        };
+      case 'in_progress':
+        return {
+          color: '#5856D6',
+          bgColor: '#EEEEFC',
+          icon: 'trending-up' as const,
+          label: 'En Progreso'
+        };
+      case 'completed':
+        return {
+          color: '#34C759',
+          bgColor: '#E8F5E8',
+          icon: 'checkmark-circle' as const,
+          label: 'Completado'
+        };
+      default:
+        return {
+          color: '#666',
+          bgColor: '#F0F0F0',
+          icon: 'help' as const,
+          label: 'Desconocido'
+        };
     }
   };
 
-  const completeMaintenance = () => {
-    if (selectedMaintenance) {
-      setMaintenances(prev =>
-        prev.map(m =>
-          m.id === selectedMaintenance.id ? { ...m, status: 'completed' } : m
-        )
-      );
-      setCompletionModalVisible(false);
-      Alert.alert('Éxito', 'Mantenimiento marcado como completado');
-    }
+  const getEquipmentIcon = (deviceType: string) => {
+    return TecnicoMantenimientosService.getEquipmentIcon(deviceType);
   };
 
-  const renderMaintenanceItem = ({ item }: { item: Maintenance }) => (
-    <TouchableOpacity
-      style={styles.maintenanceCard}
-      onPress={() => {
-        setSelectedMaintenance(item);
-        setModalVisible(true);
-      }}
-      activeOpacity={0.8}
-    >
-      <View style={styles.cardHeader}>
-        <View style={styles.equipmentInfo}>
-          <View style={[styles.equipmentIconContainer, { backgroundColor: getMaintenanceTypeColor(item.type) }]}>
-            <MaterialIcons 
-              name={getEquipmentIcon(item.equipment.type)} 
-              size={24} 
-              color="#fff" 
-            />
-          </View>
-          <View style={styles.equipmentDetails}>
-            <Text style={styles.clientName}>{item.client.name}</Text>
-            <Text style={styles.equipmentText}>
-              {item.equipment.brand} {item.equipment.model}
+  const renderMaintenanceItem = ({ item }: { item: TecnicoMaintenance }) => {
+    // Navegación inteligente según el estado del mantenimiento
+    const handleMaintenancePress = () => {
+      if (item.status === 'in_progress') {
+        // Si está en progreso, ir directamente a la pantalla de trabajo
+        navigate('MantenimientoEnProgreso', { maintenanceId: item.id });
+      } else {
+        // Si está asignado o completado, ir al detalle
+        navigate('DetalleMantenimiento', { maintenanceId: item.id });
+      }
+    };
+    
+    return <MaintenanceCard maintenance={item} onPress={handleMaintenancePress} />;
+  };
+
+  const FilterChip = ({ 
+    status, 
+    label, 
+    count 
+  }: { 
+    status: FilterType; 
+    label: string; 
+    count?: number;
+  }) => {
+    const isActive = filterStatus === status;
+    return (
+      <TouchableOpacity
+        style={[
+          styles.filterChip,
+          isActive && styles.filterChipActive
+        ]}
+        onPress={() => handleFilterChange(status)}
+      >
+        <Text style={[
+          styles.filterChipText,
+          isActive && styles.filterChipTextActive
+        ]}>
+          {label}
+        </Text>
+        {count !== undefined && (
+          <View style={[
+            styles.countBadge,
+            isActive && styles.countBadgeActive
+          ]}>
+            <Text style={[
+              styles.countText,
+              isActive && styles.countTextActive
+            ]}>
+              {count}
             </Text>
-            <Text style={styles.serialText}>Serial: {item.equipment.serial}</Text>
           </View>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardBody}>
-        <View style={styles.infoRow}>
-          <MaterialIcons name="calendar-today" size={16} color="#666" />
-          <Text style={styles.infoText}>{item.date} - {item.timeSlot}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <MaterialIcons name="location-on" size={16} color="#666" />
-          <Text style={styles.infoText} numberOfLines={1}>{item.client.address}</Text>
-        </View>
-        <View style={styles.infoRow}>
-          <MaterialIcons 
-            name={item.type === 'preventivo' ? 'schedule' : 'build'} 
-            size={16} 
-            color={getMaintenanceTypeColor(item.type)} 
-          />
-          <Text style={[styles.infoText, { color: getMaintenanceTypeColor(item.type) }]}>
-            {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
-          </Text>
-        </View>
-      </View>
-
-      <View style={styles.cardActions}>
-        {item.status === 'pending' && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.startButton]}
-            onPress={() => startMaintenance(item)}
-          >
-            <MaterialIcons name="play-arrow" size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>Iniciar</Text>
-          </TouchableOpacity>
         )}
-        {item.status === 'in_progress' && (
-          <TouchableOpacity
-            style={[styles.actionButton, styles.completeButton]}
-            onPress={() => openCompletionModal(item)}
-          >
-            <MaterialIcons name="check" size={20} color="#fff" />
-            <Text style={styles.actionButtonText}>Completar</Text>
-          </TouchableOpacity>
-        )}
-        <TouchableOpacity style={[styles.actionButton, styles.detailsButton]}>
-          <MaterialIcons name="info" size={20} color="#2196F3" />
-          <Text style={[styles.actionButtonText, { color: '#2196F3' }]}>Detalles</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
-  const FilterButton = ({ status, label }: { status: MaintenanceStatus | 'all', label: string }) => (
-    <TouchableOpacity
-      style={[
-        styles.filterButton,
-        filterStatus === status && styles.filterButtonActive
-      ]}
-      onPress={() => setFilterStatus(status)}
-    >
-      <Text style={[
-        styles.filterButtonText,
-        filterStatus === status && styles.filterButtonTextActive
-      ]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
+  const getFilteredCount = (status: FilterType) => {
+    if (status === 'all') return maintenances.length;
+    return maintenances.filter(m => m.status === status).length;
+  };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
-      <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
-        <View style={styles.container}>
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={goBack}
-            >
-              <MaterialIcons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <View style={styles.headerContent}>
-              <Text style={styles.title}>Mis Mantenimientos</Text>
-              <Text style={styles.subtitle}>Gestiona tus servicios asignados</Text>
-            </View>
-          </View>
-
-          {/* Filters */}
-          <View style={styles.filtersContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <FilterButton status="all" label="Todos" />
-              <FilterButton status="pending" label="Pendientes" />
-              <FilterButton status="in_progress" label="En Progreso" />
-              <FilterButton status="completed" label="Completados" />
-            </ScrollView>
-          </View>
-
-          {/* Content */}
-          <View style={styles.contentContainer}>
-            <FlatList
-              data={filteredMaintenances}
-              renderItem={renderMaintenanceItem}
-              keyExtractor={(item) => item.id}
-              contentContainerStyle={styles.listContainer}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
-              ListEmptyComponent={
-                <View style={styles.emptyContainer}>
-                  <MaterialIcons name="work-off" size={64} color="#ccc" />
-                  <Text style={styles.emptyText}>No hay mantenimientos</Text>
-                </View>
-              }
-            />
-          </View>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <BackButton onPress={() => navigate('TecnicoDashboard')} color="#000" />
+        <View style={styles.headerContent}>
+          <Text style={styles.title}>Mis Mantenimientos</Text>
+          <Text style={styles.subtitle}>
+            {maintenances.length} {maintenances.length === 1 ? 'servicio' : 'servicios'}
+          </Text>
         </View>
-      </LinearGradient>
+        <TouchableOpacity 
+          style={styles.filterButton}
+          onPress={() => setFilterModalVisible(true)}
+        >
+          <Ionicons name="options-outline" size={24} color="#007AFF" />
+        </TouchableOpacity>
+      </View>
 
-      {/* Detail Modal */}
+      {/* Filtros rápidos */}
+      <View style={styles.filtersContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filtersContent}
+        >
+          <FilterChip status="all" label="Todos" count={getFilteredCount('all')} />
+          <FilterChip status="assigned" label="Asignados" count={getFilteredCount('assigned')} />
+          <FilterChip status="in_progress" label="En Progreso" count={getFilteredCount('in_progress')} />
+          <FilterChip status="completed" label="Completados" count={getFilteredCount('completed')} />
+        </ScrollView>
+      </View>
+
+      {/* Lista de mantenimientos */}
+      <View style={styles.content}>
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Cargando mantenimientos...</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={maintenances}
+            renderItem={renderMaintenanceItem}
+            keyExtractor={(item) => item.id.toString()}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl 
+                refreshing={refreshing} 
+                onRefresh={onRefresh}
+                tintColor="#007AFF"
+              />
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Ionicons name="calendar-outline" size={64} color="#ccc" />
+                <Text style={styles.emptyText}>No hay mantenimientos</Text>
+                <Text style={styles.emptySubtext}>
+                  {dateFilter !== 'all' 
+                    ? `No hay mantenimientos para el filtro de fecha seleccionado`
+                    : filterStatus === 'all' 
+                      ? 'No tienes mantenimientos asignados'
+                      : `No hay mantenimientos ${getStatusConfig(filterStatus as MaintenanceStatus).label.toLowerCase()}`
+                  }
+                </Text>
+              </View>
+            }
+          />
+        )}
+      </View>
+
+
+      {/* Modal de Filtros Avanzados */}
       <Modal
         animationType="slide"
         transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        visible={filterModalVisible}
+        onRequestClose={() => setFilterModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detalle del Mantenimiento</Text>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <MaterialIcons name="close" size={24} color="#666" />
-              </TouchableOpacity>
-            </View>
-            
-            {selectedMaintenance && (
-              <ScrollView style={styles.modalContent}>
-                <View style={styles.detailSection}>
-                  <Text style={styles.sectionTitle}>Cliente</Text>
-                  <Text style={styles.detailText}>{selectedMaintenance.client.name}</Text>
-                  <Text style={styles.detailSubtext}>{selectedMaintenance.client.company}</Text>
-                  <Text style={styles.detailSubtext}>{selectedMaintenance.client.address}</Text>
-                  <Text style={styles.detailSubtext}>{selectedMaintenance.client.phone}</Text>
-                </View>
-
-                <View style={styles.detailSection}>
-                  <Text style={styles.sectionTitle}>Equipo</Text>
-                  <Text style={styles.detailText}>
-                    {selectedMaintenance.equipment.brand} {selectedMaintenance.equipment.model}
-                  </Text>
-                  <Text style={styles.detailSubtext}>
-                    Tipo: {selectedMaintenance.equipment.type.charAt(0).toUpperCase() + selectedMaintenance.equipment.type.slice(1)}
-                  </Text>
-                  <Text style={styles.detailSubtext}>Serial: {selectedMaintenance.equipment.serial}</Text>
-                </View>
-
-                <View style={styles.detailSection}>
-                  <Text style={styles.sectionTitle}>Servicio</Text>
-                  <Text style={styles.detailText}>
-                    {selectedMaintenance.type.charAt(0).toUpperCase() + selectedMaintenance.type.slice(1)}
-                  </Text>
-                  <Text style={styles.detailSubtext}>
-                    Fecha: {selectedMaintenance.date} - {selectedMaintenance.timeSlot}
-                  </Text>
-                  <Text style={styles.detailSubtext}>
-                    Estado: {getStatusText(selectedMaintenance.status)}
-                  </Text>
-                </View>
-
-                {selectedMaintenance.description && (
-                  <View style={styles.detailSection}>
-                    <Text style={styles.sectionTitle}>Descripción</Text>
-                    <Text style={styles.detailText}>{selectedMaintenance.description}</Text>
-                  </View>
-                )}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* Completion Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={completionModalVisible}
-        onRequestClose={() => setCompletionModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Completar Mantenimiento</Text>
-              <TouchableOpacity onPress={() => setCompletionModalVisible(false)}>
-                <MaterialIcons name="close" size={24} color="#666" />
+              <Text style={styles.modalTitle}>Filtros</Text>
+              <TouchableOpacity onPress={() => setFilterModalVisible(false)}>
+                <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
             
             <ScrollView style={styles.modalContent}>
-              <View style={styles.completionSection}>
-                <Text style={styles.sectionTitle}>Comentarios</Text>
-                <TextInput
-                  style={styles.textInput}
-                  placeholder="Describe el trabajo realizado..."
-                  multiline
-                  numberOfLines={4}
-                  value={comments}
-                  onChangeText={setComments}
-                />
-              </View>
-
-              <View style={styles.completionSection}>
-                <Text style={styles.sectionTitle}>Evidencias Fotográficas</Text>
-                <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
-                  <MaterialIcons name="add-a-photo" size={24} color="#2196F3" />
-                  <Text style={styles.photoButtonText}>Agregar Foto</Text>
-                </TouchableOpacity>
-                
-                <View style={styles.photosGrid}>
-                  {photos.map((photo, index) => (
-                    <Image key={index} source={{ uri: photo }} style={styles.photoThumb} />
-                  ))}
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Por Estado</Text>
+                <View style={styles.filterOptions}>
+                  <FilterChip status="all" label="Todos" />
+                  <FilterChip status="assigned" label="Asignados" />
+                  <FilterChip status="in_progress" label="En Progreso" />
+                  <FilterChip status="completed" label="Completados" />
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.completeMaintenanceButton} onPress={completeMaintenance}>
-                <MaterialIcons name="check-circle" size={24} color="#fff" />
-                <Text style={styles.completeMaintenanceText}>Marcar como Completado</Text>
-              </TouchableOpacity>
+              <View style={styles.filterSection}>
+                <Text style={styles.sectionTitle}>Por Fecha</Text>
+                
+                <TouchableOpacity 
+                  style={[styles.dateFilterButton, dateFilter === 'all' && styles.dateFilterButtonActive]}
+                  onPress={() => handleDateFilterChange('all')}
+                >
+                  <Ionicons name="calendar-clear" size={20} color={dateFilter === 'all' ? '#007AFF' : '#666'} />
+                  <Text style={[styles.dateFilterText, dateFilter === 'all' && styles.dateFilterTextActive]}>
+                    Todas las Fechas
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.dateFilterButton, dateFilter === 'today' && styles.dateFilterButtonActive]}
+                  onPress={() => handleDateFilterChange('today')}
+                >
+                  <Ionicons name="today" size={20} color={dateFilter === 'today' ? '#007AFF' : '#666'} />
+                  <Text style={[styles.dateFilterText, dateFilter === 'today' && styles.dateFilterTextActive]}>
+                    Hoy
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.dateFilterButton, dateFilter === 'week' && styles.dateFilterButtonActive]}
+                  onPress={() => handleDateFilterChange('week')}
+                >
+                  <Ionicons name="calendar" size={20} color={dateFilter === 'week' ? '#007AFF' : '#666'} />
+                  <Text style={[styles.dateFilterText, dateFilter === 'week' && styles.dateFilterTextActive]}>
+                    Esta Semana
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={[styles.dateFilterButton, dateFilter === 'month' && styles.dateFilterButtonActive]}
+                  onPress={() => handleDateFilterChange('month')}
+                >
+                  <Ionicons name="calendar-outline" size={20} color={dateFilter === 'month' ? '#007AFF' : '#666'} />
+                  <Text style={[styles.dateFilterText, dateFilter === 'month' && styles.dateFilterTextActive]}>
+                    Este Mes
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.filterActions}>
+                <TouchableOpacity 
+                  style={styles.resetFiltersButton}
+                  onPress={resetFilters}
+                >
+                  <Ionicons name="refresh" size={20} color="#666" />
+                  <Text style={styles.resetFiltersText}>Limpiar Filtros</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  style={styles.applyFiltersButton}
+                  onPress={applyAdvancedFilters}
+                >
+                  <Text style={styles.applyFiltersText}>Aplicar Filtros</Text>
+                </TouchableOpacity>
+              </View>
             </ScrollView>
           </View>
         </View>
@@ -477,172 +360,204 @@ export default function MisMantenimientos() {
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0077b6',
-  },
-  root: {
-    flex: 1,
-    width: '100%',
-  },
   container: {
     flex: 1,
-    paddingHorizontal: 20,
+    backgroundColor: '#F8F9FA',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 20,
-    paddingTop: 10,
-  },
-  backButton: {
-    marginRight: 15,
-    padding: 5,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
   },
   headerContent: {
     flex: 1,
+    marginLeft: 12,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 5,
+    fontWeight: '700',
+    color: '#000',
   },
   subtitle: {
     fontSize: 14,
-    color: 'rgba(255,255,255,0.9)',
-  },
-  filtersContainer: {
-    marginBottom: 15,
+    color: '#666',
+    marginTop: 2,
   },
   filterButton: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 8,
+  },
+  filtersContainer: {
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E5EA',
+  },
+  filtersContent: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    marginRight: 10,
+    backgroundColor: '#F2F2F7',
+    marginRight: 8,
+    gap: 6,
   },
-  filterButtonActive: {
-    backgroundColor: '#fff',
+  filterChipActive: {
+    backgroundColor: '#007AFF',
   },
-  filterButtonText: {
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterChipTextActive: {
     color: '#fff',
-    fontWeight: '500',
   },
-  filterButtonTextActive: {
-    color: '#0077b6',
+  countBadge: {
+    backgroundColor: '#E5E5EA',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    minWidth: 24,
+    alignItems: 'center',
   },
-  contentContainer: {
+  countBadgeActive: {
+    backgroundColor: 'rgba(255,255,255,0.3)',
+  },
+  countText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#666',
+  },
+  countTextActive: {
+    color: '#fff',
+  },
+  content: {
     flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingTop: 20,
   },
   listContainer: {
-    paddingHorizontal: 15,
-    paddingBottom: 20,
+    padding: 20,
   },
-  maintenanceCard: {
+  card: {
     backgroundColor: '#fff',
-    borderRadius: 15,
+    borderRadius: 16,
     padding: 16,
-    marginBottom: 15,
+    marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 16,
   },
-  equipmentInfo: {
-    flex: 1,
+  clientInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  equipmentIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  equipmentDetails: {
     flex: 1,
+    gap: 8,
   },
   clientName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 2,
-  },
-  equipmentText: {
-    fontSize: 14,
-    color: '#34495e',
-    marginBottom: 1,
-  },
-  serialText: {
-    fontSize: 12,
-    color: '#7f8c8d',
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 15,
-  },
-  statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  cardBody: {
-    marginBottom: 15,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  infoText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
+    fontWeight: '700',
+    color: '#000',
     flex: 1,
   },
-  cardActions: {
+  statusBadge: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 10,
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    gap: 4,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  equipmentSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  equipmentIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  equipmentInfo: {
+    flex: 1,
+  },
+  equipmentName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  equipmentDetail: {
+    fontSize: 13,
+    color: '#666',
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 8,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flex: 1,
+  },
+  infoText: {
+    fontSize: 13,
+    color: '#666',
+    flex: 1,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    gap: 4,
-  },
-  startButton: {
-    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    backgroundColor: '#007AFF',
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 12,
+    gap: 8,
   },
   completeButton: {
-    backgroundColor: '#FF9800',
-  },
-  detailsButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#2196F3',
+    backgroundColor: '#34C759',
   },
   actionButtonText: {
     color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+    marginTop: 12,
   },
   emptyContainer: {
     alignItems: 'center',
@@ -650,22 +565,27 @@ const styles = StyleSheet.create({
     paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 18,
+    fontWeight: '600',
     color: '#999',
-    marginTop: 10,
+    marginTop: 16,
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#ccc',
+    marginTop: 8,
+    textAlign: 'center',
   },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   modalContainer: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    width: '90%',
-    maxHeight: '80%',
-    overflow: 'hidden',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    maxHeight: '90%',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -673,84 +593,83 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E5E5EA',
   },
   modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2c3e50',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#000',
   },
   modalContent: {
     padding: 20,
   },
-  detailSection: {
-    marginBottom: 20,
-  },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 8,
-  },
-  detailText: {
-    fontSize: 14,
-    color: '#34495e',
-    marginBottom: 4,
-  },
-  detailSubtext: {
-    fontSize: 12,
-    color: '#7f8c8d',
-    marginBottom: 2,
-  },
-  completionSection: {
-    marginBottom: 24,
-  },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    minHeight: 100,
-    textAlignVertical: 'top',
-  },
-  photoButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#2196F3',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    padding: 20,
+    fontWeight: '700',
+    color: '#000',
     marginBottom: 12,
   },
-  photoButtonText: {
-    marginLeft: 8,
-    color: '#2196F3',
-    fontWeight: '500',
+  filterSection: {
+    marginBottom: 24,
   },
-  photosGrid: {
+  filterOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: 8,
   },
-  photoThumb: {
-    width: 80,
-    height: 80,
-    borderRadius: 8,
+  dateFilterButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    backgroundColor: '#F8F9FA',
+    marginBottom: 12,
+    gap: 12,
   },
-  completeMaintenanceButton: {
-    backgroundColor: '#4CAF50',
+  dateFilterButtonActive: {
+    backgroundColor: '#E6F3FF',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+  },
+  dateFilterText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+  },
+  dateFilterTextActive: {
+    color: '#007AFF',
+  },
+  filterActions: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
+  resetFiltersButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F2F2F7',
     padding: 16,
     borderRadius: 12,
     gap: 8,
   },
-  completeMaintenanceText: {
+  resetFiltersText: {
+    color: '#666',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  applyFiltersButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  applyFiltersText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });

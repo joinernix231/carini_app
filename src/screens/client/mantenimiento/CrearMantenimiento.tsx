@@ -25,32 +25,10 @@ import BackButton from '../../../components/BackButton';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MultiDeviceSelector } from '../../../components/Mantenimiento/MultiDeviceSelector';
 import { Device } from '../../../types/mantenimiento/mantenimiento';
+import { MAINTENANCE_CHECKLISTS } from '../../../utils/maintenanceChecklists';
 
 type RootStackParamList = {
   SolicitarMantenimiento: undefined;
-};
-
-const CHECKLIST_MANTENIMIENTO: Record<string, string[]> = {
-  lavadora: [
-    'Alineación y tensión correas',
-    'Limpieza y regulación válvulas solenoides',
-    'Inspección de empaques',
-    'Inspección de cierre',
-    'Ajuste y limpieza cofre eléctrico',
-    'Revisión tarjeta electrónica',
-    'Engrase y revisión rodamientos del sistema motriz',
-    'Inspección de los rodamientos del motor',
-    'Revisión parámetros variador',
-  ],
-  secadora: [
-    'Alineación y tensión correas',
-    'Limpieza tapas posteriores',
-    'Inspección de empaques',
-    'Inspección de cierre',
-    'Ajuste y limpieza cofre eléctrico',
-    'Revisión tarjeta electrónica',
-    'Engrase y revisión chumaceras',
-  ],
 };
 
 export default function CrearMantenimiento() {
@@ -417,9 +395,9 @@ export default function CrearMantenimiento() {
     });
 
     // Si todos los equipos son del mismo tipo, mostrar un solo checklist
-    if (Object.keys(equipmentGroups).length === 1) {
-      const equipmentType = Object.keys(equipmentGroups)[0];
-      const checklistItems = CHECKLIST_MANTENIMIENTO[equipmentType];
+      if (Object.keys(equipmentGroups).length === 1) {
+        const equipmentType = Object.keys(equipmentGroups)[0];
+        const checklistItems = MAINTENANCE_CHECKLISTS[equipmentType];
       
       if (!checklistItems) return null;
 
@@ -452,7 +430,7 @@ export default function CrearMantenimiento() {
         </View>
         
         {Object.entries(equipmentGroups).map(([equipmentType, deviceNames]) => {
-          const checklistItems = CHECKLIST_MANTENIMIENTO[equipmentType];
+          const checklistItems = MAINTENANCE_CHECKLISTS[equipmentType];
           if (!checklistItems) return null;
 
           return (

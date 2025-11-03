@@ -12,6 +12,13 @@
         "backgroundColor": "#ffffff"
       }
     },
+    "ios": {
+      "bundleIdentifier": "com.carini.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Esta aplicación necesita acceso a la cámara para tomar fotos de los equipos durante el mantenimiento.",
+        "NSPhotoLibraryUsageDescription": "Esta aplicación necesita acceso a la galería para seleccionar fotos de los equipos."
+      }
+    },
     "extra": {
       "router": {},
       "eas": {
@@ -20,7 +27,14 @@
     },
     "owner": "joinernix2",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "La aplicación necesita acceso a la galería para seleccionar fotos de los equipos.",
+          "cameraPermission": "La aplicación necesita acceso a la cámara para tomar fotos de los equipos durante el mantenimiento."
+        }
+      ]
     ]
   }
 }
