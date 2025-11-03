@@ -81,7 +81,6 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | 11 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $800.000 |
 | 12 | Políticas y Términos | Sistema de aceptación de políticas, control de acceso | $300.000 |
 | 13 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
-**$3.000.000** |
 
 **TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $18.800.000**
 
