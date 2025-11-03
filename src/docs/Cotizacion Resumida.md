@@ -71,7 +71,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | 1 | Sistema de Notificaciones Push Completo | Integración Expo Push, gestión de tokens, banner de notificaciones, pantalla de gestión | $1.500.000 |
 | 2 | Rol Administrador Completo (4to Rol) | Dashboard, CRUD completo de Clientes, Técnicos, Coordinadores y Equipos | $2.800.000 |
 | 3 | Mantenimientos Multi-Equipo | Selector múltiple, checklist inteligente, validaciones complejas, compatibilidad bidireccional | $1.400.000 |
-| 4 | Flujo Técnico Avanzado | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático | $3.200.000 |
+| 4 | Flujo Técnico Avanzado (Mantenimiento preventivo) | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático, Pantalla de finalizacion | $3.200.000 |
 | 5 | Sistema de Fotos Avanzado | Captura inicial obligatoria, upload a S3, optimización de imágenes | $900.000 |
 | 6 | Funcionalidades Técnico | Mi Carnet Digital, módulo Parafiscales, gestión de documentos técnicos | $1.000.000 |
 | 7 | Gestión de Documentos | Upload, visualización PDFs, gestión por rol | $700.000 |
@@ -81,7 +81,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | 11 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $800.000 |
 | 12 | Políticas y Términos | Sistema de aceptación de políticas, control de acceso | $300.000 |
 | 13 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
-| 14 | **Sistema de Finalización de Mantenimiento** | **Pantallas de finalización, firma digital del cliente, fotos finales obligatorias, observaciones finales, endpoints backend completos, pantalla de confirmación** | **$3.000.000** |
+**$3.000.000** |
 
 **TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $18.800.000**
 
