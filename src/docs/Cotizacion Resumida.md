@@ -53,7 +53,7 @@
 
 ### **Estado de Pagos:**
 - ✅ **Pagado:** $3.525.000 (50% inicial - Junio 2025)
-- ⏳ **Pendiente:** $3.525.000 (50% final - nunca pagado)
+- ⏳ **Pendiente:** $3.525.000 (50% final - No pagado)
 
 ### **Período de Desarrollo:**
 Durante **varios meses** de desarrollo continuo, se han implementado funcionalidades adicionales significativas **sin recibir ningún pago adicional** más allá del 50% inicial. Todo el trabajo adicional (incluyendo las pantallas de finalización) se desarrolló con la confianza de que sería reconocido adecuadamente al momento de finalizar el proyecto.
