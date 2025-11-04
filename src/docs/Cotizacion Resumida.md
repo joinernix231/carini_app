@@ -69,20 +69,17 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | # | Funcionalidad | Descripción | Valor Técnico |
 |---|---------------|-------------|---------------|
 | 1 | Sistema de Notificaciones Push Completo | Integración Expo Push, gestión de tokens, banner de notificaciones, pantalla de gestión | $1.500.000 |
-| 2 | Rol Administrador Completo (4to Rol) | Dashboard, CRUD completo de Clientes, Técnicos, Coordinadores y Equipos | $2.800.000 |
-| 3 | Mantenimientos Multi-Equipo | Selector múltiple, checklist inteligente, validaciones complejas, compatibilidad bidireccional | $1.400.000 |
-| 4 | Flujo Técnico Avanzado (Mantenimiento preventivo) | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático, Pantalla de finalizacion | $3.200.000 |
-| 5 | Sistema de Fotos Avanzado | Captura inicial obligatoria, upload a S3, optimización de imágenes | $900.000 |
+| 2 | Rol Administrador Completo (4to Rol) | Dashboard, GESTION completa de Clientes, Técnicos, Coordinadores y Equipos | $2.800.000 |
+| 3 | Mantenimientos Multi-Equipo | Selector múltiple, checklist inteligente, validaciones complejas, compatibilidad bidireccional | $1.200.000 |
+| 4 | Flujo Técnico Avanzado (Mantenimiento preventivo) | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático, Pantalla de finalización con firma del cliente y fotos finales | $6.200.000 |
+| 5 | Sistema de Fotos Avanzado  |upload a S3, optimización de imágenes | Subida de fotos a SERVER | $900.000 |
 | 6 | Funcionalidades Técnico | Mi Carnet Digital, módulo Parafiscales, gestión de documentos técnicos | $1.000.000 |
 | 7 | Gestión de Documentos | Upload, visualización PDFs, gestión por rol | $700.000 |
-| 8 | 33 Hooks Personalizados | Hooks especializados, optimización queries, caché inteligente, manejo de estados complejos | $1.200.000 |
-| 9 | Mejoras UI/UX Avanzadas | Componentes reutilizables, animaciones, diseño moderno, loading optimizado | $900.000 |
-| 10 | Filtros y Búsqueda Avanzada | Filtros multi-criterio, búsqueda en tiempo real, paginación inteligente | $600.000 |
-| 11 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $800.000 |
-| 12 | Políticas y Términos | Sistema de aceptación de políticas, control de acceso | $300.000 |
-| 13 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
+| 8 | Filtros y Búsqueda Avanzada | Filtros multi-criterio, búsqueda en tiempo real, paginación inteligente | $600.000 |
+| 9 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $1.500.000 |
+| 10 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
 
-**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $18.800.000**
+**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $17.100.000**
 
 ---
 
@@ -93,7 +90,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 - Este monto corresponde al cumplimiento del contrato original
 
 ### **2. Trabajo Adicional Desarrollado (Incluyendo Finalización):**
-- Valor técnico: **$18.800.000**
+- Valor técnico: **$17.100.000**
 - Trabajado durante **meses sin recibir pago adicional**
 - **Todas las funcionalidades están implementadas y funcionando**
 
@@ -103,7 +100,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ### **Justificación:**
 1. ✅ Se trabajó durante **meses sin recibir pagos adicionales**
-2. ✅ El trabajo adicional tiene un **valor técnico real de $18.800.000**
+2. ✅ El trabajo adicional tiene un **valor técnico real de $17.100.000**
 3. ✅ Se entregó **mucho más** de lo contemplado en el contrato original
 4. ✅ **Todas las funcionalidades están completas**, incluyendo las pantallas de finalización
 
@@ -112,26 +109,26 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | Concepto | Valor |
 |----------|-------|
 | **50% Pendiente Contrato Original** | $3.525.000 |
-| **Reconocimiento Trabajo Adicional (20% del valor técnico)** | $3.760.000 |
-| **TOTAL PROPUESTA** | **$7.285.000 COP** |
+| **Reconocimiento Trabajo Adicional (20% del valor técnico)** | $3.420.000 |
+| **TOTAL PROPUESTA** | **$6.945.000 COP** |
 
 ---
 
 ## 💡 ALTERNATIVAS DE PAGO
 
 ### **Opción A: Pago Único**
-- **Total: $7.285.000**
+- **Total: $6.945.000**
 - Entrega inmediata del proyecto 100% completo y funcional
 
 ### **Opción B: Pago en 2 Cuotas**
 - **Primera cuota (inmediata):** $4.000.000
   - Cubre: 50% contrato + parte del reconocimiento
-- **Segunda cuota (30 días):** $3.285.000
+- **Segunda cuota (30 días):** $2.945.000
   - Cubre: Resto del reconocimiento
 
 ### **Opción C: Mínimo Negociable**
-- **Total: $6.500.000** (solo si es necesario mantener relación)
-- Aún representa solo el **35%** del valor técnico del trabajo adicional
+- **Total: $6.200.000** (solo si es necesario mantener relación)
+- Aún representa solo el **36%** del valor técnico del trabajo adicional
 
 ---
 
@@ -140,17 +137,17 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | Concepto | Valor Original | Valor Real Desarrollado | Diferencia |
 |----------|---------------|------------------------|------------|
 | Contrato Base | $7.050.000 | $7.050.000 | - |
-| Funcionalidades Adicionales | $0 | $18.800.000 | +$18.800.000 |
-| **TOTAL** | **$7.050.000** | **$25.850.000** | **+$18.800.000** |
+| Funcionalidades Adicionales | $0 | $17.100.000 | +$17.100.000 |
+| **TOTAL** | **$7.050.000** | **$24.150.000** | **+$17.100.000** |
 
-**Trabajo realizado = 3.7x el valor del contrato original**
+**Trabajo realizado = 3.4x el valor del contrato original**
 
 ---
 
 ## ✅ LO QUE INCLUYE LA PROPUESTA
 
 1. ✅ **Proyecto 100% completo y funcional**
-2. ✅ **Todas las funcionalidades adicionales implementadas** (14 items)
+2. ✅ **Todas las funcionalidades adicionales implementadas** (10 items)
 3. ✅ **Pantallas de finalización completas** (incluidas en adicionales)
 4. ✅ Todo el código fuente desarrollado
 5. ✅ Documentación técnica completa
@@ -163,7 +160,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ⚠️ **Esta propuesta considera:**
 - Trabajo realizado durante **meses sin pagos adicionales**
-- Valor técnico real del desarrollo adicional ($18.800.000)
+- Valor técnico real del desarrollo adicional ($17.100.000)
 - Descuento del **80%** sobre el valor técnico del trabajo adicional
 - Mantenimiento de buena relación comercial
 - **Todas las funcionalidades están completas** (no hay trabajo pendiente)
@@ -179,11 +176,11 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 El cliente recibe una aplicación que **excede significativamente** el alcance del contrato original:
 
 - ✅ **4 roles completos** (vs 3 del contrato)
-- ✅ **Sistema de notificaciones** (no contemplado)
+- ✅ **Sistema de notificaciones push** (no contemplado)
 - ✅ **Mantenimientos multi-equipo** (no contemplado)
-- ✅ **Flujo técnico avanzado con timer/GPS** (vs "actualizar estado" básico)
-- ✅ **Sistema completo de finalización con firma** (mejora significativa)
-- ✅ **33 hooks personalizados** para optimización
+- ✅ **Flujo técnico avanzado con timer/GPS/pausas** (vs "actualizar estado" básico)
+- ✅ **Sistema completo de finalización con firma digital** (mejora significativa)
+- ✅ **Optimizaciones de arquitectura** para mejor rendimiento
 - ✅ **UI/UX moderna** con componentes avanzados
 
 ---
