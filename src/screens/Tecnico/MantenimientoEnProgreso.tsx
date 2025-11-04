@@ -9,6 +9,10 @@ import {
   ActivityIndicator,
   Alert,
   BackHandler,
+  TextInput,
+  Image,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -18,6 +22,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useError } from '../../context/ErrorContext';
 import { useMaintenanceTimer, useMaintenanceActions } from '../../hooks/tecnico';
 import { PauseReasonModal } from '../../components/Tecnico/Maintenance';
+import { useImageUpload } from '../../hooks/useImageUpload';
 import TecnicoMantenimientosService, {
   TecnicoMaintenance,
   Device,
@@ -40,10 +45,22 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
   
   // Estado para los checklists de cada equipo
   // Estructura: { deviceId: { taskIndex: boolean } }
-  const [completedTasks, setCompletedTasks] = useState<Record<number, Record<number, boolean>>>({});
-  const [expandedDevices, setExpandedDevices] = useState<Record<number, boolean>>({});
+  const [completedTasks, setCompletedTasks] = useState<{[deviceId: number]: {[taskIndex: number]: boolean}}>({});
+  const [expandedDevices, setExpandedDevices] = useState<{[deviceId: number]: boolean}>({});
   const [saveTimer, setSaveTimer] = useState<NodeJS.Timeout | null>(null);
   const saveProgressRef = useRef<() => Promise<void>>(async () => {});
+
+  // Estados para sugerir cambio de repuesto
+  const [sparePartDescription, setSparePartDescription] = useState('');
+  const [sparePartPhoto, setSparePartPhoto] = useState<string | null>(null);
+  const [suggestingSparePart, setSuggestingSparePart] = useState(false);
+  const [selectedDeviceForSparePart, setSelectedDeviceForSparePart] = useState<Device | null>(null);
+  const [showDeviceSelectorModal, setShowDeviceSelectorModal] = useState(false);
+  
+  const { pickImage, takePhoto, uploadImage, uploading } = useImageUpload({
+    defaultName: 'spare-part',
+    aspect: [4, 3],
+  });
 
   // Usar hooks personalizados (resta tiempo total pausado si viene del backend)
   const { formattedTime } = useMaintenanceTimer(
@@ -207,38 +224,119 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
   const handleFinalizeMaintenance = useCallback(() => {
     Alert.alert(
       '✅ Finalizar Mantenimiento',
-      '¿Has completado todas las tareas del mantenimiento? Esta acción no se puede deshacer.',
+      '¿Has completado todas las tareas del mantenimiento? Esta acción te llevará a la pantalla de finalización.',
       [
         { text: 'Cancelar', style: 'cancel' },
         {
-          text: 'Finalizar',
+          text: 'Continuar',
           onPress: async () => {
-            // TODO: Implementar finalizar mantenimiento (API call con ubicación GPS)
-            // Por ahora, simular finalización exitosa
             try {
               if (saveTimer) clearTimeout(saveTimer);
-              await saveProgress();
-            } catch {}
-            console.log('✅ Finalizando mantenimiento...');
-            
-            Alert.alert(
-              '🎉 ¡Mantenimiento Completado!',
-              'El mantenimiento ha sido finalizado exitosamente.',
-              [
-                {
-                  text: 'OK',
-                  onPress: () => {
-                    // Redirigir al dashboard para que vuelva a verificar el estado
-                    navigateReset('TecnicoDashboard');
-                  },
-                },
-              ]
-            );
+              // Usar ref para evitar dependencia circular
+              await saveProgressRef.current();
+              // Navegar a pantalla de finalización
+              navigate('FinalizarMantenimiento', { maintenanceId });
+            } catch (error) {
+              showError(error, 'Error al guardar progreso');
+            }
           },
         },
       ]
     );
-  }, [navigateReset]);
+  }, [navigate, maintenanceId, showError, saveTimer]);
+
+  // Handler para capturar foto del repuesto
+  const handlePickSparePartPhoto = useCallback(async () => {
+    try {
+      Alert.alert(
+        'Seleccionar Foto',
+        '¿Cómo deseas obtener la foto?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Galería',
+            onPress: async () => {
+              const imageUri = await pickImage();
+              if (imageUri) {
+                setSparePartPhoto(imageUri);
+              }
+            },
+          },
+          {
+            text: 'Cámara',
+            onPress: async () => {
+              const imageUri = await takePhoto();
+              if (imageUri) {
+                setSparePartPhoto(imageUri);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      showError(error, 'Error al seleccionar foto');
+    }
+  }, [pickImage, takePhoto, showError]);
+
+  // Handler para sugerir cambio de repuesto
+  const handleSuggestSparePart = useCallback(async () => {
+    if (!sparePartDescription.trim()) {
+      Alert.alert('Error', 'Debes describir el repuesto que necesita ser cambiado.');
+      return;
+    }
+
+    if (!token) return;
+
+    try {
+      setSuggestingSparePart(true);
+
+      let photoName: string | null = null;
+      
+      // Si hay foto, subirla primero
+      if (sparePartPhoto) {
+        const uploaded = await uploadImage(sparePartPhoto, 'spare-part');
+        if (uploaded) {
+          photoName = uploaded;
+        }
+      }
+
+      const response = await TecnicoMantenimientosService.suggestSparePart(
+        token,
+        maintenanceId,
+        {
+          description: sparePartDescription.trim(),
+          photo: photoName || undefined,
+          client_device_id: selectedDeviceForSparePart
+            ? ((selectedDeviceForSparePart as any).client_device_id ?? selectedDeviceForSparePart.id)
+            : undefined,
+        }
+      );
+
+      if (response.success) {
+        Alert.alert(
+          '✅ Sugerencia enviada',
+          'La sugerencia de cambio de repuesto ha sido enviada exitosamente.',
+          [
+            {
+              text: 'OK',
+              onPress: () => {
+                // Limpiar formulario
+                setSparePartDescription('');
+                setSparePartPhoto(null);
+                setSelectedDeviceForSparePart(null);
+              },
+            },
+          ]
+        );
+      } else {
+        throw new Error(response.message || 'Error al enviar sugerencia');
+      }
+    } catch (error) {
+      showError(error, 'Error al sugerir cambio de repuesto');
+    } finally {
+      setSuggestingSparePart(false);
+    }
+  }, [sparePartDescription, sparePartPhoto, token, maintenanceId, uploadImage, showError]);
 
   // Función para prevenir salida accidental
   const handleAttemptExit = useCallback(() => {
@@ -251,10 +349,10 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
 
   // Función para toggle de tarea completada
   const toggleTask = useCallback((deviceId: number, taskIndex: number) => {
-    setCompletedTasks(prev => {
+    setCompletedTasks((prev: {[deviceId: number]: {[taskIndex: number]: boolean}}) => {
       const deviceTasks = prev[deviceId] || {};
       const toggled = !deviceTasks[taskIndex];
-      const newDeviceTasks: Record<number, boolean> = { ...deviceTasks, [taskIndex]: toggled };
+      const newDeviceTasks: {[taskIndex: number]: boolean} = { ...deviceTasks, [taskIndex]: toggled };
 
       // Limpiar claves en false para evitar residuos y estados fantasma
       Object.keys(newDeviceTasks).forEach((k) => {
@@ -584,22 +682,106 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
             <Ionicons name="chatbubble" size={20} color="#FF9500" />
             <Text style={styles.sparePartsTitle}>Sugerir Cambio de Repuestos</Text>
           </View>
-          
-          <View style={styles.textAreaContainer}>
-            <Text style={styles.placeholderText}>
-              Describe el repuesto que necesita ser cambiado y por qué...
-            </Text>
-            <Ionicons name="create" size={16} color="#666" />
-          </View>
 
-          <TouchableOpacity style={styles.addPhotoButton}>
-            <Ionicons name="camera" size={20} color="#007AFF" />
-            <Text style={styles.addPhotoText}>Agregar Foto del Repuesto</Text>
+          {/* Selector de Equipo */}
+          <View style={styles.deviceSelectorSection}>
+            <Text style={styles.deviceSelectorLabel}>Equipo afectado:</Text>
+            <TouchableOpacity
+              style={[
+                styles.deviceSelectorButton,
+                selectedDeviceForSparePart && styles.deviceSelectorButtonSelected
+              ]}
+              onPress={() => setShowDeviceSelectorModal(true)}
+            >
+              {selectedDeviceForSparePart ? (
+                <View style={styles.selectedDeviceInfo}>
+                  <MaterialIcons name="devices" size={20} color="#007AFF" />
+                  <View style={styles.selectedDeviceTextContainer}>
+                    <Text style={styles.selectedDeviceName}>
+                      {selectedDeviceForSparePart.brand} {selectedDeviceForSparePart.model}
+                    </Text>
+                    <Text style={styles.selectedDeviceSerial}>
+                      Serial: {selectedDeviceForSparePart.serial || 'N/A'}
+                    </Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.removeDeviceButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      setSelectedDeviceForSparePart(null);
+                    }}
+                  >
+                    <Ionicons name="close-circle" size={20} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <View style={styles.deviceSelectorPlaceholder}>
+                  <Ionicons name="hardware-chip-outline" size={20} color="#999" />
+                  <Text style={styles.deviceSelectorPlaceholderText}>
+                    Selecciona el equipo afectado
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
+          
+          <TextInput
+            style={styles.sparePartTextInput}
+            placeholder="Describe el repuesto que necesita ser cambiado y por qué..."
+            placeholderTextColor="#999"
+            multiline
+            numberOfLines={4}
+            value={sparePartDescription}
+            onChangeText={setSparePartDescription}
+            textAlignVertical="top"
+          />
+
+          {sparePartPhoto && (
+            <View style={styles.sparePartPhotoPreview}>
+              <Image source={{ uri: sparePartPhoto }} style={styles.sparePartPhotoImage} />
+              <TouchableOpacity
+                style={styles.removePhotoButton}
+                onPress={() => {
+                  setSparePartPhoto(null);
+                }}
+              >
+                <Ionicons name="close-circle" size={24} color="#FF3B30" />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          <TouchableOpacity 
+            style={styles.addPhotoButton}
+            onPress={handlePickSparePartPhoto}
+            disabled={uploading}
+          >
+            {uploading ? (
+              <ActivityIndicator size="small" color="#007AFF" />
+            ) : (
+              <Ionicons name="camera" size={20} color="#007AFF" />
+            )}
+            <Text style={styles.addPhotoText}>
+              {sparePartPhoto ? 'Cambiar Foto del Repuesto' : 'Agregar Foto del Repuesto'}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.suggestButton}>
-            <Ionicons name="add" size={20} color="#fff" />
-            <Text style={styles.suggestButtonText}>Sugerir Cambio de Repuesto</Text>
+          <TouchableOpacity 
+            style={[
+              styles.suggestButton,
+              (suggestingSparePart || !sparePartDescription.trim() || !selectedDeviceForSparePart) && styles.buttonDisabled
+            ]}
+            onPress={handleSuggestSparePart}
+            disabled={suggestingSparePart || !sparePartDescription.trim() || !selectedDeviceForSparePart}
+          >
+            {suggestingSparePart ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="add" size={20} color="#fff" />
+            )}
+            <Text style={styles.suggestButtonText}>
+              {suggestingSparePart ? 'Enviando...' : 'Sugerir Cambio de Repuesto'}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -635,6 +817,88 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
         onConfirm={handleConfirmPause}
         loading={pausing}
       />
+
+      {/* Modal Selector de Equipo para Repuesto */}
+      <Modal
+        visible={showDeviceSelectorModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowDeviceSelectorModal(false)}
+      >
+        <SafeAreaView style={styles.deviceModalContainer}>
+          <View style={styles.deviceModalHeader}>
+            <Text style={styles.deviceModalTitle}>Seleccionar Equipo</Text>
+            <TouchableOpacity
+              onPress={() => setShowDeviceSelectorModal(false)}
+              style={styles.deviceModalCloseButton}
+            >
+              <Ionicons name="close" size={24} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            data={maintenance?.device || []}
+            keyExtractor={(item) => {
+              const id = (item as any).client_device_id || item.id;
+              return id.toString();
+            }}
+            renderItem={({ item }) => {
+              const device = item as Device;
+              const deviceId = (device as any).client_device_id ?? device.id;
+              const selectedDeviceId = selectedDeviceForSparePart 
+                ? ((selectedDeviceForSparePart as any).client_device_id ?? selectedDeviceForSparePart.id)
+                : null;
+              const isSelected = selectedDeviceId === deviceId;
+
+              return (
+                <TouchableOpacity
+                  style={[
+                    styles.deviceModalItem,
+                    isSelected && styles.deviceModalItemSelected
+                  ]}
+                  onPress={() => {
+                    setSelectedDeviceForSparePart(device);
+                    setShowDeviceSelectorModal(false);
+                  }}
+                >
+                  <View style={styles.deviceModalItemContent}>
+                    <View style={styles.deviceModalItemIcon}>
+                      <MaterialIcons
+                        name={device.type === 'lavadora' ? 'local-laundry-service' : 'dry-cleaning'}
+                        size={24}
+                        color={isSelected ? '#007AFF' : '#666'}
+                      />
+                    </View>
+                    <View style={styles.deviceModalItemInfo}>
+                      <Text style={[
+                        styles.deviceModalItemName,
+                        isSelected && styles.deviceModalItemNameSelected
+                      ]}>
+                        {device.brand} {device.model}
+                      </Text>
+                      <Text style={styles.deviceModalItemSerial}>
+                        Serial: {device.serial || 'N/A'}
+                      </Text>
+                      <Text style={styles.deviceModalItemType}>
+                        Tipo: {device.type || 'N/A'}
+                      </Text>
+                    </View>
+                    {isSelected && (
+                      <Ionicons name="checkmark-circle" size={24} color="#34C759" />
+                    )}
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+            ListEmptyComponent={
+              <View style={styles.deviceModalEmpty}>
+                <Ionicons name="hardware-chip-outline" size={48} color="#C0C0C0" />
+                <Text style={styles.deviceModalEmptyText}>No hay equipos disponibles</Text>
+              </View>
+            }
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -966,6 +1230,175 @@ const styles = StyleSheet.create({
     color: '#666',
     flex: 1,
   },
+  sparePartTextInput: {
+    backgroundColor: '#fff',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 12,
+    minHeight: 100,
+    fontSize: 14,
+    color: '#000',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  sparePartPhotoPreview: {
+    position: 'relative',
+    marginBottom: 12,
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  sparePartPhotoImage: {
+    width: '100%',
+    height: 200,
+    resizeMode: 'cover',
+  },
+  removePhotoButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  buttonDisabled: {
+    opacity: 0.5,
+  },
+  deviceSelectorSection: {
+    marginBottom: 16,
+  },
+  deviceSelectorLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 8,
+  },
+  deviceSelectorButton: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    minHeight: 56,
+    justifyContent: 'center',
+  },
+  deviceSelectorButtonSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 2,
+    backgroundColor: '#F0F8FF',
+  },
+  selectedDeviceInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  selectedDeviceTextContainer: {
+    flex: 1,
+  },
+  selectedDeviceName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 2,
+  },
+  selectedDeviceSerial: {
+    fontSize: 12,
+    color: '#666',
+  },
+  removeDeviceButton: {
+    padding: 4,
+  },
+  deviceSelectorPlaceholder: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  deviceSelectorPlaceholderText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#999',
+  },
+  deviceModalContainer: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  deviceModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  deviceModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#000',
+  },
+  deviceModalCloseButton: {
+    padding: 4,
+  },
+  deviceModalItem: {
+    backgroundColor: '#fff',
+    marginHorizontal: 20,
+    marginTop: 12,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  deviceModalItemSelected: {
+    borderColor: '#007AFF',
+    borderWidth: 2,
+    backgroundColor: '#F0F8FF',
+  },
+  deviceModalItemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  deviceModalItemIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#F2F2F7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deviceModalItemInfo: {
+    flex: 1,
+  },
+  deviceModalItemName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  deviceModalItemNameSelected: {
+    color: '#007AFF',
+  },
+  deviceModalItemSerial: {
+    fontSize: 13,
+    color: '#666',
+    marginBottom: 2,
+  },
+  deviceModalItemType: {
+    fontSize: 12,
+    color: '#999',
+    textTransform: 'capitalize',
+  },
+  deviceModalEmpty: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  deviceModalEmptyText: {
+    fontSize: 16,
+    color: '#999',
+    marginTop: 16,
+  },
   addPhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1047,9 +1480,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
     color: '#fff',
-  },
-  buttonDisabled: {
-    opacity: 0.5,
   },
   loadingContainer: {
     flex: 1,

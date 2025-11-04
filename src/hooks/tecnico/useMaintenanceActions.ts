@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import * as Location from 'expo-location';
 import { useAuth } from '../../context/AuthContext';
 import { useError } from '../../context/ErrorContext';
-import TecnicoMantenimientosService from '../../services/TecnicoMantenimientosService';
+import { TecnicoMantenimientosService } from '../../services/TecnicoMantenimientosService';
 
 interface UseMaintenanceActionsReturn {
   starting: boolean;

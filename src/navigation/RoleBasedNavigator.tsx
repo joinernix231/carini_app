@@ -50,6 +50,8 @@ import Parafiscales from '../screens/Tecnico/Parafiscales';
 import DetalleMantenimientoTecnico from '../screens/Tecnico/DetalleMantenimiento';
 import IniciarMantenimiento from '../screens/Tecnico/IniciarMantenimiento';
 import MantenimientoEnProgreso from '../screens/Tecnico/MantenimientoEnProgreso';
+import FinalizarMantenimiento from '../screens/Tecnico/FinalizarMantenimiento';
+import MantenimientoCompletado from '../screens/Tecnico/MantenimientoCompletado';
 import MantenimientosMainScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosMainScreen';
 import MantenimientosSinCotizacionScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosSinCotizacionScreen';
 import MantenimientosAprobadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosAprobadosScreen';
@@ -113,6 +115,8 @@ function TecnicoStackNavigator() {
       <TecnicoStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoTecnico} />
       <TecnicoStack.Screen name="IniciarMantenimiento" component={IniciarMantenimiento} />
       <TecnicoStack.Screen name="MantenimientoEnProgreso" component={MantenimientoEnProgreso} />
+      <TecnicoStack.Screen name="FinalizarMantenimiento" component={FinalizarMantenimiento} />
+      <TecnicoStack.Screen name="MantenimientoCompletado" component={MantenimientoCompletado} />
       <TecnicoStack.Screen name="MiPerfil" component={MiPerfil} />
       <TecnicoStack.Screen name="MiCarnet" component={MiCarnet} />
       <TecnicoStack.Screen name="Parafiscales" component={Parafiscales} />

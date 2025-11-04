@@ -1,45 +1,8 @@
-# RESUMEN - FUNCIONALIDADES ADICIONALES
-## Proyecto: App Móvil Carini
-
-### Contrato Original: $7.050.000
-- Pagado: $3.525.000 (50%)
-- Pendiente: $3.525.000 (50%)
-
----
-
-### FUNCIONALIDADES ADICIONALES (No contempladas en contrato):
-
-1. Sistema Notificaciones Push: $1.500.000
-2. Rol Administrador Completo: $2.800.000
-3. Mantenimientos Multi-Equipo: $1.400.000
-4. Flujo Técnico Avanzado (Timer, GPS, Pausas): $3.200.000
-5. Sistema de Fotos Avanzado: $900.000
-6. Funcionalidades Técnico (Carnet, Parafiscales): $1.000.000
-7. Gestión de Documentos: $700.000
-8. 33 Hooks Personalizados: $1.200.000
-9. Mejoras UI/UX: $900.000
-10. Filtros y Búsqueda Avanzada: $600.000
-11. Flujo Coordinador Avanzado: $800.000
-12. Políticas y Términos: $300.000
-13. Optimizaciones Arquitectura: $700.000
-
-**TOTAL FUNCIONALIDADES ADICIONALES: $15.800.000**
-
----
-
-### PROPUESTA FINAL:
-
-**Completamiento Contrato:** $6.025.000  
-**Trabajo Adicional (con 40% descuento):** $4.200.000  
-**TOTAL: $10.225.000 COP**
-
-
 # 📋 COTIZACIÓN - FUNCIONALIDADES ADICIONALES
 ## Proyecto: Aplicación Móvil Carini
 
 **Cliente:** CARINI SAS  
-**NIT:** 900.635.489-8  
-**Fecha:** [Fecha actual]  
+**NIT:** 900.635.489-8   
 **Desarrollador:** Joiner Antonio Dávila Saiz - C.C. 1.141.515.075
 
 ---
@@ -53,7 +16,7 @@
 
 ### **Estado de Pagos:**
 - ✅ **Pagado:** $3.525.000 (50% inicial - Junio 2025)
-- ⏳ **Pendiente:** $3.525.000 (50% final - nunca pagado)
+- ⏳ **Pendiente:** $3.525.000 (50% final - No pagado)
 
 ### **Período de Desarrollo:**
 Durante **varios meses** de desarrollo continuo, se han implementado funcionalidades adicionales significativas **sin recibir ningún pago adicional** más allá del 50% inicial. Todo el trabajo adicional (incluyendo las pantallas de finalización) se desarrolló con la confianza de que sería reconocido adecuadamente al momento de finalizar el proyecto.
@@ -66,24 +29,21 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ### **DESGLOSE DETALLADO:**
 
-| # | Funcionalidad | Descripción | Valor Técnico |
-|---|---------------|-------------|---------------|
-| 1 | Sistema de Notificaciones Push Completo | Integración Expo Push, gestión de tokens, banner de notificaciones, pantalla de gestión | $1.500.000 |
-| 2 | Rol Administrador Completo (4to Rol) | Dashboard, CRUD completo de Clientes, Técnicos, Coordinadores y Equipos | $2.800.000 |
-| 3 | Mantenimientos Multi-Equipo | Selector múltiple, checklist inteligente, validaciones complejas, compatibilidad bidireccional | $1.400.000 |
-| 4 | Flujo Técnico Avanzado | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático | $3.200.000 |
-| 5 | Sistema de Fotos Avanzado | Captura inicial obligatoria, upload a S3, optimización de imágenes | $900.000 |
-| 6 | Funcionalidades Técnico | Mi Carnet Digital, módulo Parafiscales, gestión de documentos técnicos | $1.000.000 |
-| 7 | Gestión de Documentos | Upload, visualización PDFs, gestión por rol | $700.000 |
-| 8 | 33 Hooks Personalizados | Hooks especializados, optimización queries, caché inteligente, manejo de estados complejos | $1.200.000 |
-| 9 | Mejoras UI/UX Avanzadas | Componentes reutilizables, animaciones, diseño moderno, loading optimizado | $900.000 |
-| 10 | Filtros y Búsqueda Avanzada | Filtros multi-criterio, búsqueda en tiempo real, paginación inteligente | $600.000 |
-| 11 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $800.000 |
-| 12 | Políticas y Términos | Sistema de aceptación de políticas, control de acceso | $300.000 |
-| 13 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
-| 14 | **Sistema de Finalización de Mantenimiento** | **Pantallas de finalización, firma digital del cliente, fotos finales obligatorias, observaciones finales, endpoints backend completos, pantalla de confirmación** | **$3.000.000** |
+| # | Funcionalidad | Descripción | Valor Técnico (COP) |
+|---:|---------------|-------------|--------------------:|
+| 1 | **Sistema de Notificaciones Push Completo** | Integración con **Expo Push Notifications**, gestión y almacenamiento de tokens por usuario, banner de notificaciones en tiempo real y pantalla de gestión de notificaciones dentro de la app. | **$1.500.000** |
+| 2 | **Rol Administrador Completo (4° Rol)** | Implementación del **Dashboard administrativo** con gestión integral de **Clientes, Técnicos, Coordinadores y Equipos**, incluyendo creación, edición y eliminación. | **$2.800.000** |
+| 3 | **Mantenimientos Multi-Equipo** | Selector múltiple de equipos, **checklist inteligente por equipo**, validaciones avanzadas y compatibilidad bidireccional entre técnico y coordinador. | **$1.200.000** |
+| 4 | **Flujo Técnico Avanzado (Mantenimiento Preventivo)** | Implementación de flujo técnico completo con **timer (pausa/reanudación)**, **GPS activo en todos los estados**, **checklist dinámico por tipo**, **guardado automático**, y **pantalla de finalización** con firma del cliente y fotos finales. **Este módulo servirá como base escalable para futuros mantenimientos correctivos.** | **$6.200.000** |
+| 5 | **Sistema de Fotos Avanzado** | Integración de subida de imágenes optimizada a servidor (**AWS S3**), compresión de imágenes, y manejo de permisos y fallos de red. | **$900.000** |
+| 6 | **Funcionalidades del Técnico** | Desarrollo del **carnet digital**, módulo de **parafiscales**, y gestión de **documentos técnicos personales** dentro de la aplicación. | **$1.000.000** |
+| 7 | **Gestión de Documentos** | Carga de archivos, visualización de **PDFs** y gestión de documentos filtrados según el rol del usuario. | **$700.000** |
+| 8 | **Filtros y Búsqueda Avanzada** | Implementación de filtros multicriterio, **búsqueda en tiempo real** y **paginación inteligente** tanto en listados técnicos como administrativos. | **$600.000** |
+| 9 | **Flujo del Coordinador Avanzado** | Múltiples vistas de mantenimientos, **asignación avanzada de técnicos**, seguimiento en tiempo real y **gestión de cotizaciones**. | **$1.500.000** |
+| 10 | **Optimizaciones de Arquitectura** | Implementación de **lazy loading**, **navegación optimizada** y estructura de **BaseService reutilizable** para mejorar rendimiento y escalabilidad del sistema. | **$700.000** |
 
-**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $18.800.000**
+
+**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $17.100.000 COP**
 
 ---
 
@@ -94,8 +54,8 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 - Este monto corresponde al cumplimiento del contrato original
 
 ### **2. Trabajo Adicional Desarrollado (Incluyendo Finalización):**
-- Valor técnico: **$18.800.000**
-- Trabajado durante **meses sin recibir pago adicional**
+- Valor técnico: **$17.100.000**
+- Trabajado durante **4 meses sin recibir pago adicional**
 - **Todas las funcionalidades están implementadas y funcionando**
 
 ---
@@ -104,7 +64,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ### **Justificación:**
 1. ✅ Se trabajó durante **meses sin recibir pagos adicionales**
-2. ✅ El trabajo adicional tiene un **valor técnico real de $18.800.000**
+2. ✅ El trabajo adicional tiene un **valor técnico real de $17.100.000**
 3. ✅ Se entregó **mucho más** de lo contemplado en el contrato original
 4. ✅ **Todas las funcionalidades están completas**, incluyendo las pantallas de finalización
 
@@ -113,50 +73,36 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | Concepto | Valor |
 |----------|-------|
 | **50% Pendiente Contrato Original** | $3.525.000 |
-| **Reconocimiento Trabajo Adicional (20% del valor técnico)** | $3.760.000 |
-| **TOTAL PROPUESTA** | **$7.285.000 COP** |
+| **Trabajo Adicional (con descuento del 40%)** | $10.260.000 |
+| **TOTAL PROPUESTA** | **$13.785.000 COP** |
+
+💡 **Descuento aplicado:** Se aplica un **descuento del 40%** sobre el valor técnico del trabajo adicional ($17.100.000), quedando en **$10.260.000** como reconocimiento a la relación comercial establecida.
 
 ---
 
 ## 💡 ALTERNATIVAS DE PAGO
 
 ### **Opción A: Pago Único**
-- **Total: $7.285.000**
+- **Total: $13.785.000**
 - Entrega inmediata del proyecto 100% completo y funcional
+- **Descuento adicional del 5% por pago único: $13.095.750**
 
 ### **Opción B: Pago en 2 Cuotas**
-- **Primera cuota (inmediata):** $4.000.000
-  - Cubre: 50% contrato + parte del reconocimiento
-- **Segunda cuota (30 días):** $3.285.000
-  - Cubre: Resto del reconocimiento
+- **Primera cuota (inmediata):** $8.000.000
+  - Cubre: 50% contrato + parte del adicional
+- **Segunda cuota (30 días):** $5.785.000
+  - Cubre: Resto del adicional
 
-### **Opción C: Mínimo Negociable**
-- **Total: $6.500.000** (solo si es necesario mantener relación)
-- Aún representa solo el **35%** del valor técnico del trabajo adicional
-
----
 
 ## 📊 COMPARACIÓN DE VALORES
 
-| Concepto | Valor Original | Valor Real Desarrollado | Diferencia |
-|----------|---------------|------------------------|------------|
-| Contrato Base | $7.050.000 | $7.050.000 | - |
-| Funcionalidades Adicionales | $0 | $18.800.000 | +$18.800.000 |
-| **TOTAL** | **$7.050.000** | **$25.850.000** | **+$18.800.000** |
+| Concepto | Valor Original | Valor Real Desarrollado | Valor con Descuento |
+|----------|---------------|------------------------|---------------------|
+| Contrato Base | $7.050.000 | $7.050.000 | $7.050.000 |
+| Funcionalidades Adicionales | $0 | $17.100.000 | $10.260.000 |
+| **TOTAL** | **$7.050.000** | **$24.150.000** | **$17.310.000** |
 
-**Trabajo realizado = 3.7x el valor del contrato original**
-
----
-
-## ✅ LO QUE INCLUYE LA PROPUESTA
-
-1. ✅ **Proyecto 100% completo y funcional**
-2. ✅ **Todas las funcionalidades adicionales implementadas** (14 items)
-3. ✅ **Pantallas de finalización completas** (incluidas en adicionales)
-4. ✅ Todo el código fuente desarrollado
-5. ✅ Documentación técnica completa
-6. ✅ Soporte técnico 30 días
-7. ✅ Reconocimiento justo por meses de trabajo adicional
+**Descuento aplicado:** Se cobra el **60%** del valor técnico del trabajo adicional, aplicando un **descuento del 40%** como muestra de buena voluntad comercial.
 
 ---
 
@@ -164,14 +110,14 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ⚠️ **Esta propuesta considera:**
 - Trabajo realizado durante **meses sin pagos adicionales**
-- Valor técnico real del desarrollo adicional ($18.800.000)
-- Descuento del **80%** sobre el valor técnico del trabajo adicional
+- Valor técnico real del desarrollo adicional ($17.100.000)
+- **Descuento del 40%** sobre el valor técnico del trabajo adicional (se cobra $10.260.000 en lugar de $17.100.000)
 - Mantenimiento de buena relación comercial
 - **Todas las funcionalidades están completas** (no hay trabajo pendiente)
 
-📌 **Mantenimiento Correctivo:** Flujo completamente diferente, será cotizado por separado cuando se requiera ($4.500.000 - $5.000.000)
+📌 **Mantenimiento Correctivo:** Flujo completamente diferente, será cotizado por separado cuando se requiera ($2.500.000 - $4.500.000)
 
-📌 **Sitio Web Corporativo:** Pendiente según contrato original (puede ser incluido en negociación separada)
+📌 **Sitio Web Corporativo:** Una vez cerrado el acuerdo de la aplicación móvil, el sitio web se desarrollará como proyecto adicional con un valor preferencial de $2.500.000 (vs $3.500.000 de mercado) como reconocimiento a la relación comercial.
 
 ---
 
@@ -180,24 +126,9 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 El cliente recibe una aplicación que **excede significativamente** el alcance del contrato original:
 
 - ✅ **4 roles completos** (vs 3 del contrato)
-- ✅ **Sistema de notificaciones** (no contemplado)
+- ✅ **Sistema de notificaciones push** (no contemplado)
 - ✅ **Mantenimientos multi-equipo** (no contemplado)
-- ✅ **Flujo técnico avanzado con timer/GPS** (vs "actualizar estado" básico)
-- ✅ **Sistema completo de finalización con firma** (mejora significativa)
-- ✅ **33 hooks personalizados** para optimización
+- ✅ **Flujo técnico avanzado con timer/GPS/pausas** (vs "actualizar estado" básico)
+- ✅ **Sistema completo de flujo de mantenimiento Preventivo con firma digital** (mejora significativa)
+- ✅ **Optimizaciones de arquitectura** para mejor rendimiento
 - ✅ **UI/UX moderna** con componentes avanzados
-
----
-
-**Fecha de Emisión:** [Fecha]  
-**Vigencia:** 15 días  
-**Forma de Pago:** Transferencia bancaria  
-**Cuenta:** 24124683655 - Banco Caja Social
-
----
-
-**Desarrollador:**  
-Joiner Antonio Dávila Saiz  
-C.C. 1.141.515.075  
-Teléfono: [Tu teléfono]  
-Email: [Tu email]

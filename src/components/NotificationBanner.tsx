@@ -94,13 +94,36 @@ export default function NotificationBanner({ onPress, onDismiss }: NotificationB
     if (notification?.request?.content?.data) {
       const data = notification.request.content.data;
       
-      if (data.type === 'maintenance_created' && data.maintenance_id) {
+      // Manejar sugerencia de repuesto creada
+      if (data.type === 'spare_part_suggestion_created' && data.maintenance_id) {
+        const mantenimientoId = data.maintenance_id;
+        
+        if (user?.role === 'cliente') {
+          navigation.navigate('DetalleMantenimiento' as never, { 
+            id: mantenimientoId 
+          } as never);
+          console.log('🧭 Navegando a detalle de mantenimiento por sugerencia de repuesto:', mantenimientoId);
+        }
+      }
+      // Manejar mantenimiento asignado (para técnicos)
+      else if (data.type === 'maintenance_assigned' && data.maintenance_id) {
+        const mantenimientoId = data.maintenance_id;
+        
+        if (user?.role === 'tecnico') {
+          navigation.navigate('DetalleMantenimiento' as never, { 
+            maintenanceId: mantenimientoId 
+          } as never);
+          console.log('🧭 Navegando a detalle de mantenimiento asignado:', mantenimientoId);
+        }
+      }
+      // Manejar creación de mantenimiento
+      else if (data.type === 'maintenance_created' && data.maintenance_id) {
         // Navegar al detalle del mantenimiento según el rol
         const mantenimientoId = data.maintenance_id;
         
         if (user?.role === 'cliente') {
           navigation.navigate('DetalleMantenimiento' as never, { 
-            mantenimientoId: mantenimientoId 
+            id: mantenimientoId 
           } as never);
         } else if (user?.role === 'coordinador') {
           navigation.navigate('DetalleMantenimiento' as never, { 
@@ -113,6 +136,29 @@ export default function NotificationBanner({ onPress, onDismiss }: NotificationB
         }
         
         console.log('🧭 Navegando al mantenimiento:', mantenimientoId, 'para rol:', user?.role);
+      }
+      // Manejar navegación genérica por screen
+      else if (data.screen) {
+        const screenParams: any = {};
+        if (data.maintenance_id) {
+          // Si el screen es 'MantenimientoDetail' o 'DetalleMantenimiento', usar el parámetro correcto según el rol
+          if ((data.screen === 'MantenimientoDetail' || data.screen === 'DetalleMantenimiento')) {
+            if (user?.role === 'tecnico') {
+              screenParams.maintenanceId = data.maintenance_id;
+            } else {
+              screenParams.id = data.maintenance_id;
+            }
+          } else {
+            screenParams.id = data.maintenance_id;
+          }
+        }
+        if (data.mantenimientoId) {
+          screenParams.maintenanceId = data.mantenimientoId;
+        }
+        
+        // Mapear 'MantenimientoDetail' a 'DetalleMantenimiento' si es necesario
+        const screenName = data.screen === 'MantenimientoDetail' ? 'DetalleMantenimiento' : data.screen;
+        navigation.navigate(screenName as never, screenParams as never);
       }
     }
     

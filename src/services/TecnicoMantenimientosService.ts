@@ -579,7 +579,6 @@ export class TecnicoMantenimientosService extends BaseService {
         latitude: location.latitude,
         longitude: location.longitude
       };
-
       // Agregar razón de pausa si existe
       if (pauseReason) {
         requestBody.pause_reason = pauseReason;
@@ -627,6 +626,89 @@ export class TecnicoMantenimientosService extends BaseService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error reanudando mantenimiento:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Completa un mantenimiento con ubicación GPS, firma y observaciones
+   */
+  static async completeMaintenance(
+    token: string,
+    maintenanceId: number,
+    data: {
+      latitude: number;
+      longitude: number;
+      final_observations?: string;
+      client_signature?: string; // Base64 de la firma
+      final_photos?: Array<{
+        client_device_id: number;
+        photo: string; // Nombre de la imagen subida a S3
+      }>;
+    }
+  ): Promise<BaseResponse<any>> {
+    try {
+      const url = `/api/technicianMaintenances/${maintenanceId}/complete`;
+      
+      console.log('✅ TecnicoMantenimientosService: Completando mantenimiento:', {
+        maintenanceId,
+        hasSignature: !!data.client_signature,
+        finalPhotosCount: data.final_photos?.length || 0
+      });
+
+      const requestBody = {
+        latitude: data.latitude,
+        longitude: data.longitude,
+        final_observations: data.final_observations || null,
+        client_signature: data.client_signature || null,
+        final_photos: data.final_photos || []
+      };
+
+      const response = await API.post(url, requestBody, this.getAuthHeaders(token));
+      
+      console.log('✅ Mantenimiento completado exitosamente:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error completando mantenimiento:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Sugiere un cambio de repuesto para un mantenimiento
+   */
+  static async suggestSparePart(
+    token: string,
+    maintenanceId: number,
+    data: {
+      description: string;
+      client_device_id?: number; // Opcional, si es para un equipo específico
+      photo?: string; // Nombre de la imagen subida a S3 (opcional)
+    }
+  ): Promise<BaseResponse<any>> {
+    try {
+      const url = `/api/technicianMaintenances/${maintenanceId}/suggest-spare-part`;
+      
+      console.log('🔧 TecnicoMantenimientosService: Sugiriendo cambio de repuesto:', {
+        maintenanceId,
+        hasPhoto: !!data.photo,
+        deviceId: data.client_device_id
+      });
+
+      const requestBody = {
+        description: data.description,
+        client_device_id: data.client_device_id || null,
+        photo: data.photo || null
+      };
+
+      const response = await API.post(url, requestBody, this.getAuthHeaders(token));
+      
+      console.log('✅ Sugerencia de repuesto enviada exitosamente:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error sugiriendo cambio de repuesto:', error);
       throw error;
     }
   }

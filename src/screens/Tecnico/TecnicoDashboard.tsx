@@ -46,14 +46,6 @@ const options: MenuOption[] = [
     description: 'Gestiona tus servicios'
   },
   {
-    icon: 'account-circle',
-    label: 'Mi Perfil',
-    screen: 'MiPerfil',
-    color: '#26A69A',
-    bgColor: '#E0F2F1',
-    description: 'Información personal'
-  },
-  {
     icon: 'badge',
     label: 'Mi Carnet',
     screen: 'MiCarnet',

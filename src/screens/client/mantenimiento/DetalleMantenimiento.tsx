@@ -22,6 +22,7 @@ import { getMantenimientoById, uploadPaymentSupport } from '../../../services/Ma
 import { useAuth } from '../../../context/AuthContext';
 import { useError } from '../../../context/ErrorContext';
 import DocumentUploader from '../../../components/DocumentUploader';
+import SparePartSuggestionCard from '../../../components/Cliente/SparePartSuggestionCard';
 
 const { width } = Dimensions.get('window');
 
@@ -67,6 +68,7 @@ export default function DetalleMantenimiento() {
       const data = await getMantenimientoById(id, token as string);
       console.log('🔧 Datos del mantenimiento:', data);
       console.log('🔧 Spare parts:', data.spare_parts);
+      console.log('🔧 Spare part suggestions:', data.spare_part_suggestions);
       setMantenimiento(data);
     } catch (error) {
       // Error log removed
@@ -393,6 +395,36 @@ export default function DetalleMantenimiento() {
                   )}
                 </View>
               ))}
+            </View>
+          )}
+
+          {/* Sugerencias de Repuesto */}
+          {mantenimiento.spare_part_suggestions && mantenimiento.spare_part_suggestions.length > 0 && (
+            <View style={styles.sparePartSuggestionsContainer}>
+              <View style={styles.sparePartSuggestionsHeader}>
+                <View style={styles.sparePartSuggestionsHeaderLeft}>
+                  <View style={styles.sparePartSuggestionsIconContainer}>
+                    <MaterialIcons name="build-circle" size={24} color="#FF9500" />
+                  </View>
+                  <View>
+                    <Text style={styles.sparePartSuggestionsTitle}>
+                      Sugerencias de Repuesto
+                    </Text>
+                    <Text style={styles.sparePartSuggestionsSubtitle}>
+                      {mantenimiento.spare_part_suggestions.length} sugerencia{mantenimiento.spare_part_suggestions.length !== 1 ? 's' : ''} del técnico
+                    </Text>
+                  </View>
+                </View>
+              </View>
+              
+              <View style={styles.sparePartSuggestionsList}>
+                {mantenimiento.spare_part_suggestions.map((suggestion: any) => (
+                  <SparePartSuggestionCard
+                    key={suggestion.id}
+                    suggestion={suggestion}
+                  />
+                ))}
+              </View>
             </View>
           )}
 
@@ -1163,6 +1195,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#9CA3AF',
     fontStyle: 'italic',
+  },
+  sparePartSuggestionsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  sparePartSuggestionsHeader: {
+    marginBottom: 16,
+  },
+  sparePartSuggestionsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  sparePartSuggestionsIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#FFF3E0',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sparePartSuggestionsTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 2,
+  },
+  sparePartSuggestionsSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+  },
+  sparePartSuggestionsList: {
+    gap: 12,
   },
   paymentSupportContainer: {
     backgroundColor: '#fff',

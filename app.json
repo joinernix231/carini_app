@@ -4,6 +4,7 @@
     "slug": "carini",
     "version": "1.0.0",
     "newArchEnabled": false,
+    "icon": "./assets/icon.png",
     "android": {
       "package": "com.carini.app",
       "versionCode": 1,

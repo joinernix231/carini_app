@@ -5,7 +5,7 @@ import { logger } from '../utils/logger';
 
 const API = axios.create({
      baseURL: 'https://cariniservice-dev.up.railway.app/',
-     //baseURL: 'http://192.168.2.12:8500/',
+     //seURL: 'http://192.168.2.12:8500/',
     timeout: 5000,
 });
 

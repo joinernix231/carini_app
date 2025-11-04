@@ -18,11 +18,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTecnicoMantenimientos } from '../../hooks/useTecnicoMantenimientos';
 import { MaintenanceCard } from '../../components/Tecnico/Maintenance';
-import TecnicoMantenimientosService, { 
-  TecnicoMaintenance, 
-  MaintenanceStatus,
-  Client
-} from '../../services/TecnicoMantenimientosService';
+import { TecnicoMantenimientosService, 
+  TecnicoMaintenance,
+  MaintenanceProgressResponse,
+  DeviceProgress } from '../../services/TecnicoMantenimientosService';
 import BackButton from '../../components/BackButton';
 
 type FilterType = 'all' | MaintenanceStatus;

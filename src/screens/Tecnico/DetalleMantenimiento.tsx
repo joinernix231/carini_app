@@ -15,9 +15,10 @@ import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { useAuth } from '../../context/AuthContext';
 import { useError } from '../../context/ErrorContext';
 import { useMaintenanceActions } from '../../hooks/tecnico';
-import TecnicoMantenimientosService, {
+import { TecnicoMantenimientosService, 
   TecnicoMaintenance,
-} from '../../services/TecnicoMantenimientosService';
+  MaintenanceProgressResponse,
+  DeviceProgress } from '../../services/TecnicoMantenimientosService';
 import BackButton from '../../components/BackButton';
 
 type RouteParams = {
@@ -32,11 +33,19 @@ export default function DetalleMantenimiento({ route }: { route: { params: Route
   const { resuming, resumeMaintenance } = useMaintenanceActions();
 
   const [maintenance, setMaintenance] = useState<TecnicoMaintenance | null>(null);
+  const [progressData, setProgressData] = useState<MaintenanceProgressResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadMaintenanceDetail();
   }, [maintenanceId]);
+
+  useEffect(() => {
+    // Cargar progreso solo si el mantenimiento está completado
+    if (maintenance?.status === 'completed') {
+      loadProgress();
+    }
+  }, [maintenance?.status, maintenanceId]);
 
   const loadMaintenanceDetail = async () => {
     if (!token) return;
@@ -61,6 +70,65 @@ export default function DetalleMantenimiento({ route }: { route: { params: Route
       setLoading(false);
     }
   };
+
+  const loadProgress = async () => {
+    if (!token) return;
+
+    try {
+      const response = await TecnicoMantenimientosService.getMaintenanceProgress(
+        token,
+        maintenanceId
+      );
+
+      if (response.success) {
+        setProgressData(response);
+      }
+    } catch (error) {
+      console.error('Error cargando progreso:', error);
+    }
+  };
+
+  // Calcular tiempo por item basado en el progreso
+  const calculateTimePerItem = useMemo(() => {
+    if (!maintenance?.started_at || !progressData?.data || maintenance.status !== 'completed') {
+      return null;
+    }
+
+    // Para mantenimientos completados, calcular desde started_at hasta ahora
+    // Como no tenemos completed_at, usamos la fecha actual como aproximación
+    const start = new Date(maintenance.started_at);
+    const end = new Date(); // Fecha actual como aproximación
+    const totalTimeMs = end.getTime() - start.getTime();
+    
+    // Si el tiempo es negativo, no mostrar
+    if (totalTimeMs <= 0) {
+      return null;
+    }
+
+    // Calcular total de items completados desde el progreso
+    let totalItemsCompleted = 0;
+    if (progressData.data.devices) {
+      progressData.data.devices.forEach((device: DeviceProgress) => {
+        totalItemsCompleted += device.progress_completed_count || 0;
+      });
+    }
+
+    if (totalItemsCompleted === 0) return null;
+
+    const timePerItemMs = totalTimeMs / totalItemsCompleted;
+    const minutes = Math.floor(timePerItemMs / (1000 * 60));
+    const seconds = Math.floor((timePerItemMs % (1000 * 60)) / 1000);
+
+    const hours = Math.floor(totalTimeMs / (1000 * 60 * 60));
+    const totalMinutes = Math.floor((totalTimeMs % (1000 * 60 * 60)) / (1000 * 60));
+    const totalSeconds = Math.floor((totalTimeMs % (1000 * 60)) / 1000);
+
+    return {
+      totalItems: totalItemsCompleted,
+      timePerItem: `${minutes}min ${seconds}seg`,
+      totalTime: `${String(hours).padStart(2, '0')}:${String(totalMinutes).padStart(2, '0')}:${String(totalSeconds).padStart(2, '0')}`,
+    };
+  }, [maintenance, progressData]);
 
   const getStatusConfig = useCallback((status: string) => {
     switch (status) {
@@ -236,7 +304,7 @@ export default function DetalleMantenimiento({ route }: { route: { params: Route
                 </View>
                 <View style={styles.deviceInfo}>
                   <Text style={styles.deviceName}>
-                    {TecnicoMantenimientosService.getEquipmentName(device)}
+                    
                   </Text>
                   <Text style={styles.deviceSerial}>{device.type} - Serie: {device.serial}</Text>
                 </View>
@@ -251,6 +319,78 @@ export default function DetalleMantenimiento({ route }: { route: { params: Route
             <View style={styles.commentSection}>
               <Text style={styles.commentLabel}>📝 Descripción</Text>
               <Text style={styles.commentText}>{maintenance.description}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Tiempo de Items - Solo si está completado */}
+        {maintenance.status === 'completed' && calculateTimePerItem && (
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Ionicons name="time-outline" size={20} color="#34C759" />
+              <Text style={styles.sectionTitle}>Tiempo de Ejecución</Text>
+            </View>
+            <View style={styles.timeCard}>
+              <View style={styles.timeContent}>
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Tiempo Total:</Text>
+                  <Text style={styles.timeValue}>{calculateTimePerItem.totalTime}</Text>
+                </View>
+                
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Items Completados:</Text>
+                  <Text style={styles.timeValue}>{calculateTimePerItem.totalItems} items</Text>
+                </View>
+                
+                <View style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>Tiempo Promedio por Item:</Text>
+                  <Text style={styles.timeValueHighlight}>{calculateTimePerItem.timePerItem}</Text>
+                </View>
+              </View>
+
+              {/* Progreso por Dispositivo */}
+              {progressData?.data?.devices && progressData.data.devices.length > 0 && (
+                <View style={styles.devicesProgressContainer}>
+                  <Text style={styles.devicesProgressTitle}>Progreso por Equipo</Text>
+                  {progressData.data.devices.map((device: DeviceProgress) => {
+                    const deviceInfo = maintenance?.device?.find(
+                      (d) => d.client_device_id === device.client_device_id
+                    );
+                    return (
+                      <View key={device.client_device_id} style={styles.deviceProgressCard}>
+                        <View style={styles.deviceProgressHeader}>
+                          <View style={styles.deviceProgressInfo}>
+                            <Text style={styles.deviceProgressName}>
+                              {deviceInfo?.brand} {deviceInfo?.model}
+                            </Text>
+                            {deviceInfo?.serial && (
+                              <Text style={styles.deviceProgressSerial}>
+                                S/N: {deviceInfo.serial}
+                              </Text>
+                            )}
+                          </View>
+                          <View style={styles.deviceProgressBadge}>
+                            <Text style={styles.deviceProgressBadgeText}>
+                              {device.progress_pct || 0}%
+                            </Text>
+                          </View>
+                        </View>
+                        <View style={styles.deviceProgressBarContainer}>
+                          <View
+                            style={[
+                              styles.deviceProgressBarFill,
+                              { width: `${device.progress_pct || 0}%` },
+                            ]}
+                          />
+                        </View>
+                        <Text style={styles.deviceProgressDetails}>
+                          {device.progress_completed_count || 0}/{device.progress_total || 0} items completados
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </View>
+              )}
             </View>
           </View>
         )}
@@ -516,6 +656,113 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+  },
+  timeCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderLeftWidth: 4,
+    borderLeftColor: '#34C759',
+  },
+  timeContent: {
+    gap: 12,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F2F2F7',
+  },
+  timeLabel: {
+    fontSize: 14,
+    color: '#666',
+    fontWeight: '500',
+    flex: 1,
+  },
+  timeValue: {
+    fontSize: 14,
+    color: '#000',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  timeValueHighlight: {
+    fontSize: 15,
+    color: '#34C759',
+    fontWeight: '700',
+    flex: 1,
+    textAlign: 'right',
+  },
+  devicesProgressContainer: {
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+  },
+  devicesProgressTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#000',
+    marginBottom: 12,
+  },
+  deviceProgressCard: {
+    backgroundColor: '#F9F9F9',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  deviceProgressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  deviceProgressInfo: {
+    flex: 1,
+  },
+  deviceProgressName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#000',
+    marginBottom: 4,
+  },
+  deviceProgressSerial: {
+    fontSize: 12,
+    color: '#666',
+  },
+  deviceProgressBadge: {
+    backgroundColor: '#34C759',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  deviceProgressBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  deviceProgressBarContainer: {
+    height: 6,
+    backgroundColor: '#E5E5EA',
+    borderRadius: 3,
+    overflow: 'hidden',
+    marginBottom: 8,
+  },
+  deviceProgressBarFill: {
+    height: '100%',
+    backgroundColor: '#34C759',
+    borderRadius: 3,
+  },
+  deviceProgressDetails: {
+    fontSize: 12,
+    color: '#666',
   },
 });
 

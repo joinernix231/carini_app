@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import TecnicoMantenimientosService, { TecnicoMaintenance } from '../services/TecnicoMantenimientosService';
+import { TecnicoMantenimientosService, TecnicoMaintenance } from '../services/TecnicoMantenimientosService';
 
 interface UseActiveMaintenanceReturn {
   hasActiveMaintenance: boolean;
