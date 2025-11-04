@@ -66,20 +66,21 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ### **DESGLOSE DETALLADO:**
 
-| # | Funcionalidad | Descripción | Valor Técnico |
-|---|---------------|-------------|---------------|
-| 1 | Sistema de Notificaciones Push Completo | Integración Expo Push, gestión de tokens, banner de notificaciones, pantalla de gestión | $1.500.000 |
-| 2 | Rol Administrador Completo (4to Rol) | Dashboard, GESTION completa de Clientes, Técnicos, Coordinadores y Equipos | $2.800.000 |
-| 3 | Mantenimientos Multi-Equipo | Selector múltiple, checklist inteligente, validaciones complejas, compatibilidad bidireccional | $1.200.000 |
-| 4 | Flujo Técnico Avanzado (Mantenimiento preventivo) | Timer con pausa/reanudación, GPS en todos los estados, checklist por tipo, guardado automático, Pantalla de finalización con firma del cliente y fotos finales | $6.200.000 |
-| 5 | Sistema de Fotos Avanzado  |upload a S3, optimización de imágenes | Subida de fotos a SERVER | $900.000 |
-| 6 | Funcionalidades Técnico | Mi Carnet Digital, módulo Parafiscales, gestión de documentos técnicos | $1.000.000 |
-| 7 | Gestión de Documentos | Upload, visualización PDFs, gestión por rol | $700.000 |
-| 8 | Filtros y Búsqueda Avanzada | Filtros multi-criterio, búsqueda en tiempo real, paginación inteligente | $600.000 |
-| 9 | Flujo Coordinador Avanzado | Múltiples vistas de mantenimientos, asignación avanzada, gestión de cotizaciones | $1.500.000 |
-| 10 | Optimizaciones Arquitectura | Lazy loading, navegación inteligente, BaseService reutilizable | $700.000 |
+| # | Funcionalidad | Descripción | Valor Técnico (COP) |
+|---:|---------------|-------------|--------------------:|
+| 1 | **Sistema de Notificaciones Push Completo** | Integración con **Expo Push Notifications**, gestión y almacenamiento de tokens por usuario, banner de notificaciones en tiempo real y pantalla de gestión de notificaciones dentro de la app. | **$1.500.000** |
+| 2 | **Rol Administrador Completo (4° Rol)** | Implementación del **Dashboard administrativo** con gestión integral de **Clientes, Técnicos, Coordinadores y Equipos**, incluyendo creación, edición y eliminación. | **$2.800.000** |
+| 3 | **Mantenimientos Multi-Equipo** | Selector múltiple de equipos, **checklist inteligente por equipo**, validaciones avanzadas y compatibilidad bidireccional entre técnico y coordinador. | **$1.200.000** |
+| 4 | **Flujo Técnico Avanzado (Mantenimiento Preventivo)** | Implementación de flujo técnico completo con **timer (pausa/reanudación)**, **GPS activo en todos los estados**, **checklist dinámico por tipo**, **guardado automático**, y **pantalla de finalización** con firma del cliente y fotos finales. **Este módulo servirá como base escalable para futuros mantenimientos correctivos.** | **$6.200.000** |
+| 5 | **Sistema de Fotos Avanzado** | Integración de subida de imágenes optimizada a servidor (**AWS S3**), compresión de imágenes, y manejo de permisos y fallos de red. | **$900.000** |
+| 6 | **Funcionalidades del Técnico** | Desarrollo del **carnet digital**, módulo de **parafiscales**, y gestión de **documentos técnicos personales** dentro de la aplicación. | **$1.000.000** |
+| 7 | **Gestión de Documentos** | Carga de archivos, visualización de **PDFs** y gestión de documentos filtrados según el rol del usuario. | **$700.000** |
+| 8 | **Filtros y Búsqueda Avanzada** | Implementación de filtros multicriterio, **búsqueda en tiempo real** y **paginación inteligente** tanto en listados técnicos como administrativos. | **$600.000** |
+| 9 | **Flujo del Coordinador Avanzado** | Múltiples vistas de mantenimientos, **asignación avanzada de técnicos**, seguimiento en tiempo real y **gestión de cotizaciones**. | **$1.500.000** |
+| 10 | **Optimizaciones de Arquitectura** | Implementación de **lazy loading**, **navegación optimizada** y estructura de **BaseService reutilizable** para mejorar rendimiento y escalabilidad del sistema. | **$700.000** |
 
-**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $17.100.000**
+
+**TOTAL VALOR TÉCNICO FUNCIONALIDADES ADICIONALES: $17.100.000 COP**
 
 ---
 
