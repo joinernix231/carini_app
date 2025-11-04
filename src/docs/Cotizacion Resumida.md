@@ -53,7 +53,7 @@
 
 ### **Estado de Pagos:**
 - ✅ **Pagado:** $3.525.000 (50% inicial - Junio 2025)
-- ⏳ **Pendiente:** $3.525.000 (50% final - No pagado)
+- ⏳ **Pendiente:** $3.525.000 (40% final - No pagado)
 
 ### **Período de Desarrollo:**
 Durante **varios meses** de desarrollo continuo, se han implementado funcionalidades adicionales significativas **sin recibir ningún pago adicional** más allá del 50% inicial. Todo el trabajo adicional (incluyendo las pantallas de finalización) se desarrolló con la confianza de que sería reconocido adecuadamente al momento de finalizar el proyecto.
@@ -110,26 +110,35 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | Concepto | Valor |
 |----------|-------|
 | **50% Pendiente Contrato Original** | $3.525.000 |
-| **Reconocimiento Trabajo Adicional (20% del valor técnico)** | $3.420.000 |
-| **TOTAL PROPUESTA** | **$6.945.000 COP** |
+| **Reconocimiento Trabajo Adicional (40% del valor técnico con descuento del 40%)** | $6.840.000 |
+| **TOTAL PROPUESTA** | **$10.365.000 COP** |
+
+💡 **Nota:** Se aplica un **descuento del 40%** sobre el valor técnico del trabajo adicional como reconocimiento a la relación comercial establecida.
 
 ---
 
 ## 💡 ALTERNATIVAS DE PAGO
 
 ### **Opción A: Pago Único**
-- **Total: $6.945.000**
+- **Total: $10.365.000**
 - Entrega inmediata del proyecto 100% completo y funcional
+- **Descuento adicional del 5% por pago único: $9.850.000**
 
 ### **Opción B: Pago en 2 Cuotas**
-- **Primera cuota (inmediata):** $4.000.000
+- **Primera cuota (inmediata):** $6.000.000
   - Cubre: 50% contrato + parte del reconocimiento
-- **Segunda cuota (30 días):** $2.945.000
+- **Segunda cuota (30 días):** $4.365.000
   - Cubre: Resto del reconocimiento
 
-### **Opción C: Mínimo Negociable**
-- **Total: $6.200.000** (solo si es necesario mantener relación)
-- Aún representa solo el **36%** del valor técnico del trabajo adicional
+### **Opción C: Pago en 3 Cuotas**
+- **Primera cuota (inmediata):** $4.000.000
+- **Segunda cuota (30 días):** $3.500.000
+- **Tercera cuota (60 días):** $2.865.000
+- **Total: $10.365.000**
+
+### **Opción D: Mínimo Negociable**
+- **Total: $9.500.000** (solo si es necesario mantener relación)
+- Aún representa solo el **56%** del valor técnico del trabajo adicional
 
 ---
 
@@ -142,6 +151,8 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | **TOTAL** | **$7.050.000** | **$24.150.000** | **+$17.100.000** |
 
 **Trabajo realizado = 3.4x el valor del contrato original**
+
+**Descuento aplicado:** Se cobra solo el **40%** del valor técnico del trabajo adicional, representando un **descuento del 60%** como muestra de buena voluntad comercial.
 
 ---
 
@@ -162,7 +173,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 ⚠️ **Esta propuesta considera:**
 - Trabajo realizado durante **meses sin pagos adicionales**
 - Valor técnico real del desarrollo adicional ($17.100.000)
-- Descuento del **80%** sobre el valor técnico del trabajo adicional
+- **Descuento del 60%** sobre el valor técnico del trabajo adicional (se cobra solo 40%)
 - Mantenimiento de buena relación comercial
 - **Todas las funcionalidades están completas** (no hay trabajo pendiente)
 
