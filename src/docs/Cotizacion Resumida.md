@@ -110,61 +110,47 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 | Concepto | Valor |
 |----------|-------|
 | **50% Pendiente Contrato Original** | $3.525.000 |
-| **Reconocimiento Trabajo Adicional (40% del valor técnico con descuento del 40%)** | $6.840.000 |
-| **TOTAL PROPUESTA** | **$10.365.000 COP** |
+| **Trabajo Adicional (con descuento del 40%)** | $10.260.000 |
+| **TOTAL PROPUESTA** | **$13.785.000 COP** |
 
-💡 **Nota:** Se aplica un **descuento del 40%** sobre el valor técnico del trabajo adicional como reconocimiento a la relación comercial establecida.
+💡 **Descuento aplicado:** Se aplica un **descuento del 40%** sobre el valor técnico del trabajo adicional ($17.100.000), quedando en **$10.260.000** como reconocimiento a la relación comercial establecida.
 
 ---
 
 ## 💡 ALTERNATIVAS DE PAGO
 
 ### **Opción A: Pago Único**
-- **Total: $10.365.000**
+- **Total: $13.785.000**
 - Entrega inmediata del proyecto 100% completo y funcional
-- **Descuento adicional del 5% por pago único: $9.850.000**
+- **Descuento adicional del 5% por pago único: $13.095.750**
 
 ### **Opción B: Pago en 2 Cuotas**
-- **Primera cuota (inmediata):** $6.000.000
-  - Cubre: 50% contrato + parte del reconocimiento
-- **Segunda cuota (30 días):** $4.365.000
-  - Cubre: Resto del reconocimiento
+- **Primera cuota (inmediata):** $8.000.000
+  - Cubre: 50% contrato + parte del adicional
+- **Segunda cuota (30 días):** $5.785.000
+  - Cubre: Resto del adicional
 
 ### **Opción C: Pago en 3 Cuotas**
-- **Primera cuota (inmediata):** $4.000.000
-- **Segunda cuota (30 días):** $3.500.000
-- **Tercera cuota (60 días):** $2.865.000
-- **Total: $10.365.000**
+- **Primera cuota (inmediata):** $5.000.000
+- **Segunda cuota (30 días):** $4.500.000
+- **Tercera cuota (60 días):** $4.285.000
+- **Total: $13.785.000**
 
 ### **Opción D: Mínimo Negociable**
-- **Total: $9.500.000** (solo si es necesario mantener relación)
-- Aún representa solo el **56%** del valor técnico del trabajo adicional
+- **Total: $12.500.000** (solo si es necesario mantener relación)
+- Aún representa solo el **73%** del valor técnico del trabajo adicional
 
 ---
 
 ## 📊 COMPARACIÓN DE VALORES
 
-| Concepto | Valor Original | Valor Real Desarrollado | Diferencia |
-|----------|---------------|------------------------|------------|
-| Contrato Base | $7.050.000 | $7.050.000 | - |
-| Funcionalidades Adicionales | $0 | $17.100.000 | +$17.100.000 |
-| **TOTAL** | **$7.050.000** | **$24.150.000** | **+$17.100.000** |
+| Concepto | Valor Original | Valor Real Desarrollado | Valor con Descuento |
+|----------|---------------|------------------------|---------------------|
+| Contrato Base | $7.050.000 | $7.050.000 | $7.050.000 |
+| Funcionalidades Adicionales | $0 | $17.100.000 | $10.260.000 |
+| **TOTAL** | **$7.050.000** | **$24.150.000** | **$17.310.000** |
 
-**Trabajo realizado = 3.4x el valor del contrato original**
-
-**Descuento aplicado:** Se cobra solo el **40%** del valor técnico del trabajo adicional, representando un **descuento del 60%** como muestra de buena voluntad comercial.
-
----
-
-## ✅ LO QUE INCLUYE LA PROPUESTA
-
-1. ✅ **Proyecto 100% completo y funcional**
-2. ✅ **Todas las funcionalidades adicionales implementadas** (10 items)
-3. ✅ **Pantallas de finalización completas** (incluidas en adicionales)
-4. ✅ Todo el código fuente desarrollado
-5. ✅ Documentación técnica completa
-6. ✅ Soporte técnico 30 días
-7. ✅ Reconocimiento justo por meses de trabajo adicional
+**Descuento aplicado:** Se cobra el **60%** del valor técnico del trabajo adicional, aplicando un **descuento del 40%** como muestra de buena voluntad comercial.
 
 ---
 
@@ -173,7 +159,7 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 ⚠️ **Esta propuesta considera:**
 - Trabajo realizado durante **meses sin pagos adicionales**
 - Valor técnico real del desarrollo adicional ($17.100.000)
-- **Descuento del 60%** sobre el valor técnico del trabajo adicional (se cobra solo 40%)
+- **Descuento del 40%** sobre el valor técnico del trabajo adicional (se cobra $10.260.000 en lugar de $17.100.000)
 - Mantenimiento de buena relación comercial
 - **Todas las funcionalidades están completas** (no hay trabajo pendiente)
 
