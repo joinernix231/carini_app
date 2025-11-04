@@ -304,7 +304,7 @@ export default function DetalleMantenimiento({ route }: { route: { params: Route
                 </View>
                 <View style={styles.deviceInfo}>
                   <Text style={styles.deviceName}>
-                    
+                    {TecnicoMantenimientosService.getEquipmentName(device)}
                   </Text>
                   <Text style={styles.deviceSerial}>{device.type} - Serie: {device.serial}</Text>
                 </View>
