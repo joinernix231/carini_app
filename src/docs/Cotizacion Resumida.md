@@ -16,7 +16,11 @@
 
 ### **Estado de Pagos:**
 - ✅ **Pagado:** $3.525.000 (50% inicial - Junio 2025)
+<<<<<<< HEAD
 - ⏳ **Pendiente:** $3.525.000 (50% final - No pagado)
+=======
+- ⏳ **Pendiente:** $3.525.000 (40% final - No pagado)
+>>>>>>> 5311c56cfa98dd6379985976d08698d52c49b058
 
 ### **Período de Desarrollo:**
 Durante **varios meses** de desarrollo continuo, se han implementado funcionalidades adicionales significativas **sin recibir ningún pago adicional** más allá del 50% inicial. Todo el trabajo adicional (incluyendo las pantallas de finalización) se desarrolló con la confianza de que sería reconocido adecuadamente al momento de finalizar el proyecto.
@@ -55,7 +59,11 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 
 ### **2. Trabajo Adicional Desarrollado (Incluyendo Finalización):**
 - Valor técnico: **$17.100.000**
+<<<<<<< HEAD
 - Trabajado durante **4 meses sin recibir pago adicional**
+=======
+- Trabajado durante **meses sin recibir pago adicional**
+>>>>>>> 5311c56cfa98dd6379985976d08698d52c49b058
 - **Todas las funcionalidades están implementadas y funcionando**
 
 ---
@@ -93,6 +101,20 @@ Estas funcionalidades **NO estaban contempladas en el contrato original** pero f
 - **Segunda cuota (30 días):** $5.785.000
   - Cubre: Resto del adicional
 
+<<<<<<< HEAD
+=======
+### **Opción C: Pago en 3 Cuotas**
+- **Primera cuota (inmediata):** $5.000.000
+- **Segunda cuota (30 días):** $4.500.000
+- **Tercera cuota (60 días):** $4.285.000
+- **Total: $13.785.000**
+
+### **Opción D: Mínimo Negociable**
+- **Total: $12.500.000** (solo si es necesario mantener relación)
+- Aún representa solo el **73%** del valor técnico del trabajo adicional
+
+---
+>>>>>>> 5311c56cfa98dd6379985976d08698d52c49b058
 
 ## 📊 COMPARACIÓN DE VALORES
 
@@ -129,6 +151,27 @@ El cliente recibe una aplicación que **excede significativamente** el alcance d
 - ✅ **Sistema de notificaciones push** (no contemplado)
 - ✅ **Mantenimientos multi-equipo** (no contemplado)
 - ✅ **Flujo técnico avanzado con timer/GPS/pausas** (vs "actualizar estado" básico)
+<<<<<<< HEAD
 - ✅ **Sistema completo de flujo de mantenimiento Preventivo con firma digital** (mejora significativa)
 - ✅ **Optimizaciones de arquitectura** para mejor rendimiento
 - ✅ **UI/UX moderna** con componentes avanzados
+=======
+- ✅ **Sistema completo de finalización con firma digital** (mejora significativa)
+- ✅ **Optimizaciones de arquitectura** para mejor rendimiento
+- ✅ **UI/UX moderna** con componentes avanzados
+
+---
+
+**Fecha de Emisión:** [Fecha]  
+**Vigencia:** 15 días  
+**Forma de Pago:** Transferencia bancaria  
+**Cuenta:** 24124683655 - Banco Caja Social
+
+---
+
+**Desarrollador:**  
+Joiner Antonio Dávila Saiz  
+C.C. 1.141.515.075  
+Teléfono: [Tu teléfono]  
+Email: [Tu email]
+>>>>>>> 5311c56cfa98dd6379985976d08698d52c49b058
