@@ -14,9 +14,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTecnico } from '../../hooks/tecnico/useTecnico';
-import AlertError from '../../components/AlertError';
+import { useMe } from '../../hooks/useMe';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NotificationIcon from '../../components/NotificationIcon';
 
 const { width } = Dimensions.get('window');
 
@@ -66,7 +66,8 @@ const options: MenuOption[] = [
 export default function TecnicoDashboard() {
   const { navigate } = useSmartNavigation();
   const { user, logout } = useAuth();
-  const { tecnico, loading, error } = useTecnico();
+  const { meData, loading } = useMe();
+  const tecnico = meData?.technician_data || null;
 
   const renderItem = ({ item }: { item: MenuOption }) => (
       <TouchableOpacity
@@ -115,19 +116,6 @@ export default function TecnicoDashboard() {
     );
   }
 
-  // Mostrar error
-  if (error) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor="#0077b6" />
-        <LinearGradient colors={['#00b4d8', '#0077b6', '#023e8a']} style={styles.root}>
-          <View style={styles.errorContainer}>
-            <AlertError message={error} />
-          </View>
-        </LinearGradient>
-      </SafeAreaView>
-    );
-  }
 
   return (
       <SafeAreaView style={styles.safeArea}>
@@ -136,18 +124,27 @@ export default function TecnicoDashboard() {
           <View style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-              <View style={styles.avatarContainer}>
-                {tecnico?.photo ? (
-                  <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
-                ) : (
-                  <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
-                )}
+              <View style={styles.headerTop}>
+                <View style={styles.headerContent}>
+                  <View style={styles.avatarContainer}>
+                    {tecnico?.photo ? (
+                      <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
+                    ) : (
+                      <MaterialIcons name="engineering" size={60} color="rgba(255,255,255,0.9)" />
+                    )}
+                  </View>
+                  <View style={styles.headerTextContainer}>
+                    <Text style={styles.greeting}>{getGreeting()}</Text>
+                    <Text style={styles.title}>{tecnico?.specialty || user?.name || 'Técnico'}</Text>
+                    <Text style={styles.subtitle}>
+                      {tecnico?.specialty ? `${tecnico.specialty} - Panel de Control` : 'Panel de Control Técnico'}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.headerRight}>
+                  <NotificationIcon color="#fff" size={24} />
+                </View>
               </View>
-              <Text style={styles.greeting}>{getGreeting()}</Text>
-              <Text style={styles.title}>{tecnico?.specialty || user?.name || 'Técnico'}</Text>
-              <Text style={styles.subtitle}>
-                {tecnico?.specialty ? `${tecnico.specialty} - Panel de Control` : 'Panel de Control Técnico'}
-              </Text>
             </View>
             {/* Menu Grid */}
             <View style={styles.contentContainer}>
@@ -189,9 +186,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    alignItems: 'center',
     paddingVertical: 20,
     paddingTop: 50,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  headerRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 8,
   },
   avatarContainer: {
     marginBottom: 15,

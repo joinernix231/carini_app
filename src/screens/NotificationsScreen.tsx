@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
       } else {
         screenParams.id = notification.data.maintenance_id;
       }
-      navigation.navigate('DetalleMantenimiento' as never, screenParams as never);
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     } else if (notification.data?.type === 'maintenance_assigned' && notification.data?.maintenance_id) {
       // Navegar a detalle de mantenimiento cuando se asigna a técnico
       const screenParams: any = {};
@@ -105,10 +105,12 @@ export default function NotificationsScreen() {
         screenParams.maintenanceId = notification.data.maintenance_id;
       } else if (user?.role === 'coordinador') {
         screenParams.mantenimientoId = notification.data.maintenance_id;
+      } else if (user?.role === 'cliente') {
+        screenParams.id = notification.data.maintenance_id;
       } else {
         screenParams.id = notification.data.maintenance_id;
       }
-      navigation.navigate('DetalleMantenimiento' as never, screenParams as never);
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     } else if (notification.data?.screen) {
       // Navegar a la pantalla específica
       const screenParams: any = {};
@@ -131,7 +133,7 @@ export default function NotificationsScreen() {
       }
       // Mapear 'MantenimientoDetail' a 'DetalleMantenimiento' si es necesario
       const screenName = notification.data.screen === 'MantenimientoDetail' ? 'DetalleMantenimiento' : notification.data.screen;
-      navigation.navigate(screenName as never, screenParams as never);
+      (navigation as any).navigate(screenName, screenParams);
     } else if (notification.data?.type === 'maintenance' && notification.data?.id) {
       // Navegar a detalles de mantenimiento
       const screenParams: any = {};
@@ -142,7 +144,7 @@ export default function NotificationsScreen() {
       } else {
         screenParams.id = notification.data.id;
       }
-      navigation.navigate('DetalleMantenimiento' as never, screenParams as never);
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     }
   };
 
@@ -222,7 +224,7 @@ export default function NotificationsScreen() {
             </Text>
             <Text style={styles.notificationBody}>{item.body}</Text>
             <Text style={styles.notificationDate}>
-              {formatDate(item.created_at || item.receivedAt)}
+              {formatDate(item.created_at || (item.receivedAt ? item.receivedAt.toISOString() : ''))}
             </Text>
           </View>
           {!item.read && <View style={styles.unreadDot} />}

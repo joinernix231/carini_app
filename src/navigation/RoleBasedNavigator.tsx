@@ -112,6 +112,7 @@ export function ClienteNavigator() {
       <ClienteStack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
       <ClienteStack.Screen name="EquipmentMaintenanceHistory" component={EquipmentMaintenanceHistory} />
       <ClienteStack.Screen name="MiPerfil" component={MiPerfil} />
+      <ClienteStack.Screen name="Notifications" component={NotificationsScreen} />
     </ClienteStack.Navigator>
   );
 }
@@ -134,6 +135,7 @@ function TecnicoStackNavigator() {
       <TecnicoStack.Screen name="MiCarnet" component={MiCarnet} />
       <TecnicoStack.Screen name="Parafiscales" component={Parafiscales} />
       <TecnicoStack.Screen name="GestionarDocumentos" component={LazyGestionarDocumentos} />
+      <TecnicoStack.Screen name="Notifications" component={NotificationsScreen} />
     </TecnicoStack.Navigator>
   );
 }
@@ -266,6 +268,9 @@ export function AdministradorNavigator() {
       {/* Mantenimientos */}
       <AdministradorStack.Screen name="VerMantenimientos" component={LazyMantenimientosListAdmin} />
       <AdministradorStack.Screen name="CrearMantenimiento" component={LazyCrearMantenimientoAdmin} />
+      
+      {/* Notificaciones */}
+      <AdministradorStack.Screen name="Notifications" component={NotificationsScreen} />
     </AdministradorStack.Navigator>
   );
 }
