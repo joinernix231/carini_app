@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
+import { formatDateToLocal } from '../../utils/dateUtils';
 
 
 interface DatePickerProps {
@@ -63,7 +64,8 @@ export default function DatePicker({
     
     if (selectedDate) {
       setSelectedDate(selectedDate);
-      const dateString = selectedDate.toISOString().split('T')[0];
+      // Formatear la fecha usando valores locales para evitar problemas de zona horaria
+      const dateString = formatDateToLocal(selectedDate);
       onDateChange(dateString);
     }
   };

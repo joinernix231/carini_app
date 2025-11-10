@@ -23,6 +23,7 @@ import { TecnicoService, AvailableTechnician } from '../../../services/TecnicoSe
 import { AsignarMantenimientoPayload, CoordinadorMantenimientoService } from '../../../services/CoordinadorMantenimientoService';
 import DatePicker from '../../../components/Calendar/DatePicker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { getTodayLocal } from '../../../utils/dateUtils';
 
 type RootStackParamList = {
   AsignarTecnico: { mantenimientoId: number };
@@ -301,7 +302,7 @@ export default function AsignarTecnicoScreen() {
               value={fechaMantenimiento}
               onDateChange={setFechaMantenimiento}
               placeholder="Seleccionar fecha del mantenimiento"
-              minimumDate={new Date().toISOString().split('T')[0]} // Fecha mínima: hoy
+              minimumDate={getTodayLocal()} // Fecha mínima: hoy
             />
           </View>
 
