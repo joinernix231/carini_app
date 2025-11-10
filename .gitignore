@@ -135,4 +135,4 @@ jspm_packages/
 # TernJS port file
 .tern-port
 
-.service-account.json
+.service-account.jsonservice-account.json
