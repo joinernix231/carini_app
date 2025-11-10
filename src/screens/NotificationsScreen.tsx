@@ -21,7 +21,8 @@ interface Notification {
   body: string;
   data?: any;
   read: boolean;
-  created_at: string;
+  created_at?: string;
+  receivedAt?: Date;
 }
 
 export default function NotificationsScreen() {
@@ -88,13 +89,28 @@ export default function NotificationsScreen() {
     // Navegar según el tipo de notificación
     if (notification.data?.type === 'spare_part_suggestion_created' && notification.data?.maintenance_id) {
       // Navegar a detalle de mantenimiento cuando hay sugerencia de repuesto
-      navigation.navigate('DetalleMantenimiento', { id: notification.data.maintenance_id });
+      const screenParams: any = {};
+      if (user?.role === 'tecnico') {
+        screenParams.maintenanceId = notification.data.maintenance_id;
+      } else if (user?.role === 'coordinador') {
+        screenParams.mantenimientoId = notification.data.maintenance_id;
+      } else {
+        screenParams.id = notification.data.maintenance_id;
+      }
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     } else if (notification.data?.type === 'maintenance_assigned' && notification.data?.maintenance_id) {
       // Navegar a detalle de mantenimiento cuando se asigna a técnico
-      const screenParams: any = user?.role === 'tecnico' 
-        ? { maintenanceId: notification.data.maintenance_id }
-        : { id: notification.data.maintenance_id };
-      navigation.navigate('DetalleMantenimiento', screenParams);
+      const screenParams: any = {};
+      if (user?.role === 'tecnico') {
+        screenParams.maintenanceId = notification.data.maintenance_id;
+      } else if (user?.role === 'coordinador') {
+        screenParams.mantenimientoId = notification.data.maintenance_id;
+      } else if (user?.role === 'cliente') {
+        screenParams.id = notification.data.maintenance_id;
+      } else {
+        screenParams.id = notification.data.maintenance_id;
+      }
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     } else if (notification.data?.screen) {
       // Navegar a la pantalla específica
       const screenParams: any = {};
@@ -103,6 +119,10 @@ export default function NotificationsScreen() {
         if ((notification.data.screen === 'MantenimientoDetail' || notification.data.screen === 'DetalleMantenimiento')) {
           if (user?.role === 'tecnico') {
             screenParams.maintenanceId = notification.data.maintenance_id;
+          } else if (user?.role === 'coordinador') {
+            screenParams.mantenimientoId = notification.data.maintenance_id;
+          } else if (user?.role === 'cliente') {
+            screenParams.id = notification.data.maintenance_id;
           } else {
             screenParams.id = notification.data.maintenance_id;
           }
@@ -112,10 +132,18 @@ export default function NotificationsScreen() {
       }
       // Mapear 'MantenimientoDetail' a 'DetalleMantenimiento' si es necesario
       const screenName = notification.data.screen === 'MantenimientoDetail' ? 'DetalleMantenimiento' : notification.data.screen;
-      navigation.navigate(screenName, screenParams);
+      (navigation as any).navigate(screenName, screenParams);
     } else if (notification.data?.type === 'maintenance' && notification.data?.id) {
       // Navegar a detalles de mantenimiento
-      navigation.navigate('DetalleMantenimiento', { id: notification.data.id });
+      const screenParams: any = {};
+      if (user?.role === 'tecnico') {
+        screenParams.maintenanceId = notification.data.id;
+      } else if (user?.role === 'coordinador') {
+        screenParams.mantenimientoId = notification.data.id;
+      } else {
+        screenParams.id = notification.data.id;
+      }
+      (navigation as any).navigate('DetalleMantenimiento', screenParams);
     }
   };
 
@@ -194,7 +222,7 @@ export default function NotificationsScreen() {
             </Text>
             <Text style={styles.notificationBody}>{item.body}</Text>
             <Text style={styles.notificationDate}>
-              {formatDate(item.created_at)}
+              {formatDate(item.created_at || (item.receivedAt ? item.receivedAt.toISOString() : ''))}
             </Text>
           </View>
           {!item.read && <View style={styles.unreadDot} />}
