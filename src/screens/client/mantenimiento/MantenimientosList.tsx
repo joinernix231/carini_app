@@ -375,7 +375,7 @@ export default function MantenimientosList() {
         </Text>
         <TouchableOpacity
             style={styles.emptyButton}
-            onPress={() => navigate('CrearMantenimiento')}
+            onPress={() => navigate('FlujoMantenimientoInfo')}
         >
           <Ionicons name="add" size={20} color="#FFFFFF" />
           <Text style={styles.emptyButtonText}>Crear mantenimiento</Text>
@@ -436,7 +436,7 @@ export default function MantenimientosList() {
               {/* Botón flotante para crear nuevo mantenimiento */}
               <TouchableOpacity
                   style={styles.fab}
-                  onPress={() => navigate('CrearMantenimiento')}
+                  onPress={() => navigate('FlujoMantenimientoInfo')}
                   activeOpacity={0.9}
               >
                 <Ionicons name="add" size={28} color="#FFFFFF" />

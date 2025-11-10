@@ -7,6 +7,7 @@ export type ClienteStackParamList = {
   DetalleEquipo: { deviceId: number };
   AgregarEquipo: undefined;
   SolicitarMantenimiento: { equipoId?: number };
+  FlujoMantenimientoInfo: { equipoId?: number };
   CrearMantenimiento: { equipoId?: number };
   DetalleMantenimiento: { id: number };
   EquipmentMaintenanceHistory: { deviceId: number; deviceBrand?: string; deviceModel?: string };

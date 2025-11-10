@@ -290,6 +290,40 @@ export const updateQuotation = async (
   }
 };
 
+export const markAsCalled = async (
+  maintenanceId: number,
+  token: string
+): Promise<any> => {
+  try {
+    const response = await API.put(
+      `/api/maintenances/${maintenanceId}/mark-as-called`,
+      {},
+      authHeaders(token)
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error marcando como llamado:', error);
+    throw error;
+  }
+};
+
+export const cancelMaintenance = async (
+  maintenanceId: number,
+  token: string
+): Promise<any> => {
+  try {
+    const response = await API.put(
+      `/api/cancelMaintenance/${maintenanceId}`,
+      {},
+      authHeaders(token)
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('❌ Error cancelando mantenimiento:', error);
+    throw error;
+  }
+};
+
 export const CoordinadorMantenimientoService = {
   getMantenimientosSinAsignarCoordinador,
   getMantenimientosAsignadosCoordinador,
@@ -299,4 +333,6 @@ export const CoordinadorMantenimientoService = {
   asignarTecnicoCoordinador,
   uploadPriceSupport,
   updateQuotation,
+  markAsCalled,
+  cancelMaintenance,
 };

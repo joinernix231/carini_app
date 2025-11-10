@@ -124,6 +124,7 @@ export default function NotificationsScreen() {
           } else if (user?.role === 'cliente') {
             screenParams.id = notification.data.maintenance_id;
           } else {
+            // Por defecto para otros roles
             screenParams.id = notification.data.maintenance_id;
           }
         } else {
@@ -147,8 +148,9 @@ export default function NotificationsScreen() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+  const formatDate = (dateString?: string | Date) => {
+    if (!dateString) return 'Fecha desconocida';
+    const date = dateString instanceof Date ? dateString : new Date(dateString);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
 

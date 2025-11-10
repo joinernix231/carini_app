@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import BackButton from '../../../components/BackButton';
+import ReagendarModal from '../../../components/Mantenimiento/ReagendarModal';
 import { useAuth } from '../../../context/AuthContext';
 import { useError } from '../../../context/ErrorContext';
 import { MantenimientoInformationService, MaintenanceInformation } from '../../../services/MantenimientoInformationService';
@@ -40,6 +41,7 @@ export default function DetalleMantenimientoEquipo() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [reagendarModalVisible, setReagendarModalVisible] = useState<boolean>(false);
 
     const fetchMaintenanceDetail = useCallback(async () => {
         if (!token) return;
@@ -532,6 +534,29 @@ export default function DetalleMantenimientoEquipo() {
                         </View>
                     );
                 })()}
+
+                {/* Botón de Reagendar - Disponible si tiene fecha y turno asignados */}
+                {maintenance?.date_maintenance && maintenance?.shift && 
+                 maintenance?.status !== 'completed' && maintenance?.status !== 'cancelled' && (
+                    <View style={styles.section}>
+                        <View style={styles.rescheduleSection}>
+                            <View style={styles.rescheduleHeader}>
+                                <MaterialIcons name="schedule" size={24} color="#FF9800" />
+                                <Text style={styles.rescheduleSectionTitle}>Reagendar Mantenimiento</Text>
+                            </View>
+                            <Text style={styles.rescheduleDescription}>
+                                Si necesitas cambiar la fecha, turno o técnico asignado a este mantenimiento.
+                            </Text>
+                            <TouchableOpacity
+                                style={styles.rescheduleButton}
+                                onPress={() => setReagendarModalVisible(true)}
+                            >
+                                <MaterialIcons name="event" size={20} color="#fff" />
+                                <Text style={styles.rescheduleButtonText}>Reagendar Mantenimiento</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
             </ScrollView>
 
             {/* Modal para ver imagen ampliada */}
@@ -565,6 +590,20 @@ export default function DetalleMantenimientoEquipo() {
                     </TouchableOpacity>
                 </View>
             </Modal>
+
+            {/* Modal de Reagendar */}
+            <ReagendarModal
+                visible={reagendarModalVisible}
+                onClose={() => setReagendarModalVisible(false)}
+                onSuccess={() => {
+                    setReagendarModalVisible(false);
+                    onRefresh();
+                }}
+                maintenanceId={maintenance?.id || 0}
+                currentDate={maintenance?.date_maintenance || null}
+                currentShift={maintenance?.shift || null}
+                currentTechnicianId={maintenance?.technician?.id || null}
+            />
         </SafeAreaView>
     );
 }
@@ -933,6 +972,55 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 12,
+    },
+    rescheduleSection: {
+        backgroundColor: '#FFF9E6',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#FFE082',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    rescheduleHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    rescheduleSectionTitle: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FF9800',
+        marginLeft: 8,
+    },
+    rescheduleDescription: {
+        fontSize: 14,
+        color: '#6B7280',
+        lineHeight: 20,
+        marginBottom: 16,
+    },
+    rescheduleButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FF9800',
+        paddingHorizontal: 24,
+        paddingVertical: 16,
+        borderRadius: 12,
+        gap: 8,
+        shadowColor: '#FF9800',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    rescheduleButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: '700',
     },
 });
 

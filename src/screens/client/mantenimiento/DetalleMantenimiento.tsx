@@ -27,6 +27,7 @@ import SparePartSuggestionCard from '../../../components/Cliente/SparePartSugges
 import MantenimientoConfirmationService from '../../../services/MantenimientoConfirmationService';
 
 const { width } = Dimensions.get('window');
+const CARINI_PHONE = '3104856772';
 
 interface MaintenanceStatus {
   color: string;
@@ -383,20 +384,30 @@ export default function DetalleMantenimiento() {
                     </Text>
                   </View>
                 )}
-                <TouchableOpacity
-                  style={[styles.confirmButton, confirming && styles.confirmButtonDisabled]}
-                  onPress={handleConfirmMaintenance}
-                  disabled={confirming}
-                >
-                  {confirming ? (
-                    <ActivityIndicator size="small" color="#fff" />
-                  ) : (
-                    <>
-                      <MaterialIcons name="check-circle" size={20} color="#fff" />
-                      <Text style={styles.confirmButtonText}>Confirmar Mantenimiento</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
+                <View style={styles.confirmationButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.confirmButton, confirming && styles.confirmButtonDisabled]}
+                    onPress={handleConfirmMaintenance}
+                    disabled={confirming}
+                  >
+                    {confirming ? (
+                      <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                      <>
+                        <MaterialIcons name="check-circle" size={20} color="#fff" />
+                        <Text style={styles.confirmButtonText}>Confirmar Mantenimiento</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.callCariniButton}
+                    onPress={() => Linking.openURL(`tel:${CARINI_PHONE}`)}
+                  >
+                    <MaterialIcons name="call" size={20} color="#fff" />
+                    <Text style={styles.callCariniButtonText}>Llamar a Carini</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             ) : null}
           </View>
@@ -1959,7 +1970,13 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
+  confirmationButtonsContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 8,
+  },
   confirmButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1978,6 +1995,27 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   confirmButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  callCariniButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF9800',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    gap: 8,
+    shadowColor: '#FF9800',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  callCariniButtonText: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
