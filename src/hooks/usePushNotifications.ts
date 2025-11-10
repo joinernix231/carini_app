@@ -154,7 +154,7 @@ export const usePushNotifications = () => {
         body: notif.body || '',
         data: notif.data || {},
         receivedAt: notif.created_at ? new Date(notif.created_at) : new Date(),
-        read: notif.read || false,
+        read: !!notif.read_at, // Si read_at existe y no es null, está leída
       }));
       setNotifications(mappedNotifications);
       return mappedNotifications;
