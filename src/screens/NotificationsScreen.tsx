@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { useAuth } from '../context/AuthContext';
 import { useNavigation } from '@react-navigation/native';
@@ -85,9 +86,33 @@ export default function NotificationsScreen() {
     }
 
     // Navegar según el tipo de notificación
-    if (notification.data?.screen) {
+    if (notification.data?.type === 'spare_part_suggestion_created' && notification.data?.maintenance_id) {
+      // Navegar a detalle de mantenimiento cuando hay sugerencia de repuesto
+      navigation.navigate('DetalleMantenimiento', { id: notification.data.maintenance_id });
+    } else if (notification.data?.type === 'maintenance_assigned' && notification.data?.maintenance_id) {
+      // Navegar a detalle de mantenimiento cuando se asigna a técnico
+      const screenParams: any = user?.role === 'tecnico' 
+        ? { maintenanceId: notification.data.maintenance_id }
+        : { id: notification.data.maintenance_id };
+      navigation.navigate('DetalleMantenimiento', screenParams);
+    } else if (notification.data?.screen) {
       // Navegar a la pantalla específica
-      navigation.navigate(notification.data.screen, notification.data);
+      const screenParams: any = {};
+      if (notification.data.maintenance_id) {
+        // Si el screen es 'MantenimientoDetail' o 'DetalleMantenimiento', usar el parámetro correcto según el rol
+        if ((notification.data.screen === 'MantenimientoDetail' || notification.data.screen === 'DetalleMantenimiento')) {
+          if (user?.role === 'tecnico') {
+            screenParams.maintenanceId = notification.data.maintenance_id;
+          } else {
+            screenParams.id = notification.data.maintenance_id;
+          }
+        } else {
+          screenParams.id = notification.data.maintenance_id;
+        }
+      }
+      // Mapear 'MantenimientoDetail' a 'DetalleMantenimiento' si es necesario
+      const screenName = notification.data.screen === 'MantenimientoDetail' ? 'DetalleMantenimiento' : notification.data.screen;
+      navigation.navigate(screenName, screenParams);
     } else if (notification.data?.type === 'maintenance' && notification.data?.id) {
       // Navegar a detalles de mantenimiento
       navigation.navigate('DetalleMantenimiento', { id: notification.data.id });
@@ -115,7 +140,11 @@ export default function NotificationsScreen() {
   };
 
   const getNotificationIcon = (notification: Notification) => {
-    if (notification.data?.type === 'maintenance') {
+    if (notification.data?.type === 'spare_part_suggestion_created') {
+      return 'build-outline';
+    } else if (notification.data?.type === 'maintenance_assigned') {
+      return 'person-add-outline';
+    } else if (notification.data?.type === 'maintenance') {
       return 'build-outline';
     } else if (notification.data?.type === 'assignment') {
       return 'person-add-outline';
@@ -127,7 +156,11 @@ export default function NotificationsScreen() {
   };
 
   const getNotificationColor = (notification: Notification) => {
-    if (notification.data?.type === 'alert') {
+    if (notification.data?.type === 'spare_part_suggestion_created') {
+      return '#FF9500';
+    } else if (notification.data?.type === 'maintenance_assigned') {
+      return '#3B82F6';
+    } else if (notification.data?.type === 'alert') {
       return '#FF6B6B';
     } else if (notification.data?.type === 'assignment') {
       return '#4ECDC4';
@@ -182,15 +215,15 @@ export default function NotificationsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
+      <SafeAreaView style={styles.loadingContainer} edges={['top']}>
         <ActivityIndicator size="large" color="#007AFF" />
         <Text style={styles.loadingText}>Cargando notificaciones...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity
           style={styles.backButton}
@@ -225,7 +258,7 @@ export default function NotificationsScreen() {
         contentContainerStyle={notifications.length === 0 ? styles.emptyListContainer : undefined}
         showsVerticalScrollIndicator={false}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -249,7 +282,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
+    paddingTop: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
     borderBottomColor: '#E9ECEF',

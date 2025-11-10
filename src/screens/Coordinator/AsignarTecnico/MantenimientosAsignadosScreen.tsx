@@ -15,10 +15,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import BackButton from '../../../components/BackButton';
-import MantenimientoCard from '../../../components/Mantenimiento/MantenimientoCard';
+import { MantenimientoCard } from '../../../components/Mantenimiento/MantenimientoCard';
 import { useMantenimientosAsignados } from '../../../hooks/mantenimiento/useMantenimientosAsignados';
 import { CoordinadorMantenimiento } from '../../../services/CoordinadorMantenimientoService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { MantenimientoListItem, Device } from '../../../types/mantenimiento/mantenimiento';
 
 const { width } = Dimensions.get('window');
 
@@ -33,9 +34,14 @@ export default function MantenimientosAsignadosScreen() {
   const { mantenimientos, loading, refreshing, error, onRefresh, fetchMantenimientos } = useMantenimientosAsignados();
 
   const handleVerDetalle = useCallback((mantenimiento: CoordinadorMantenimiento) => {
+    const devicesRaw = Array.isArray(mantenimiento.device) ? mantenimiento.device : (mantenimiento.device ? [mantenimiento.device] : []);
+    const firstDevice = devicesRaw[0];
+    const deviceName = firstDevice ? `${firstDevice.brand} ${firstDevice.model}` : 'equipo';
+    const clientName = mantenimiento.client?.name || 'cliente';
+    
     Alert.alert(
       'Ver Detalle',
-      `¿Deseas ver los detalles del mantenimiento del equipo ${mantenimiento.device.brand} ${mantenimiento.device.model}?`,
+      `¿Deseas ver los detalles del mantenimiento de ${clientName}?`,
       [
         { text: 'Cancelar', style: 'cancel' },
         {
@@ -48,12 +54,39 @@ export default function MantenimientosAsignadosScreen() {
     );
   }, [navigation]);
 
-  const renderMantenimiento = ({ item }: { item: CoordinadorMantenimiento }) => (
-    <MantenimientoCard
-      mantenimiento={item}
-      onPress={handleVerDetalle}
-    />
-  );
+  const renderMantenimiento = ({ item }: { item: CoordinadorMantenimiento }) => {
+    const devicesRaw = Array.isArray(item.device) ? item.device : (item.device ? [item.device] : []);
+    const devices: Device[] = devicesRaw.map((d: any) => ({
+      id: d.id,
+      client_device_id: d.client_device_id || d.id,
+      model: d.model,
+      brand: d.brand,
+      type: d.type,
+      serial: d.serial || '',
+      address: d.address || '',
+      pivot_description: d.pivot_description || d.description || null,
+    }));
+
+    const listItem: MantenimientoListItem = {
+      id: item.id,
+      type: item.type,
+      status: item.status as any,
+      devices,
+      description: item.description || '',
+      date_maintenance: item.date_maintenance,
+      created_at: item.created_at,
+      deviceCount: devices.length,
+      primaryDevice: devices[0] || { id: 0, model: 'N/A', brand: 'N/A', type: 'N/A', serial: '', address: '' },
+      clientName: item.client?.name || null,
+    };
+
+    return (
+      <MantenimientoCard
+        item={listItem}
+        onPress={() => handleVerDetalle(item)}
+      />
+    );
+  };
 
   if (loading) {
     return (

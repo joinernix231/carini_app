@@ -79,8 +79,7 @@ const EquipoCard = ({ item, onPress }: { item: Equipo; onPress: () => void }) =>
                     <MaterialIcons name={equipmentIcon} size={28} color="#fff" />
                 </View>
                 <View style={styles.equipmentInfo}>
-                    <Text style={styles.cardTitle}>{item.device.model}</Text>
-                    <Text style={styles.brandText}>{item.device.brand}</Text>
+                    <Text style={styles.cardTitle}>{item.device.model || item.device.brand}</Text>
                 </View>
                 <View style={styles.statusContainer}>
                     <View style={styles.statusDot} />

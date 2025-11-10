@@ -9,6 +9,7 @@ import {
   Alert,
   StatusBar,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import BackButton from '../../../components/BackButton';
@@ -24,13 +25,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MantenimientoCard } from '../../../components/Mantenimiento/MantenimientoCard';
 import { MantenimientoListItem } from '../../../types/mantenimiento/mantenimiento';
 
+type FilterType = 'all' | 'pending' | 'assigned' | 'in_progress' | 'completed';
+
 export default function MantenimientosList() {
   const { token } = useAuth();
   const { showError } = useError();
   const { navigate } = useSmartNavigation();
   const [mantenimientos, setMantenimientos] = useState<MantenimientoListItem[]>([]);
+  const [allMantenimientos, setAllMantenimientos] = useState<MantenimientoListItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('completed'); // Iniciar con "Asignados"
 
   const traducirEstado = (estadoIngles: string): string => {
     const traducciones: Record<string, string> = {
@@ -130,17 +135,74 @@ export default function MantenimientosList() {
           };
         });
 
-        setMantenimientos(formattedData);
+        setAllMantenimientos(formattedData);
+        // Aplicar filtro actual
+        applyFilter(activeFilter, formattedData);
       } else {
         // Warning log removed
+        setAllMantenimientos([]);
         setMantenimientos([]);
       }
     } catch (error) {
       // Error log removed
       showError(error, 'Error al cargar los mantenimientos');
       setMantenimientos([]);
+      setAllMantenimientos([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para aplicar filtro
+  const applyFilter = (filter: FilterType, data?: MantenimientoListItem[]) => {
+    const sourceData = data || allMantenimientos;
+    
+    let filtered: MantenimientoListItem[] = [];
+    
+    switch (filter) {
+      case 'all':
+        filtered = sourceData;
+        break;
+      case 'pending':
+        filtered = sourceData.filter(m => m.status === 'pending');
+        break;
+      case 'assigned':
+        filtered = sourceData.filter(m => m.status === 'assigned');
+        break;
+      case 'in_progress':
+        filtered = sourceData.filter(m => m.status === 'in_progress');
+        break;
+      case 'completed':
+        filtered = sourceData.filter(m => m.status === 'completed');
+        break;
+      default:
+        filtered = sourceData;
+    }
+    
+    setMantenimientos(filtered);
+  };
+
+  // Manejar cambio de filtro
+  const handleFilterChange = (filter: FilterType) => {
+    setActiveFilter(filter);
+    applyFilter(filter);
+  };
+
+  // Obtener conteo por filtro
+  const getFilterCount = (filter: FilterType): number => {
+    switch (filter) {
+      case 'all':
+        return allMantenimientos.length;
+      case 'pending':
+        return allMantenimientos.filter(m => m.status === 'pending').length;
+      case 'assigned':
+        return allMantenimientos.filter(m => m.status === 'assigned').length;
+      case 'in_progress':
+        return allMantenimientos.filter(m => m.status === 'in_progress').length;
+      case 'completed':
+        return allMantenimientos.filter(m => m.status === 'completed').length;
+      default:
+        return 0;
     }
   };
 
@@ -226,23 +288,78 @@ export default function MantenimientosList() {
 
         <View style={styles.statsCard}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{mantenimientos.length}</Text>
+            <Text style={styles.statNumber}>{allMantenimientos.length}</Text>
             <Text style={styles.statLabel}>Total</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {mantenimientos.filter(m => traducirEstado(m.status) === 'Pendiente').length}
+              {allMantenimientos.filter(m => m.status === 'pending').length}
             </Text>
             <Text style={styles.statLabel}>Pendiente</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
             <Text style={styles.statNumber}>
-              {mantenimientos.filter(m => traducirEstado(m.status) === 'Completado').length}
+              {allMantenimientos.filter(m => m.status === 'completed').length}
             </Text>
             <Text style={styles.statLabel}>Completado</Text>
           </View>
+        </View>
+
+        {/* Botones de filtro */}
+        <View style={styles.filtersContainer}>
+          <ScrollView 
+            horizontal 
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filtersContent}
+          >
+            <TouchableOpacity
+              style={[styles.filterChip, activeFilter === 'all' && styles.filterChipActive]}
+              onPress={() => handleFilterChange('all')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, activeFilter === 'all' && styles.filterChipTextActive]}>
+                Todos ({getFilterCount('all')})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, activeFilter === 'pending' && styles.filterChipActive]}
+              onPress={() => handleFilterChange('pending')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, activeFilter === 'pending' && styles.filterChipTextActive]}>
+                Pendientes ({getFilterCount('pending')})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, activeFilter === 'assigned' && styles.filterChipActive]}
+              onPress={() => handleFilterChange('assigned')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, activeFilter === 'assigned' && styles.filterChipTextActive]}>
+                Asignados ({getFilterCount('assigned')})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, activeFilter === 'in_progress' && styles.filterChipActive]}
+              onPress={() => handleFilterChange('in_progress')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, activeFilter === 'in_progress' && styles.filterChipTextActive]}>
+                En Progreso ({getFilterCount('in_progress')})
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterChip, activeFilter === 'completed' && styles.filterChipActive]}
+              onPress={() => handleFilterChange('completed')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.filterChipText, activeFilter === 'completed' && styles.filterChipTextActive]}>
+                Completados ({getFilterCount('completed')})
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
         </View>
       </View>
   );
@@ -560,5 +677,34 @@ const styles = StyleSheet.create({
     fontSize: 17,
     color: '#666',
     fontWeight: '500',
+  },
+  filtersContainer: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  filtersContent: {
+    paddingRight: 20,
+    gap: 10,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  filterChipActive: {
+    backgroundColor: '#007AFF',
+    borderColor: '#007AFF',
+  },
+  filterChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  filterChipTextActive: {
+    color: '#FFFFFF',
   },
 });

@@ -21,31 +21,44 @@ export function useCliente(id: number) {
 
     const fetchCliente = useCallback(async () => {
         if (!token || !id) {
-            setLoading(false);
+            if (mountedRef.current) {
+                setLoading(false);
+            }
             return;
         }
 
         try {
-            setLoading(true);
-            setError(null);
+            if (mountedRef.current) {
+                setLoading(true);
+                setError(null);
+            }
 
-            const data = await ClienteService.getById(id, token);
+            // Timeout de seguridad para evitar carga infinita
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Timeout: La solicitud tardó demasiado')), 10000);
+            });
+
+            const data = await Promise.race([
+                ClienteService.getById(id, token),
+                timeoutPromise
+            ]) as Cliente;
 
             if (!mountedRef.current) return;
 
             setCliente(data);
         } catch (err: any) {
-            // Error log removed
             if (!mountedRef.current) return;
             
             // Usar el sistema de errores global
             showError(err, 'Error al cargar los datos del cliente');
-            setError(err.message || 'Error cargando cliente');
+            const errorMessage = err?.response?.data?.message || err?.message || 'Error cargando cliente';
+            setError(errorMessage);
         } finally {
-            if (!mountedRef.current) return;
-            setLoading(false);
+            if (mountedRef.current) {
+                setLoading(false);
+            }
         }
-    }, [token, id]);
+    }, [token, id, showError]);
 
     useEffect(() => {
         fetchCliente();

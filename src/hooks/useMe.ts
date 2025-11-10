@@ -14,8 +14,14 @@ export const useMe = () => {
   const [meData, setMeData] = useState<MeData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   const loadMe = useCallback(async () => {
+    // Evitar cargar si ya se cargó antes
+    if (hasLoaded && meData) {
+      return meData;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -60,6 +66,7 @@ export const useMe = () => {
         };
         
         setMeData(meData);
+        setHasLoaded(true);
         return meData;
       }
 
@@ -72,11 +79,12 @@ export const useMe = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hasLoaded, meData]);
 
-  useEffect(() => {
-    loadMe();
-  }, [loadMe]);
+  // No cargar automáticamente - solo cuando se llame explícitamente
+  // useEffect(() => {
+  //   loadMe();
+  // }, [loadMe]);
 
   return {
     meData,
@@ -94,6 +102,9 @@ export const useCarnetInfo = () => {
     foto: string;
     numero_carnet: string;
     fecha_expedicion: string;
+    telefono: string;
+    direccion: string;
+    tipo_contrato: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -131,7 +142,9 @@ export const useCarnetInfo = () => {
           foto: tecnico.photo || '',
           numero_carnet: `${tecnico.document}`,
           fecha_expedicion: tecnico.hire_date || new Date().toISOString().split('T')[0],
-        
+          telefono: tecnico.phone || '',
+          direccion: tecnico.address || '',
+          tipo_contrato: tecnico.contract_type || 'full_time',
         };
         
         setCarnetInfo(carnetData);

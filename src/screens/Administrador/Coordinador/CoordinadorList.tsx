@@ -234,9 +234,8 @@ export default function CoordinadorList() {
             item={item}
             onPress={goToDetail}
             onDelete={handleDelete}
-            theme={isDark ? 'dark' : 'light'}
         />
-    ), [goToDetail, handleDelete, isDark]);
+    ), [goToDetail, handleDelete]);
 
     // Loading state
     if (loading && !refreshing && coordinadores.length === 0) {

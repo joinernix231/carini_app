@@ -177,6 +177,23 @@ export function useCoordinadores({
         [token, showError]
     );
 
+    const updateCoordinadorStatus = useCallback(
+        async (id: number, status: 'active' | 'inactive') => {
+            if (!token) throw new Error('No auth token');
+            try {
+                await CoordinadorService.changeStatus(id, status, token);
+                // Recargar desde el servidor para obtener datos completos
+                await fetchCoordinadores(page, false);
+                return true;
+            } catch (err: any) {
+                showError(err, 'Error al cambiar el estado del coordinador');
+                setError(err.message || 'Error cambiando estado');
+                return false;
+            }
+        },
+        [token, fetchCoordinadores, page]
+    );
+
     return {
         coordinadores, // <- Consistente con el estado
         pagination,
@@ -195,5 +212,6 @@ export function useCoordinadores({
         removeCoordinador,
         addCoordinador,
         updateCoordinador,
+        updateCoordinadorStatus,
     };
 }

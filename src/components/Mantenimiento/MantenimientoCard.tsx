@@ -183,7 +183,7 @@ export const MantenimientoCard: React.FC<MantenimientoCardProps> = ({
             </View>
             <View style={styles.equipoInfo}>
               <Text style={styles.equipoNombre} numberOfLines={1}>
-                {item.primaryDevice.model} {item.deviceCount > 1 && `+${item.deviceCount - 1} más`}
+                {item.clientName || `${item.primaryDevice.brand} ${item.primaryDevice.model}`}
               </Text>
               <View style={styles.badgesContainer}>
                 <View style={[styles.tipoBadge, { backgroundColor: tipoConfig.bgColor }]}>

@@ -86,7 +86,6 @@ export default function DetalleCliente() {
     const toggleStatus = useCallback(() => {
         if (!cliente) return;
         const next = cliente.status === 'active' ? 'inactive' : 'active';
-        console.log(next)
         Alert.alert(
             `${next === 'active' ? 'Activar' : 'Desactivar'} cliente`,
             `¿Deseas cambiar el estado a "${next === 'active' ? 'Activo' : 'Inactivo'}"?`,
@@ -156,44 +155,55 @@ export default function DetalleCliente() {
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="dark-content" backgroundColor="#F8FAFC" />
+            <StatusBar barStyle="light-content" backgroundColor="#0EA5E9" />
 
-            <LinearGradient
-                colors={['#F3F4F6', '#E5E7EB', '#D1D5DB']}
-                style={styles.header}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-            >
-                <View style={styles.headerRow}>
-                    <BackButton color="#6B7280" />
-                    <View style={styles.headerCenter}>
-                        <View style={styles.avatar}>
-                            <Ionicons name="business-outline" size={44} color="#3B82F6" />
+            <View style={styles.headerWrapper}>
+                <LinearGradient
+                    colors={['#0EA5E9', '#0284C7', '#0369A1']}
+                    style={styles.header}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                >
+                    <View style={styles.headerRow}>
+                        <BackButton color="#ffffff" />
+                        <View style={styles.headerCenter}>
+                            <View style={styles.avatar}>
+                                <Ionicons name="business-outline" size={44} color="#0EA5E9" />
+                            </View>
+
+                            <Text style={styles.title}>{displayName}</Text>
+
+                            <View style={[styles.statusBadge, { 
+                                backgroundColor: cliente?.status === 'active' 
+                                    ? 'rgba(16, 185, 129, 0.2)' 
+                                    : 'rgba(239, 68, 68, 0.2)',
+                            }]}>
+                                <View style={[styles.statusDot, { 
+                                    backgroundColor: cliente?.status === 'active' ? '#10B981' : '#EF4444' 
+                                }]} />
+                                <Text style={[styles.statusText, { 
+                                    color: cliente?.status === 'active' ? '#10B981' : '#EF4444' 
+                                }]}>
+                                    {cliente?.status === 'active' ? 'Activo' : 'Inactivo'}
+                                </Text>
+                            </View>
                         </View>
 
-                        <Text style={[styles.title, { color: '#1F2937' }]}>{displayName}</Text>
-
-                        <View style={[styles.statusBadge, { backgroundColor: cliente?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.15)' }]}>
-                            <Text style={[styles.statusText, { color: cliente?.status === 'active' ? '#9ef01a' : '#EF4444' }]}>
-                                {cliente?.status === 'active' ? 'Activo' : 'Inactivo'}
-                            </Text>
+                        <View style={styles.headerActions}>
+                            <TouchableOpacity onPress={() => {
+                                Alert.alert('Compartir', `Cliente: ${displayName}`);
+                            }} accessibilityLabel="Compartir cliente" style={styles.shareButton}>
+                                <MaterialIcons name="share" size={22} color="#ffffff" />
+                            </TouchableOpacity>
                         </View>
                     </View>
-
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity onPress={() => {
-                            Alert.alert('Compartir', `Cliente: ${displayName}`);
-                        }} accessibilityLabel="Compartir cliente">
-                            <MaterialIcons name="share" size={22} color="#6B7280" />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </LinearGradient>
+                </LinearGradient>
+            </View>
 
             <ScrollView
                 style={styles.scrollContainer}
                 contentContainerStyle={{ paddingBottom: 40 }}
-                refreshControl={<RefreshControl refreshing={false} onRefresh={() => fetchCliente()} />}
+                refreshControl={<RefreshControl refreshing={loading} onRefresh={() => fetchCliente()} />}
                 showsVerticalScrollIndicator={false}
             >
                 <View style={styles.section}>
@@ -303,15 +313,77 @@ const ActionButton = ({ icon, label, color, onPress, disabled }: { icon: string;
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#F8FAFB' },
-    header: { paddingTop: 12, paddingBottom: 24, paddingHorizontal: 16 },
-    headerRow: { flexDirection: 'row', alignItems: 'center' },
+    headerWrapper: {
+        overflow: 'hidden',
+        borderBottomLeftRadius: 24,
+        borderBottomRightRadius: 24,
+        shadowColor: '#0EA5E9',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 8,
+    },
+    header: { 
+        paddingTop: 12, 
+        paddingBottom: 28, 
+        paddingHorizontal: 16,
+    },
+    headerRow: { 
+        flexDirection: 'row', 
+        alignItems: 'center',
+    },
     headerCenter: { flex: 1, alignItems: 'center' },
     headerActions: { width: 44, alignItems: 'flex-end' },
-    avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E0F2FE', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#BFDBFE' },
-    title: { color: '#fff', fontSize: 20, fontWeight: '700' },
-    subtitle: { color: 'rgba(255,255,255,0.95)', marginTop: 4 },
-    statusBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
-    statusText: { fontWeight: '700' },
+    shareButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    avatar: { 
+        width: 88, 
+        height: 88, 
+        borderRadius: 44, 
+        backgroundColor: '#ffffff', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        elevation: 6,
+    },
+    title: { 
+        color: '#ffffff', 
+        fontSize: 22, 
+        fontWeight: '700',
+        textShadowColor: 'rgba(0,0,0,0.15)',
+        textShadowOffset: { width: 0, height: 1 },
+        textShadowRadius: 3,
+        marginBottom: 4,
+    },
+    subtitle: { color: 'rgba(255,255,255,0.85)', marginTop: 4 },
+    statusBadge: { 
+        marginTop: 10, 
+        paddingHorizontal: 14, 
+        paddingVertical: 6, 
+        borderRadius: 16,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    statusDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+    },
+    statusText: { 
+        fontWeight: '600', 
+        fontSize: 13,
+    },
 
     scrollContainer: { flex: 1 },
 
@@ -351,13 +423,13 @@ const styles = StyleSheet.create({
     actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, flexWrap: 'wrap' },
     actionBtn: { width: (width - 56) / 3, paddingVertical: 12, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
     actionIcon: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', color: '#1F2937' },
 
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 8, color: '#6B7280' },
 
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700' },
+    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700', color: '#1F2937' },
     errorText: { color: '#6B7280', marginTop: 8, textAlign: 'center' },
     retryButton: { marginTop: 16, backgroundColor: '#0EA5E9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
     retryButtonText: { color: '#fff', fontWeight: '700' },

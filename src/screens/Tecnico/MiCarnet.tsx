@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import {
     View,
     Text,
@@ -9,24 +9,86 @@ import {
     useColorScheme,
     Image,
     ActivityIndicator,
+    TouchableOpacity,
+    Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import BackButton from '../../components/BackButton';
 import { useAuth } from '../../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCarnetInfo } from '../../hooks/useMe';
 import AlertError from '../../components/AlertError';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width * 0.9;
+const CARD_HEIGHT = CARD_WIDTH * 1.6;
 
 export default function MiCarnet() {
     const { user } = useAuth();
     const colorScheme = useColorScheme();
     const isDark = colorScheme === 'dark';
     const { carnetInfo, loading, error } = useCarnetInfo();
+    
+    const [isFlipped, setIsFlipped] = useState(false);
+    const flipAnimation = useRef(new Animated.Value(0)).current;
 
-    // Mostrar loading
+    const flipCard = () => {
+        if (isFlipped) {
+            Animated.spring(flipAnimation, {
+                toValue: 0,
+                friction: 8,
+                tension: 10,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            Animated.spring(flipAnimation, {
+                toValue: 180,
+                friction: 8,
+                tension: 10,
+                useNativeDriver: true,
+            }).start();
+        }
+        setIsFlipped(!isFlipped);
+    };
+
+    const frontInterpolate = flipAnimation.interpolate({
+        inputRange: [0, 180],
+        outputRange: ['0deg', '180deg'],
+    });
+
+    const backInterpolate = flipAnimation.interpolate({
+        inputRange: [0, 180],
+        outputRange: ['180deg', '360deg'],
+    });
+
+    const frontAnimatedStyle = {
+        transform: [{ rotateY: frontInterpolate }],
+    };
+
+    const backAnimatedStyle = {
+        transform: [{ rotateY: backInterpolate }],
+    };
+
+    const getContractTypeText = (type: string) => {
+        const types: Record<string, string> = {
+            'full_time': 'Tiempo Completo',
+            'part_time': 'Medio Tiempo',
+            'contractor': 'Contratista',
+        };
+        return types[type] || type;
+    };
+
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+        });
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
@@ -48,7 +110,6 @@ export default function MiCarnet() {
         );
     }
 
-    // Mostrar error
     if (error) {
         return (
             <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
@@ -67,22 +128,26 @@ export default function MiCarnet() {
         );
     }
 
-    // Datos por defecto si no hay información
     const tecnicoData = carnetInfo || {
         nombre: user?.name || 'Técnico Carini',
         rh: 'No especificado',
         especialidad: 'Técnico',
         foto: '',
-        numero_carnet: 'TC-000',
+        numero_carnet: user?.name || 'TC-000',
         fecha_expedicion: new Date().toISOString().split('T')[0],
-        vigencia: new Date().toISOString().split('T')[0]
+        telefono: '',
+        direccion: '',
+        tipo_contrato: 'full_time',
     };
+
+    const nombreParts = tecnicoData.nombre.split(' ');
+    const primerNombre = nombreParts[0] || '';
+    const apellidos = nombreParts.slice(1).join(' ') || '';
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: isDark ? '#111827' : '#F8FAFC' }]}>
             <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
             
-            {/* Header */}
             <View style={styles.header}>
                 <BackButton color={isDark ? '#fff' : '#000'} size={28} />
                 <Text style={[styles.headerTitle, { color: isDark ? '#fff' : '#000' }]}>
@@ -96,85 +161,169 @@ export default function MiCarnet() {
                 contentContainerStyle={styles.scrollContent}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Carnet Digital */}
+                <View style={styles.instructionContainer}>
+                    <Ionicons name="information-circle-outline" size={20} color="#3B82F6" />
+                    <Text style={styles.instructionText}>
+                        Toca el carnet para ver la información completa
+                    </Text>
+                </View>
+
                 <View style={styles.carnetContainer}>
-                    <LinearGradient
-                        colors={['#1E40AF', '#3B82F6', '#60A5FA']}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 1, y: 1 }}
-                        style={styles.carnetCard}
+                    <TouchableOpacity
+                        activeOpacity={0.9}
+                        onPress={flipCard}
+                        style={styles.carnetTouchable}
                     >
-                        {/* Header del Carnet */}
-                        <View style={styles.carnetHeader}>
-                            <View style={styles.logoContainer}>
-                                <View style={styles.logoCircle}>
-                                    <Text style={styles.logoText}>C</Text>
-                                </View>
-                                <Text style={styles.companyName}>CARINI</Text>
-                            </View>
-                            <View style={styles.carnetNumber}>
-                                <Text style={styles.carnetNumberText}>#{tecnicoData.numero_carnet}</Text>
-                            </View>
-                        </View>
-
-                        {/* Foto y Info Principal */}
-                        <View style={styles.mainInfo}>
-                            <View style={styles.photoContainer}>
-                                {tecnicoData.foto ? (
-                                    <Image 
-                                        source={{ uri: tecnicoData.foto }} 
-                                        style={styles.photo}
-                                        resizeMode="cover"
-                                    />
-                                ) : (
-                                    <View style={styles.photoPlaceholder}>
-                                        <MaterialIcons name="person" size={40} color="#3B82F6" />
+                        {/* Cara Frontal */}
+                        <Animated.View
+                            style={[
+                                styles.carnetCard,
+                                styles.carnetFront,
+                                frontAnimatedStyle,
+                            ]}
+                        >
+                            <LinearGradient
+                                colors={['#FFFFFF', '#F8FAFC', '#F1F5F9']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.gradientFront}
+                            >
+                                {/* Header con logo y número */}
+                                <View style={styles.frontHeader}>
+                                    <View style={styles.logoContainer}>
+                                        <View style={styles.logoCircle}>
+                                            <View style={styles.logoHalfCircle} />
+                                            <View style={styles.logoWaves} />
+                                        </View>
+                                        <View style={styles.companyInfo}>
+                                            <Text style={styles.companyName}>carini</Text>
+                                            <Text style={styles.companySlogan}>Equipos para Lavandería</Text>
+                                        </View>
                                     </View>
-                                )}
-                            </View>
-                            
-                            <View style={styles.infoContainer}>
-                                <Text style={styles.nameText}>{tecnicoData.nombre}</Text>
-                                <Text style={styles.roleText}>TÉCNICO ESPECIALIZADO</Text>
-                            </View>
-                        </View>
-
-                        {/* Detalles del Técnico */}
-                        <View style={styles.detailsContainer}>
-                            <View style={styles.detailRow}>
-                                <View style={styles.detailIcon}>
-                                    <MaterialIcons name="bloodtype" size={20} color="#fff" />
+                                    <View style={styles.carnetBadge}>
+                                        <Text style={styles.carnetBadgeText}>#{tecnicoData.numero_carnet}</Text>
+                                    </View>
                                 </View>
-                                <Text style={styles.detailLabel}>RH:</Text>
-                                <Text style={styles.detailValue}>{tecnicoData.rh}</Text>
-                            </View>
 
-                            <View style={styles.detailRow}>
-                                <View style={styles.detailIcon}>
-                                    <MaterialIcons name="engineering" size={20} color="#fff" />
+                                {/* Foto y nombre */}
+                                <View style={styles.frontContent}>
+                                    <View style={styles.photoContainer}>
+                                        {tecnicoData.foto ? (
+                                            <Image 
+                                                source={{ uri: tecnicoData.foto }} 
+                                                style={styles.photo}
+                                                resizeMode="cover"
+                                            />
+                                        ) : (
+                                            <View style={styles.photoPlaceholder}>
+                                                <MaterialIcons name="person" size={50} color="#3B82F6" />
+                                            </View>
+                                        )}
+                                        <View style={styles.photoBorder} />
+                                    </View>
+                                    
+                                    <View style={styles.nameContainer}>
+                                        <Text style={styles.firstName}>{primerNombre}</Text>
+                                        <Text style={styles.lastName}>{apellidos}</Text>
+                                        <View style={styles.specialtyContainer}>
+                                            <MaterialIcons name="engineering" size={16} color="#3B82F6" />
+                                            <Text style={styles.specialtyText}>{tecnicoData.especialidad}</Text>
+                                        </View>
+                                    </View>
                                 </View>
-                                <Text style={styles.detailLabel}>Especialidad:</Text>
-                                <Text style={styles.detailValue}>{tecnicoData.especialidad}</Text>
-                            </View>
 
-                            <View style={styles.detailRow}>
-                                <View style={styles.detailIcon}>
-                                    <MaterialIcons name="calendar-today" size={20} color="#fff" />
+                                {/* Footer con cédula */}
+                                <View style={styles.frontFooter}>
+                                    <Text style={styles.cedulaLabel}>CEDULA DE CIUDADANÍA</Text>
+                                    <Text style={styles.cedulaNumber}>{tecnicoData.numero_carnet}</Text>
                                 </View>
-                                <Text style={styles.detailLabel}>Fecha de Contratación:</Text>
-                                <Text style={styles.detailValue}>{tecnicoData.fecha_expedicion}</Text>
-                            </View>
+                            </LinearGradient>
+                        </Animated.View>
 
-                        
-                        </View>
+                        {/* Cara Trasera */}
+                        <Animated.View
+                            style={[
+                                styles.carnetCard,
+                                styles.carnetBack,
+                                backAnimatedStyle,
+                            ]}
+                        >
+                            <LinearGradient
+                                colors={['#FFFFFF', '#F8FAFC', '#F1F5F9']}
+                                start={{ x: 0, y: 0 }}
+                                end={{ x: 1, y: 1 }}
+                                style={styles.gradientBack}
+                            >
+                                {/* Advertencia */}
+                                <View style={styles.backWarning}>
+                                    <Ionicons name="shield-checkmark" size={16} color="#F59E0B" />
+                                    <Text style={styles.warningText}>
+                                        ESTE CARNET ES PERSONAL E INTRANSFERIBLE
+                                    </Text>
+                                </View>
 
-                        {/* Footer del Carnet */}
-                        <View style={styles.carnetFooter}>
-                            <Text style={styles.footerText}>
-                                Este carnet es válido únicamente para actividades laborales autorizadas
-                            </Text>
-                        </View>
-                    </LinearGradient>
+                                {/* Información médica */}
+                                <View style={styles.backContent}>
+                                    <View style={styles.rhSection}>
+                                        <View style={styles.rhIconContainer}>
+                                            <MaterialIcons name="bloodtype" size={24} color="#DC2626" />
+                                        </View>
+                                        <View style={styles.rhInfo}>
+                                            <Text style={styles.rhLabel}>Tipo de Sangre</Text>
+                                            <Text style={styles.rhValue}>{tecnicoData.rh}</Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Información de contacto */}
+                                    {tecnicoData.telefono && (
+                                        <View style={styles.infoRow}>
+                                            <View style={styles.infoIcon}>
+                                                <MaterialIcons name="phone" size={18} color="#3B82F6" />
+                                            </View>
+                                            <Text style={styles.infoText}>{tecnicoData.telefono}</Text>
+                                        </View>
+                                    )}
+
+                                    <View style={styles.infoRow}>
+                                        <View style={styles.infoIcon}>
+                                            <MaterialIcons name="work" size={18} color="#3B82F6" />
+                                        </View>
+                                        <Text style={styles.infoText}>
+                                            {getContractTypeText(tecnicoData.tipo_contrato)}
+                                        </Text>
+                                    </View>
+
+                                    <View style={styles.infoRow}>
+                                        <View style={styles.infoIcon}>
+                                            <MaterialIcons name="calendar-today" size={18} color="#3B82F6" />
+                                        </View>
+                                        <Text style={styles.infoText}>
+                                            Desde: {formatDate(tecnicoData.fecha_expedicion)}
+                                        </Text>
+                                    </View>
+
+                                    {/* Información de la empresa */}
+                                    <View style={styles.companyDetails}>
+                                        <View style={styles.companyHeader}>
+                                            <View style={styles.companyLogoSmall}>
+                                                <View style={styles.logoCircleSmall}>
+                                                    <View style={styles.logoHalfCircleSmall} />
+                                                </View>
+                                            </View>
+                                            <Text style={styles.companyNameBack}>CARINI S.A.S.</Text>
+                                        </View>
+                                        <View style={styles.companyContact}>
+                                            <Text style={styles.companyAddress}>Calle 78 No. 69Q-41</Text>
+                                            <Text style={styles.companyCity}>Bogotá, D. C. - Colombia</Text>
+                                            <Text style={styles.companyPhone}>PBX.: 601 3653389</Text>
+                                            <Text style={styles.companyEmail}>planta@carini.co</Text>
+                                            <Text style={styles.companyWebsite}>www.carini.co</Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            </LinearGradient>
+                        </Animated.View>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Información Adicional */}
@@ -238,139 +387,368 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 20,
         paddingBottom: 40,
+        alignItems: 'center',
+    },
+    instructionContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#DBEAFE',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
+        marginBottom: 20,
+        gap: 8,
+    },
+    instructionText: {
+        fontSize: 14,
+        color: '#1E40AF',
+        fontWeight: '500',
     },
     carnetContainer: {
         alignItems: 'center',
         marginBottom: 30,
     },
+    carnetTouchable: {
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
+    },
     carnetCard: {
-        width: width * 0.9,
+        position: 'absolute',
+        width: CARD_WIDTH,
+        height: CARD_HEIGHT,
         borderRadius: 20,
-        padding: 24,
+        backfaceVisibility: 'hidden',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 16,
         elevation: 12,
     },
-    carnetHeader: {
+    carnetFront: {
+        backgroundColor: 'transparent',
+    },
+    carnetBack: {
+        backgroundColor: 'transparent',
+    },
+    gradientFront: {
+        flex: 1,
+        borderRadius: 20,
+        padding: 24,
+        borderWidth: 2,
+        borderColor: '#E5E7EB',
+        overflow: 'hidden',
+    },
+    gradientBack: {
+        flex: 1,
+        borderRadius: 20,
+        padding: 24,
+        borderWidth: 2,
+        borderColor: '#E5E7EB',
+        overflow: 'hidden',
+    },
+    // Estilos cara frontal
+    frontHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
+        alignItems: 'flex-start',
+        marginBottom: 20,
     },
     logoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
+        flex: 1,
+        gap: 12,
     },
     logoCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#3B82F6',
+        position: 'relative',
+        overflow: 'hidden',
     },
-    logoText: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#1E40AF',
+    logoHalfCircle: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: 25,
+        height: 50,
+        backgroundColor: '#1E40AF',
+    },
+    logoWaves: {
+        position: 'absolute',
+        right: 8,
+        top: 8,
+        width: 15,
+        height: 34,
+        borderLeftWidth: 2,
+        borderLeftColor: '#fff',
+        borderStyle: 'dashed',
+    },
+    companyInfo: {
+        flex: 1,
     },
     companyName: {
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: 'bold',
-        color: '#fff',
-        letterSpacing: 2,
+        color: '#1F2937',
+        letterSpacing: 1,
+        marginBottom: 2,
     },
-    carnetNumber: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    companySlogan: {
+        fontSize: 10,
+        color: '#6B7280',
+    },
+    carnetBadge: {
+        backgroundColor: '#3B82F6',
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 12,
     },
-    carnetNumberText: {
+    carnetBadgeText: {
         color: '#fff',
-        fontSize: 12,
-        fontWeight: '600',
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.5,
     },
-    mainInfo: {
-        flexDirection: 'row',
+    frontContent: {
+        flex: 1,
         alignItems: 'center',
-        marginBottom: 24,
+        justifyContent: 'center',
+        marginBottom: 20,
     },
     photoContainer: {
-        marginRight: 20,
+        position: 'relative',
+        marginBottom: 24,
     },
     photo: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        width: 130,
+        height: 150,
+        borderRadius: 12,
         backgroundColor: '#fff',
+        borderWidth: 3,
+        borderColor: '#3B82F6',
     },
     photoPlaceholder: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        width: 130,
+        height: 150,
+        borderRadius: 12,
+        backgroundColor: '#E5E7EB',
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 3,
+        borderColor: '#3B82F6',
+    },
+    photoBorder: {
+        position: 'absolute',
+        top: -2,
+        left: -2,
+        right: -2,
+        bottom: -2,
+        borderRadius: 14,
+        borderWidth: 2,
+        borderColor: '#DBEAFE',
+    },
+    nameContainer: {
+        alignItems: 'center',
+        width: '100%',
+    },
+    firstName: {
+        fontSize: 30,
+        fontWeight: 'bold',
+        color: '#1F2937',
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    lastName: {
+        fontSize: 22,
+        fontWeight: '600',
+        color: '#374151',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    specialtyContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#EFF6FF',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        gap: 6,
+    },
+    specialtyText: {
+        fontSize: 12,
+        color: '#1E40AF',
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    frontFooter: {
+        alignItems: 'center',
+        borderTopWidth: 2,
+        borderTopColor: '#E5E7EB',
+        paddingTop: 16,
+    },
+    cedulaLabel: {
+        fontSize: 9,
+        color: '#6B7280',
+        marginBottom: 6,
+        letterSpacing: 1,
+        fontWeight: '600',
+    },
+    cedulaNumber: {
+        fontSize: 26,
+        fontWeight: 'bold',
+        color: '#1F2937',
+        letterSpacing: 3,
+    },
+    // Estilos cara trasera
+    backWarning: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEF3C7',
+        padding: 14,
+        borderRadius: 12,
+        marginBottom: 24,
+        borderLeftWidth: 4,
+        borderLeftColor: '#F59E0B',
+        gap: 8,
+    },
+    warningText: {
+        flex: 1,
+        fontSize: 10,
+        color: '#92400E',
+        fontWeight: '700',
+        textAlign: 'center',
+        letterSpacing: 0.5,
+    },
+    backContent: {
+        flex: 1,
+    },
+    rhSection: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#FEE2E2',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 20,
+        gap: 12,
+    },
+    rhIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 24,
+        backgroundColor: '#DC2626',
         justifyContent: 'center',
         alignItems: 'center',
     },
-    infoContainer: {
+    rhInfo: {
         flex: 1,
     },
-    nameText: {
-        fontSize: 22,
-        fontWeight: 'bold',
-        color: '#fff',
+    rhLabel: {
+        fontSize: 11,
+        color: '#991B1B',
+        fontWeight: '600',
         marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
     },
-    roleText: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.9)',
-        fontWeight: '500',
+    rhValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#DC2626',
         letterSpacing: 1,
     },
-    detailsContainer: {
-        marginBottom: 20,
-    },
-    detailRow: {
+    infoRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        marginBottom: 14,
+        gap: 12,
     },
-    detailIcon: {
+    infoIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#EFF6FF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    infoText: {
+        flex: 1,
+        fontSize: 13,
+        color: '#374151',
+        fontWeight: '500',
+    },
+    companyDetails: {
+        marginTop: 'auto',
+        paddingTop: 20,
+        borderTopWidth: 2,
+        borderTopColor: '#E5E7EB',
+    },
+    companyHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+        gap: 10,
+    },
+    companyLogoSmall: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    logoCircleSmall: {
         width: 32,
         height: 32,
         borderRadius: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
+        backgroundColor: '#3B82F6',
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    logoHalfCircleSmall: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        width: 16,
+        height: 32,
+        backgroundColor: '#1E40AF',
+    },
+    companyNameBack: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#1F2937',
+        letterSpacing: 1,
+    },
+    companyContact: {
         alignItems: 'center',
-        marginRight: 12,
     },
-    detailLabel: {
-        fontSize: 14,
-        color: 'rgba(255, 255, 255, 0.8)',
-        fontWeight: '500',
-        marginRight: 8,
-        minWidth: 80,
-    },
-    detailValue: {
-        fontSize: 14,
-        color: '#fff',
-        fontWeight: '600',
-        flex: 1,
-    },
-    carnetFooter: {
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(255, 255, 255, 0.2)',
-        paddingTop: 16,
-    },
-    footerText: {
-        fontSize: 12,
-        color: 'rgba(255, 255, 255, 0.8)',
+    companyAddress: {
+        fontSize: 11,
+        color: '#6B7280',
+        marginBottom: 3,
         textAlign: 'center',
-        lineHeight: 16,
+    },
+    companyCity: {
+        fontSize: 11,
+        color: '#6B7280',
+        marginBottom: 3,
+        textAlign: 'center',
+    },
+    companyPhone: {
+        fontSize: 11,
+        color: '#6B7280',
+        marginBottom: 3,
+        textAlign: 'center',
+    },
+    companyEmail: {
+        fontSize: 11,
+        color: '#6B7280',
+        marginBottom: 3,
+        textAlign: 'center',
+    },
+    companyWebsite: {
+        fontSize: 11,
+        color: '#3B82F6',
+        fontWeight: '600',
+        textAlign: 'center',
     },
     additionalInfo: {
         borderRadius: 16,
@@ -380,6 +758,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 8,
         elevation: 4,
+        width: '100%',
     },
     additionalTitle: {
         fontSize: 18,

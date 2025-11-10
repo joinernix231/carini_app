@@ -45,8 +45,8 @@ export const MultiDeviceSelector: React.FC<MultiDeviceSelectorProps> = ({
   };
 
   const updateDescription = (deviceId: number, description: string) => {
-    // Remover espacios y caracteres especiales, solo permitir letras, números y guiones
-    const cleanDescription = description.replace(/[^a-zA-Z0-9\-_]/g, '');
+    // Permitir letras, números, guiones, guiones bajos y espacios
+    const cleanDescription = description.replace(/[^a-zA-Z0-9\-_\s]/g, '');
     
     setLocalSelections(prev =>
       prev.map(sel =>
@@ -95,7 +95,7 @@ export const MultiDeviceSelector: React.FC<MultiDeviceSelectorProps> = ({
             <Text style={styles.descriptionLabel}>Descripción específica (opcional):</Text>
             <TextInput
               style={styles.descriptionInput}
-              placeholder="Descripción específica (solo letras, números y guiones)..."
+              placeholder="Describe el problema o mantenimiento específico para este equipo..."
               value={selection?.description || ''}
               onChangeText={(text) => updateDescription(device.id, text)}
               multiline

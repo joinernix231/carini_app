@@ -55,45 +55,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (storedToken && storedUserData) {
         console.log('🔍 AuthContext - Datos encontrados, validando token...');
         
-        // Validar que el token sigue siendo válido
-        const isValid = await UserService.validateToken(storedToken);
+        // Validar que el token sigue siendo válido y obtener perfil actualizado
+        const userProfile = await UserService.validateToken(storedToken);
         
-        if (isValid) {
+        if (userProfile) {
           // Log removed
           setToken(storedToken);
           API.defaults.headers.common['Authorization'] = `Bearer ${storedToken}`;
           
-          // Obtener datos actualizados del endpoint /api/me
-          try {
-            const response = await API.get('/api/me');
-            if (response.data.success && response.data.data) {
-              const userData = response.data.data;
-              const updatedUser: User = {
-                id: userData.id,
-                name: userData.name,
-                email: userData.email,
-                role: userData.role,
-                phone: userData.phone || '',
-                address: userData.address || '',
-                city: userData.city || '',
-                identifier: userData.identifier || '',
-                legal_representative: userData.legal_representative || '',
-                client_type: userData.client_type || 'persona',
-                policy_accepted: userData.policy_accepted
-              };
-              
-              // Guardar datos actualizados
-              await StorageService.saveUserData(updatedUser as StoredUserData);
-              setUser(updatedUser);
-              // Log removed
-            } else {
-              // Si no se pueden obtener datos actualizados, usar los guardados
-              setUser(storedUserData as User);
-            }
-          } catch (meError) {
-            // Log removed
-            setUser(storedUserData as User);
-          }
+          // Usar los datos del perfil validado (ya tenemos datos actualizados de /api/me)
+          const updatedUser: User = {
+            id: userProfile.id,
+            name: userProfile.name,
+            email: userProfile.email || storedUserData.email || '',
+            role: userProfile.role as any,
+            phone: userProfile.phone || storedUserData.phone || '',
+            address: userProfile.address || storedUserData.address || '',
+            city: userProfile.city || storedUserData.city || '',
+            identifier: userProfile.identifier || storedUserData.identifier || '',
+            legal_representative: userProfile.legal_representative || storedUserData.legal_representative || '',
+            client_type: (userProfile.client_type as any) || storedUserData.client_type || 'persona',
+            policy_accepted: userProfile.policy_accepted
+          };
+          
+          // Guardar datos actualizados
+          await StorageService.saveUserData(updatedUser as StoredUserData);
+          setUser(updatedUser);
         } else {
           console.log('🔄 AuthContext - Token expirado, intentando renovar automáticamente...');
           

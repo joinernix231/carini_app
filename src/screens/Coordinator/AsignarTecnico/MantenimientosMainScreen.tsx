@@ -39,7 +39,8 @@ export default function MantenimientosMainScreen() {
   
   const [mantenimientosData, setMantenimientosData] = useState<MantenimientosByPaymentStatus>({
     paid_pending_review: [],
-    pending_payment: []
+    pending_payment: [],
+    no_payment_required: []
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
@@ -58,13 +59,14 @@ export default function MantenimientosMainScreen() {
       const data = await CoordinadorMantenimientoService.getMantenimientosByPaymentStatus(token);
       setMantenimientosData({
         paid_pending_review: data.paid_pending_review || [],
-        pending_payment: data.pending_payment || []
+        pending_payment: data.pending_payment || [],
+        no_payment_required: data.no_payment_required || []
       });
     } catch (err: any) {
       // Error log removed
       showError(err, 'Error al cargar los mantenimientos');
       setError('Error al cargar los mantenimientos');
-      setMantenimientosData({ paid_pending_review: [], pending_payment: [] });
+      setMantenimientosData({ paid_pending_review: [], pending_payment: [], no_payment_required: [] });
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,6 +108,7 @@ export default function MantenimientosMainScreen() {
       created_at: item.created_at,
       deviceCount: devices.length,
       primaryDevice: devices[0] || { id: 0, model: 'N/A', brand: 'N/A', type: 'N/A', serial: '', address: '' },
+      clientName: item.client?.name || null,
     };
 
     return (
@@ -198,7 +201,9 @@ export default function MantenimientosMainScreen() {
     );
   }
 
-  const totalCount = (mantenimientosData.paid_pending_review?.length || 0) + (mantenimientosData.pending_payment?.length || 0);
+  const totalCount = (mantenimientosData.paid_pending_review?.length || 0) + 
+                     (mantenimientosData.pending_payment?.length || 0) + 
+                     (mantenimientosData.no_payment_required?.length || 0);
 
   return (
     <View style={styles.container}>
@@ -251,6 +256,18 @@ export default function MantenimientosMainScreen() {
               <Text style={styles.statLabel}>Esperando</Text>
             </View>
           </View>
+          
+          <View style={styles.statDivider} />
+          
+          <View style={styles.statItem}>
+            <View style={[styles.statIcon, { backgroundColor: '#4CAF5015' }]}>
+              <MaterialIcons name="check-circle" size={24} color="#4CAF50" />
+            </View>
+            <View style={styles.statInfo}>
+              <Text style={styles.statValue}>{mantenimientosData.no_payment_required?.length || 0}</Text>
+              <Text style={styles.statLabel}>Sin Pago</Text>
+            </View>
+          </View>
         </View>
       </View>
 
@@ -273,6 +290,15 @@ export default function MantenimientosMainScreen() {
             icon: 'schedule',
             gradient: ['#2196F3', '#1976D2'],
             accentColor: '#2196F3'
+          },
+          { 
+            type: 'no_payment_required', 
+            data: mantenimientosData.no_payment_required || [],
+            title: 'No Requieren Pago',
+            subtitle: 'Mantenimientos cotizados sin pago requerido',
+            icon: 'check-circle',
+            gradient: ['#4CAF50', '#388E3C'],
+            accentColor: '#4CAF50'
           }
         ]}
         renderItem={({ item }) => renderSection(item.title, item.subtitle, item.data, item.icon, item.gradient as [string, string], item.accentColor)}
