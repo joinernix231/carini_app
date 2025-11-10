@@ -16,6 +16,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import NotificationIcon from '../../components/NotificationIcon';
 
 type RootStackParamList = {
   ClienteList: undefined;
@@ -132,14 +133,23 @@ export default function AdminDashboard() {
         <View style={styles.container}>
           {/* Header */}
           <View style={styles.header}>
-            <View style={styles.avatarContainer}>
-              <MaterialIcons name="admin-panel-settings" size={60} color="rgba(255,255,255,0.9)" />
+            <View style={styles.headerTop}>
+              <View style={styles.headerContent}>
+                <View style={styles.avatarContainer}>
+                  <MaterialIcons name="admin-panel-settings" size={60} color="rgba(255,255,255,0.9)" />
+                </View>
+                <View style={styles.headerTextContainer}>
+                  <Text style={styles.greeting}>{getGreeting()}</Text>
+                  <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
+                    {user?.name ?? 'Administrador'}
+                  </Text>
+                  <Text style={styles.subtitle}>Gestión administrativa</Text>
+                </View>
+              </View>
+              <View style={styles.headerRight}>
+                <NotificationIcon color="#fff" size={24} />
+              </View>
             </View>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>
-              {user?.name ?? 'Administrador'}
-            </Text>
-            <Text style={styles.subtitle}>Gestión administrativa</Text>
           </View>
 
           {/* Menu Grid */}
@@ -183,9 +193,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   header: {
-    alignItems: 'center',
     paddingVertical: 30,
     paddingTop: 20,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  headerContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTextContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  headerRight: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    padding: 8,
   },
   avatarContainer: {
     marginBottom: 15,
