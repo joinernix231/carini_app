@@ -106,8 +106,8 @@ export default function DetalleEquipo() {
             text: 'Solicitar',
             style: 'default',
             onPress: () => {
-              // Navegar a pantalla de crear mantenimiento
-              navigate('CrearMantenimiento', { equipoId: equipo.id });
+              // Navegar a pantalla de información del flujo primero
+              navigate('FlujoMantenimientoInfo', { equipoId: equipo.id });
             }
           },
         ]

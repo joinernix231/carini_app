@@ -571,6 +571,7 @@ export default function CrearMantenimiento() {
           <MultiDeviceSelector
             devices={equipos.map(eq => ({
               id: eq.id,
+              client_device_id: eq.id,
               model: eq.name.split(' - ')[0] || eq.name,
               brand: 'Carini', // Siempre Carini
               type: eq.tipo_equipo || 'equipo',

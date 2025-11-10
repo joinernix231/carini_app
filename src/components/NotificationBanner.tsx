@@ -145,7 +145,12 @@ export default function NotificationBanner({ onPress, onDismiss }: NotificationB
           if ((data.screen === 'MantenimientoDetail' || data.screen === 'DetalleMantenimiento')) {
             if (user?.role === 'tecnico') {
               screenParams.maintenanceId = data.maintenance_id;
+            } else if (user?.role === 'coordinador') {
+              screenParams.mantenimientoId = data.maintenance_id;
+            } else if (user?.role === 'cliente') {
+              screenParams.id = data.maintenance_id;
             } else {
+              // Por defecto para otros roles
               screenParams.id = data.maintenance_id;
             }
           } else {

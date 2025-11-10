@@ -47,6 +47,7 @@ import {
 import DetalleEquipoCliente from '../screens/client/MyDevices/DetalleEquipo';
 import AgregarEquipo from '../screens/client/MyDevices/AgregarEquipo';
 import CrearMantenimiento from '../screens/client/mantenimiento/CrearMantenimiento';
+import FlujoMantenimientoInfo from '../screens/client/mantenimiento/FlujoMantenimientoInfo';
 import DetalleMantenimiento from '../screens/client/mantenimiento/DetalleMantenimiento';
 import MiPerfil from '../screens/client/MiPerfil/MiPerfil';
 import MiCarnet from '../screens/Tecnico/MiCarnet';
@@ -106,6 +107,7 @@ export function ClienteNavigator() {
       <ClienteStack.Screen name="DetalleEquipo" component={DetalleEquipoCliente} />
       <ClienteStack.Screen name="AgregarEquipo" component={AgregarEquipo} />
       <ClienteStack.Screen name="SolicitarMantenimiento" component={LazyMantenimientosList} />
+      <ClienteStack.Screen name="FlujoMantenimientoInfo" component={FlujoMantenimientoInfo} />
       <ClienteStack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
       <ClienteStack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
       <ClienteStack.Screen name="EquipmentMaintenanceHistory" component={EquipmentMaintenanceHistory} />

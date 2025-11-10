@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -23,6 +24,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../../components/BackButton';
 import DocumentUploader from '../../../components/DocumentUploader';
 import EditQuotationModal from '../../../components/EditQuotationModal';
+import ReagendarModal from '../../../components/Mantenimiento/ReagendarModal';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useMantenimientoDetalle } from '../../../hooks/mantenimiento/useMantenimientoDetalle';
 import { 
@@ -89,10 +91,13 @@ export default function DetalleMantenimientoScreen() {
   const [quotationUrl, setQuotationUrl] = useState<string | null>(null);
   const [maintenanceValue, setMaintenanceValue] = useState<string>('');
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+  const [reagendarModalVisible, setReagendarModalVisible] = useState<boolean>(false);
   const route = useRoute<DetalleMantenimientoRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { goBack } = useSmartNavigation();
   const { mantenimientoId } = route.params;
+  const appState = useRef(AppState.currentState);
+  const pendingCallMark = useRef<number | null>(null);
   
   const {
     mantenimiento,
@@ -102,6 +107,40 @@ export default function DetalleMantenimientoScreen() {
     onRefresh,
     handleVerifyPayment,
   } = useMantenimientoDetalle(mantenimientoId);
+
+  // Listener para detectar cuando la app regresa al foreground después de una llamada
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active' &&
+        pendingCallMark.current !== null
+      ) {
+        // La app regresó al foreground y hay una llamada pendiente de marcar
+        const maintenanceIdToMark = pendingCallMark.current;
+        pendingCallMark.current = null;
+        
+        // Esperar un momento para asegurar que la app está completamente activa
+        setTimeout(async () => {
+          if (!token) return;
+          
+          try {
+            await CoordinadorMantenimientoService.markAsCalled(maintenanceIdToMark, token);
+            Alert.alert('Éxito', 'Llamada al cliente registrada correctamente');
+            onRefresh();
+          } catch (e: any) {
+            Alert.alert('Error', e?.response?.data?.message || 'No se pudo registrar la llamada');
+          }
+        }, 500);
+      }
+
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [token, onRefresh]);
 
   const handleVerifyPaymentPress = async () => {
     try {
@@ -362,6 +401,122 @@ export default function DetalleMantenimientoScreen() {
     } catch (e: any) {
       Alert.alert('Error', e?.response?.data?.message || 'No se pudo verificar el pago');
     }
+  };
+
+  const handleMarkAsCalled = async () => {
+    if (!token) {
+      Alert.alert('Error', 'No hay token de autenticación');
+      return;
+    }
+
+    if (!mantenimiento?.client?.phone) {
+      Alert.alert('Error', 'No hay número de teléfono disponible para el cliente');
+      return;
+    }
+
+    const phoneNumber = mantenimiento.client.phone.trim();
+    
+    // Formatear el número de teléfono (remover espacios, guiones, etc.)
+    const cleanPhoneNumber = phoneNumber.replace(/[\s\-\(\)]/g, '');
+    
+    // Verificar que el número sea válido
+    if (!cleanPhoneNumber || cleanPhoneNumber.length < 7) {
+      Alert.alert('Error', 'El número de teléfono no es válido');
+      return;
+    }
+
+    // Formato para iOS y Android: tel:numero
+    const phoneUrl = `tel:${cleanPhoneNumber}`;
+
+    // Verificar si se puede abrir el teléfono
+    const canOpen = await Linking.canOpenURL(phoneUrl);
+    
+    if (!canOpen) {
+      Alert.alert('Error', 'No se puede abrir la aplicación de teléfono en este dispositivo');
+      return;
+    }
+
+    // Guardar el ID del mantenimiento para marcarlo cuando regrese
+    pendingCallMark.current = mantenimiento.id;
+    
+    try {
+      // Abrir la aplicación de teléfono
+      await Linking.openURL(phoneUrl);
+      
+      // Mostrar un mensaje informativo
+      Alert.alert(
+        'Llamando al Cliente',
+        'La llamada se registrará automáticamente cuando regreses a la aplicación.',
+        [{ text: 'OK' }]
+      );
+    } catch (error) {
+      pendingCallMark.current = null;
+      Alert.alert('Error', 'No se pudo abrir la aplicación de teléfono');
+    }
+  };
+
+  const handleCancelMaintenance = async () => {
+    if (!token) {
+      Alert.alert('Error', 'No hay token de autenticación');
+      return;
+    }
+
+    if (!mantenimiento) {
+      Alert.alert('Error', 'No hay información del mantenimiento');
+      return;
+    }
+
+    // Verificar si el mantenimiento ya está cancelado o completado
+    if (mantenimiento.status === 'cancelled') {
+      Alert.alert('Información', 'Este mantenimiento ya está cancelado');
+      return;
+    }
+
+    if (mantenimiento.status === 'completed') {
+      Alert.alert('Error', 'No se puede cancelar un mantenimiento completado');
+      return;
+    }
+
+    const clientName = mantenimiento.client?.name || 'el cliente';
+    
+    Alert.alert(
+      'Cancelar Mantenimiento',
+      `¿Estás seguro de que deseas cancelar este mantenimiento?\n\nEsta acción:\n• Cambiará el estado a "Cancelado"\n• Liberará al técnico asignado\n• Limpiará la fecha y turno programados\n• Limpiará los campos de confirmación\n\nEsta acción no se puede deshacer.`,
+      [
+        {
+          text: 'No, mantener',
+          style: 'cancel',
+        },
+        {
+          text: 'Sí, cancelar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await CoordinadorMantenimientoService.cancelMaintenance(mantenimiento.id, token);
+              Alert.alert(
+                'Éxito',
+                'El mantenimiento ha sido cancelado correctamente.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      onRefresh();
+                      // Opcional: regresar a la pantalla anterior después de cancelar
+                      // goBack();
+                    },
+                  },
+                ]
+              );
+            } catch (e: any) {
+              Alert.alert(
+                'Error',
+                e?.response?.data?.message || 'No se pudo cancelar el mantenimiento'
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderActionSection = () => {
@@ -728,6 +883,142 @@ export default function DetalleMantenimientoScreen() {
           </View>
         )}
 
+        {/* Sección de Confirmación Requerida - Botón para Llamar al Cliente */}
+        {mantenimiento.confirmation_required === true && 
+         mantenimiento.confirmed_at === null && 
+         mantenimiento.coordinator_called === false && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Confirmación Requerida</Text>
+            <View style={styles.confirmationCard}>
+              <View style={styles.confirmationHeader}>
+                <MaterialIcons name="phone" size={24} color="#FF6B6B" />
+                <Text style={styles.confirmationTitle}>Cliente No Ha Confirmado</Text>
+              </View>
+              <Text style={styles.confirmationDescription}>
+                El cliente no ha confirmado el mantenimiento programado. Por favor, llámalo para confirmar la cita.
+              </Text>
+              {mantenimiento.confirmation_deadline && (
+                <View style={styles.deadlineContainer}>
+                  <MaterialIcons name="schedule" size={16} color="#FF9800" />
+                  <Text style={styles.deadlineText}>
+                    Fecha límite: {formatDateWithTime(mantenimiento.confirmation_deadline)}
+                  </Text>
+                </View>
+              )}
+              <TouchableOpacity
+                style={styles.callButton}
+                onPress={handleMarkAsCalled}
+              >
+                <MaterialIcons name="phone" size={20} color="#fff" />
+                <Text style={styles.callButtonText}>
+                  {mantenimiento.client?.phone 
+                    ? `Llamar a ${mantenimiento.client.phone}` 
+                    : 'Llamar al Cliente'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Información de Estado de Confirmación - Se muestra después de llamar al cliente */}
+        {mantenimiento.coordinator_called === true && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Estado de Confirmación</Text>
+            <View style={styles.infoCard}>
+              <View style={styles.confirmationStatusHeader}>
+                <MaterialIcons 
+                  name={mantenimiento.confirmed_at ? "check-circle" : "schedule"} 
+                  size={24} 
+                  color={mantenimiento.confirmed_at ? "#4CAF50" : "#FF9800"} 
+                />
+                <Text style={[
+                  styles.confirmationStatusTitle,
+                  { color: mantenimiento.confirmed_at ? "#4CAF50" : "#FF9800" }
+                ]}>
+                  {mantenimiento.confirmed_at ? "Confirmado por el Cliente" : "Pendiente de Confirmación"}
+                </Text>
+              </View>
+
+              <View style={styles.confirmationInfoContainer}>
+                <View style={styles.confirmationInfoRow}>
+                  <Text style={styles.confirmationInfoLabel}>Confirmación Requerida:</Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: mantenimiento.confirmation_required ? "#4CAF50" : "#9E9E9E" }
+                  ]}>
+                    <Text style={styles.statusText}>
+                      {mantenimiento.confirmation_required ? "Sí" : "No"}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.confirmationInfoRow}>
+                  <Text style={styles.confirmationInfoLabel}>Confirmado por Cliente:</Text>
+                  <Text style={styles.confirmationInfoValue}>
+                    {mantenimiento.confirmed_at 
+                      ? formatDateWithTime(mantenimiento.confirmed_at)
+                      : "Pendiente"}
+                  </Text>
+                </View>
+
+                {mantenimiento.confirmation_deadline && (
+                  <View style={styles.confirmationInfoRow}>
+                    <Text style={styles.confirmationInfoLabel}>Fecha Límite:</Text>
+                    <Text style={[
+                      styles.confirmationInfoValue,
+                      !mantenimiento.confirmed_at && new Date(mantenimiento.confirmation_deadline) < new Date() && styles.warningText
+                    ]}>
+                      {formatDateWithTime(mantenimiento.confirmation_deadline)}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.confirmationInfoRow}>
+                  <Text style={styles.confirmationInfoLabel}>Coordinador Notificado:</Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: mantenimiento.coordinator_notified ? "#4CAF50" : "#9E9E9E" }
+                  ]}>
+                    <Text style={styles.statusText}>
+                      {mantenimiento.coordinator_notified ? "Sí" : "No"}
+                    </Text>
+                  </View>
+                </View>
+
+                {mantenimiento.coordinator_notified_at && (
+                  <View style={styles.confirmationInfoRow}>
+                    <Text style={styles.confirmationInfoLabel}>Notificado el:</Text>
+                    <Text style={styles.confirmationInfoValue}>
+                      {formatDateWithTime(mantenimiento.coordinator_notified_at)}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.confirmationInfoRow}>
+                  <Text style={styles.confirmationInfoLabel}>Coordinador Llamó:</Text>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: mantenimiento.coordinator_called ? "#4CAF50" : "#9E9E9E" }
+                  ]}>
+                    <Text style={styles.statusText}>
+                      {mantenimiento.coordinator_called ? "Sí" : "No"}
+                    </Text>
+                  </View>
+                </View>
+
+                {mantenimiento.coordinator_called_at && (
+                  <View style={styles.confirmationInfoRow}>
+                    <Text style={styles.confirmationInfoLabel}>Llamado el:</Text>
+                    <Text style={styles.confirmationInfoValue}>
+                      {formatDateWithTime(mantenimiento.coordinator_called_at)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
         {/* Información de los Equipos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
@@ -869,6 +1160,51 @@ export default function DetalleMantenimientoScreen() {
           </View>
         )}
 
+        {/* Botón de Reagendar - Disponible si tiene fecha y turno asignados */}
+        {mantenimiento?.date_maintenance && mantenimiento?.shift && 
+         mantenimiento?.status !== 'completed' && mantenimiento?.status !== 'cancelled' && (
+          <View style={styles.section}>
+            <View style={styles.rescheduleSection}>
+              <View style={styles.rescheduleHeader}>
+                <MaterialIcons name="schedule" size={24} color="#FF9800" />
+                <Text style={styles.rescheduleSectionTitle}>Reagendar Mantenimiento</Text>
+              </View>
+              <Text style={styles.rescheduleDescription}>
+                Si necesitas cambiar la fecha, turno o técnico asignado a este mantenimiento.
+              </Text>
+              <TouchableOpacity
+                style={styles.rescheduleButton}
+                onPress={() => setReagendarModalVisible(true)}
+              >
+                <MaterialIcons name="event" size={20} color="#fff" />
+                <Text style={styles.rescheduleButtonText}>Reagendar Mantenimiento</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
+        {/* Botón de Cancelar Mantenimiento - Disponible si no está completado o cancelado */}
+        {mantenimiento?.status !== 'completed' && mantenimiento?.status !== 'cancelled' && (
+          <View style={styles.section}>
+            <View style={styles.cancelSection}>
+              <View style={styles.cancelHeader}>
+                <MaterialIcons name="cancel" size={24} color="#F44336" />
+                <Text style={styles.cancelSectionTitle}>Cancelar Mantenimiento</Text>
+              </View>
+              <Text style={styles.cancelDescription}>
+                Si necesitas cancelar este mantenimiento, se liberará al técnico asignado y se limpiarán los campos de programación.
+              </Text>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancelMaintenance}
+              >
+                <MaterialIcons name="cancel" size={20} color="#fff" />
+                <Text style={styles.cancelButtonText}>Cancelar Mantenimiento</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         <View style={styles.bottomSpacing} />
         </ScrollView>
       </KeyboardAvoidingView>
@@ -883,6 +1219,20 @@ export default function DetalleMantenimientoScreen() {
           value: mantenimiento?.value || null,
           price_support: mantenimiento?.price_support || null,
         }}
+      />
+
+      {/* Modal de Reagendar */}
+      <ReagendarModal
+        visible={reagendarModalVisible}
+        onClose={() => setReagendarModalVisible(false)}
+        onSuccess={() => {
+          setReagendarModalVisible(false);
+          onRefresh();
+        }}
+        maintenanceId={mantenimiento?.id || 0}
+        currentDate={mantenimiento?.date_maintenance || null}
+        currentShift={mantenimiento?.shift || null}
+        currentTechnicianId={mantenimiento?.technician?.id || null}
       />
     </SafeAreaView>
   );
@@ -1384,5 +1734,206 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#1976D2',
+  },
+  confirmationCard: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  confirmationHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  confirmationTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF6B6B',
+    marginLeft: 8,
+  },
+  confirmationDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  deadlineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF9E6',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  deadlineText: {
+    fontSize: 14,
+    color: '#FF9800',
+    fontWeight: '600',
+    marginLeft: 6,
+  },
+  callButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#FF6B6B',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  callButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cancelSection: {
+    backgroundColor: '#FFF5F5',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFE5E5',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cancelHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  cancelSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#F44336',
+    marginLeft: 8,
+  },
+  cancelDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F44336',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#F44336',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  cancelButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  rescheduleSection: {
+    backgroundColor: '#FFF9E6',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFE082',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  rescheduleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  rescheduleSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#FF9800',
+    marginLeft: 8,
+  },
+  rescheduleDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    lineHeight: 20,
+    marginBottom: 16,
+  },
+  rescheduleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    borderRadius: 12,
+    gap: 8,
+    shadowColor: '#FF9800',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  rescheduleButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  confirmationStatusHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  confirmationStatusTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 8,
+  },
+  confirmationInfoContainer: {
+    gap: 12,
+  },
+  confirmationInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  confirmationInfoLabel: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    flex: 1,
+  },
+  confirmationInfoValue: {
+    fontSize: 14,
+    color: '#374151',
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  warningText: {
+    color: '#F44336',
+    fontWeight: '700',
   },
 });
