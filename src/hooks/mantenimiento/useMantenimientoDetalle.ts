@@ -1,58 +1,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useError } from '../../context/ErrorContext';
-import { getMantenimientoById, verifyMaintenancePayment } from '../../services/MantenimientoService';
-import { 
-  MaintenanceType, 
-  MaintenanceStatus, 
-  PaymentStatus 
-} from '../../services/CoordinadorMantenimientoService';
-
-interface MantenimientoDetalle {
-  id: number;
-  type: MaintenanceType;
-  date_maintenance: string | null;
-  shift: string | null;
-  status: MaintenanceStatus;
-  value: number | null;
-  spare_parts: string | null;
-  is_paid: PaymentStatus;
-  payment_support: string | null;
-  created_at: string;
-  description: string | null;
-  photo: string | null;
-  device: {
-    id: number;
-    model: string;
-    brand: string;
-    type: string;
-    photo: string | null;
-    pdf_url: string | null;
-    description: string | null;
-  };
-  client: {
-    id: number;
-    name: string;
-    phone: string;
-    address: string;
-    city: string;
-    department: string;
-  };
-  technician?: {
-    id: number;
-    user: {
-      name: string;
-      email: string;
-    };
-    phone: string;
-  };
-}
+import { verifyMaintenancePayment } from '../../services/MantenimientoService';
+import { MantenimientoInformationService, MaintenanceInformation } from '../../services/MantenimientoInformationService';
 
 export function useMantenimientoDetalle(mantenimientoId: number) {
   const { token } = useAuth();
   const { showError } = useError();
   
-  const [mantenimiento, setMantenimiento] = useState<MantenimientoDetalle | null>(null);
+  const [mantenimiento, setMantenimiento] = useState<MaintenanceInformation | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [refreshing, setRefreshing] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,7 +24,7 @@ export function useMantenimientoDetalle(mantenimientoId: number) {
       setLoading(true);
       setError(null);
       
-      const data = await getMantenimientoById(mantenimientoId, token);
+      const data = await MantenimientoInformationService.getMaintenanceInformation(mantenimientoId, token);
       setMantenimiento(data);
     } catch (err: any) {
       // Error log removed

@@ -16,6 +16,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../../context/AuthContext';
 import { useError } from '../../../context/ErrorContext';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
@@ -108,7 +109,7 @@ export default function ClienteDevicesScreen() {
     };
 
     // Desasociar dispositivo
-    const handleDisassociateDevice = (deviceId: number, deviceName: string) => {
+    const handleDisassociateDevice = (clientDeviceId: number, deviceName: string) => {
         Alert.alert(
             'Desasociar Dispositivo',
             `¿Estás seguro de que quieres desasociar el dispositivo "${deviceName}"?`,
@@ -119,7 +120,7 @@ export default function ClienteDevicesScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
-                            await ClientDeviceService.disassociateDevice(clientId, deviceId, token!);
+                            await ClientDeviceService.disassociateDevice(clientDeviceId, token!);
                             Alert.alert('Éxito', 'Dispositivo desasociado correctamente');
                             await loadClientDevices();
                         } catch (err: any) {
@@ -139,7 +140,17 @@ export default function ClienteDevicesScreen() {
 
     // Renderizar dispositivo
     const renderDevice = ({ item }: { item: ClientDevice }) => (
-        <View style={styles.deviceCard}>
+        <TouchableOpacity
+            style={styles.deviceCard}
+            onPress={() => {
+                navigation.navigate('DetalleEquipoCliente' as never, {
+                    clientDeviceId: item.id,
+                    clientDevice: item,
+                    clientName: clientName,
+                } as never);
+            }}
+            activeOpacity={0.7}
+        >
             <View style={styles.deviceHeader}>
                 <View style={styles.deviceInfo}>
                     <Text style={styles.deviceName}>{item.device.brand} {item.device.model}</Text>
@@ -149,16 +160,6 @@ export default function ClienteDevicesScreen() {
                 </View>
                 <View style={styles.deviceActions}>
                     <TouchableOpacity
-                        style={[styles.statusButton, { backgroundColor: item.status ? '#10B981' : '#F97316' }]}
-                        onPress={() => {/* TODO: Implementar cambio de estado */}}
-                    >
-                        <MaterialIcons 
-                            name={item.status ? 'check-circle' : 'pause-circle'} 
-                            size={20} 
-                            color="#ffffff" 
-                        />
-                    </TouchableOpacity>
-                    <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => handleDisassociateDevice(item.id, `${item.device.brand} ${item.device.model}`)}
                     >
@@ -166,20 +167,20 @@ export default function ClienteDevicesScreen() {
                     </TouchableOpacity>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 
     if (loading) {
         return (
-            <View style={styles.loadingContainer}>
+            <SafeAreaView style={styles.loadingContainer} edges={['top', 'left', 'right']}>
                 <ActivityIndicator size="large" color="#3B82F6" />
                 <Text style={styles.loadingText}>Cargando dispositivos...</Text>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container} edges={['top']}>
             <LinearGradient
                 colors={['#3B82F6', '#1E40AF']}
                 style={styles.header}
@@ -239,7 +240,7 @@ export default function ClienteDevicesScreen() {
                 title="Asociar Dispositivo al Cliente"
                 submitButtonText="Asociar Dispositivo"
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
@@ -260,9 +261,9 @@ const styles = StyleSheet.create({
         color: '#6B7280',
     },
     header: {
-        paddingTop: 50,
         paddingBottom: 20,
         paddingHorizontal: 20,
+        paddingTop: 12,
     },
     headerContent: {
         flexDirection: 'row',
@@ -384,13 +385,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
-    },
-    statusButton: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     deleteButton: {
         width: 36,

@@ -37,6 +37,10 @@ import {
   LazyDetalleTecnico,
   LazyDetalleEquipo,
   LazyDetalleCoordinador,
+  LazyMantenimientosTecnicoList,
+  LazyDetalleMantenimientoTecnico,
+  LazyMantenimientosListAdmin,
+  LazyCrearMantenimientoAdmin,
 } from '../screens/NormalScreens';
 
 // Importar pantallas no lazy (críticas o pequeñas)
@@ -60,7 +64,13 @@ import MantenimientosScreen from '../screens/Coordinator/AsignarTecnico/Mantenim
 import DetalleMantenimientoScreen from '../screens/Coordinator/AsignarTecnico/DetalleMantenimientoScreen';
 import AsignarTecnicoScreen from '../screens/Coordinator/AsignarTecnico/AsignarTecnicoScreen';
 import MantenimientosRechazadosScreen from '../screens/Coordinator/AsignarTecnico/MantenimientosRechazadosScreen';
+import MantenimientosSinConfirmar from '../screens/Coordinator/MantenimientosSinConfirmar';
+import AsignarTecnicoMainScreen from '../screens/Coordinator/AsignarTecnico/AsignarTecnicoMainScreen';
+import NotificationsScreen from '../screens/NotificationsScreen';
+import EquipmentMaintenanceHistory from '../screens/shared/EquipmentMaintenanceHistory';
 import ClienteDevicesScreen from '../screens/Administrador/Cliente/ClienteDevicesScreen';
+import DetalleEquipoClienteAdmin from '../screens/Administrador/Cliente/DetalleEquipoCliente';
+import DetalleMantenimientoEquipo from '../screens/Administrador/Cliente/DetalleMantenimientoEquipo';
 
 // Stack Navigators por rol
 const AuthStack = createNativeStackNavigator();
@@ -98,6 +108,7 @@ export function ClienteNavigator() {
       <ClienteStack.Screen name="SolicitarMantenimiento" component={LazyMantenimientosList} />
       <ClienteStack.Screen name="CrearMantenimiento" component={CrearMantenimiento} />
       <ClienteStack.Screen name="DetalleMantenimiento" component={DetalleMantenimiento} />
+      <ClienteStack.Screen name="EquipmentMaintenanceHistory" component={EquipmentMaintenanceHistory} />
       <ClienteStack.Screen name="MiPerfil" component={MiPerfil} />
     </ClienteStack.Navigator>
   );
@@ -132,21 +143,32 @@ export function TecnicoNavigator() {
 
   useEffect(() => {
     if (!isLoading && hasActiveMaintenance && activeMaintenance) {
-      console.log('🚨 REDIRIGIENDO A MANTENIMIENTO ACTIVO:', activeMaintenance.id);
+      const lastAction = activeMaintenance.last_action_log?.action;
       
-      // Redirigir automáticamente al mantenimiento en progreso
-      // Usar setTimeout para asegurar que la navegación está lista
-      setTimeout(() => {
-        (navigation as any).reset({
-          index: 0,
-          routes: [
-            {
-              name: 'MantenimientoEnProgreso',
-              params: { maintenanceId: activeMaintenance.id },
-            },
-          ],
-        });
-      }, 100);
+      // Si está pausado, NO redirigir automáticamente (el usuario debe ir al detalle manualmente)
+      if (lastAction === 'pause') {
+        console.log('⏸️ Mantenimiento pausado detectado, no redirigiendo automáticamente');
+        return;
+      }
+      
+      // Solo redirigir si está realmente en progreso (start, resume, on_the_way)
+      if (lastAction === 'start' || lastAction === 'resume' || lastAction === 'on_the_way') {
+        console.log('🚨 REDIRIGIENDO A MANTENIMIENTO ACTIVO:', activeMaintenance.id);
+        
+        // Redirigir automáticamente al mantenimiento en progreso
+        // Usar setTimeout para asegurar que la navegación está lista
+        setTimeout(() => {
+          (navigation as any).reset({
+            index: 0,
+            routes: [
+              {
+                name: 'MantenimientoEnProgreso',
+                params: { maintenanceId: activeMaintenance.id },
+              },
+            ],
+          });
+        }, 100);
+      }
     }
   }, [isLoading, hasActiveMaintenance, activeMaintenance, navigation]);
 
@@ -173,17 +195,22 @@ export function CoordinadorNavigator() {
       <CoordinadorStack.Screen name="AsignarEquipos" component={LazyAsignarEquipos} />
       <CoordinadorStack.Screen name="MantenimientosMain" component={MantenimientosMainScreen} />
       <CoordinadorStack.Screen name="MantenimientosSinCotizacion" component={MantenimientosSinCotizacionScreen} />
+      <CoordinadorStack.Screen name="AsignarTecnicoMain" component={AsignarTecnicoMainScreen} />
       <CoordinadorStack.Screen name="MantenimientosAprobados" component={MantenimientosAprobadosScreen} />
       <CoordinadorStack.Screen name="Mantenimientos" component={MantenimientosScreen} />
       <CoordinadorStack.Screen name="MantenimientosAsignados" component={MantenimientosAsignadosScreen} />
       <CoordinadorStack.Screen name="MantenimientosRechazados" component={MantenimientosRechazadosScreen} />
+      <CoordinadorStack.Screen name="MantenimientosSinConfirmar" component={MantenimientosSinConfirmar} />
       <CoordinadorStack.Screen name="DetalleMantenimiento" component={DetalleMantenimientoScreen} />
       <CoordinadorStack.Screen name="AsignarTecnico" component={AsignarTecnicoScreen} />
+      <CoordinadorStack.Screen name="Notifications" component={NotificationsScreen} />
       
       {/* Pantallas compartidas con Administrador */}
       {/* Técnicos */}
       <CoordinadorStack.Screen name="TecnicoList" component={LazyTecnicoList} />
       <CoordinadorStack.Screen name="DetalleTecnico" component={LazyDetalleTecnico} />
+      <CoordinadorStack.Screen name="MantenimientosTecnicoList" component={LazyMantenimientosTecnicoList} />
+      <CoordinadorStack.Screen name="DetalleMantenimientoTecnico" component={LazyDetalleMantenimientoTecnico} />
       <CoordinadorStack.Screen name="CrearTecnico" component={LazyCrearTecnico} />
       <CoordinadorStack.Screen name="EditarTecnico" component={LazyEditarTecnico} />
       
@@ -209,6 +236,9 @@ export function AdministradorNavigator() {
       <AdministradorStack.Screen name="CrearCliente" component={LazyCrearCliente} />
       <AdministradorStack.Screen name="DetalleCliente" component={LazyDetalleCliente} />
       <AdministradorStack.Screen name="ClienteDevices" component={ClienteDevicesScreen} />
+      <AdministradorStack.Screen name="DetalleEquipoCliente" component={DetalleEquipoClienteAdmin} />
+      <AdministradorStack.Screen name="DetalleMantenimientoEquipo" component={DetalleMantenimientoEquipo} />
+      <AdministradorStack.Screen name="EquipmentMaintenanceHistory" component={EquipmentMaintenanceHistory} />
       <AdministradorStack.Screen name="EditarCliente" component={LazyEditarCliente} />
       
       {/* Equipos */}
@@ -220,6 +250,8 @@ export function AdministradorNavigator() {
       {/* Técnicos */}
       <AdministradorStack.Screen name="TecnicoList" component={LazyTecnicoList} />
       <AdministradorStack.Screen name="DetalleTecnico" component={LazyDetalleTecnico} />
+      <AdministradorStack.Screen name="MantenimientosTecnicoList" component={LazyMantenimientosTecnicoList} />
+      <AdministradorStack.Screen name="DetalleMantenimientoTecnico" component={LazyDetalleMantenimientoTecnico} />
       <AdministradorStack.Screen name="CrearTecnico" component={LazyCrearTecnico} />
       <AdministradorStack.Screen name="EditarTecnico" component={LazyEditarTecnico} />
       
@@ -228,6 +260,10 @@ export function AdministradorNavigator() {
       <AdministradorStack.Screen name="DetalleCoordinador" component={LazyDetalleCoordinador} />
       <AdministradorStack.Screen name="CrearCoordinador" component={LazyCrearCoordinador} />
       <AdministradorStack.Screen name="EditarCoordinador" component={LazyEditarCoordinador} />
+      
+      {/* Mantenimientos */}
+      <AdministradorStack.Screen name="VerMantenimientos" component={LazyMantenimientosListAdmin} />
+      <AdministradorStack.Screen name="CrearMantenimiento" component={LazyCrearMantenimientoAdmin} />
     </AdministradorStack.Navigator>
   );
 }

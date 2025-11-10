@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { pushNotificationService } from '../services/PushNotificationService';
 import * as Notifications from 'expo-notifications';
@@ -17,50 +17,70 @@ export const usePushNotifications = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [tokenRegistered, setTokenRegistered] = useState(false);
+  const initializingRef = useRef(false);
+  const tokenRegisteredRef = useRef(false);
 
   /**
    * Inicializar el servicio de notificaciones
    */
   const initialize = useCallback(async () => {
+    // Evitar múltiples inicializaciones simultáneas
+    if (initializingRef.current) {
+      console.log('🔔 Inicialización ya en progreso, omitiendo...');
+      return false;
+    }
+
     try {
+      initializingRef.current = true;
       console.log('🔔 Inicializando notificaciones push...');
       
       const success = await pushNotificationService.initialize();
       if (!success) {
-        // Error log removed
+        initializingRef.current = false;
         return false;
       }
 
       // Configurar listeners
       pushNotificationService.setupNotificationListeners();
 
-      // Registrar token si hay usuario autenticado
-      if (user && token) {
-        await registerToken();
+      // Registrar token si hay usuario autenticado y no está ya registrado
+      if (user?.id && token && !tokenRegisteredRef.current) {
+        const registerSuccess = await pushNotificationService.registerToken(user.id, token);
+        if (registerSuccess) {
+          tokenRegisteredRef.current = true;
+          setTokenRegistered(true);
+        }
       }
 
       setIsInitialized(true);
-      // Log removed
+      initializingRef.current = false;
       return true;
     } catch (error) {
-      // Error log removed
+      initializingRef.current = false;
       return false;
     }
-  }, [user, token]);
+  }, [user?.id, token]);
 
   /**
    * Registrar token en el servidor
    */
   const registerToken = useCallback(async () => {
     if (!user?.id || !token) {
-      // Warning log removed
       return false;
+    }
+
+    // Evitar registrar el token múltiples veces
+    if (tokenRegisteredRef.current) {
+      console.log('🔔 Token ya registrado, omitiendo registro duplicado');
+      return true;
     }
 
     try {
       const success = await pushNotificationService.registerToken(user.id, token);
       if (success) {
-        // Log removed
+        tokenRegisteredRef.current = true;
+        setTokenRegistered(true);
       }
       return success;
     } catch (error) {
@@ -127,8 +147,17 @@ export const usePushNotifications = () => {
 
     try {
       const userNotifications = await pushNotificationService.getUserNotifications(token);
-      setNotifications(userNotifications);
-      return userNotifications;
+      // Mapear las notificaciones del backend al formato esperado
+      const mappedNotifications: NotificationData[] = userNotifications.map((notif: any) => ({
+        id: String(notif.id),
+        title: notif.title || '',
+        body: notif.body || '',
+        data: notif.data || {},
+        receivedAt: notif.created_at ? new Date(notif.created_at) : new Date(),
+        read: notif.read || false,
+      }));
+      setNotifications(mappedNotifications);
+      return mappedNotifications;
     } catch (error) {
       // Error log removed
       return [];
@@ -192,12 +221,8 @@ export const usePushNotifications = () => {
     setNotifications([]);
   }, []);
 
-  // Inicializar automáticamente cuando hay usuario
-  useEffect(() => {
-    if (user && token && !isInitialized) {
-      initialize();
-    }
-  }, [user, token, isInitialized, initialize]);
+  // Este useEffect se eliminó para evitar llamadas duplicadas
+  // La inicialización se maneja desde App.tsx
 
   // Actualizar contador de no leídas
   useEffect(() => {

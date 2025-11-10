@@ -12,7 +12,7 @@ import {
     RefreshControl,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackButton from '../../../components/BackButton';
@@ -50,6 +50,16 @@ export default function DetalleCoordinador() {
         changeStatus,
     } = useCoordinador(id, { autoFetch: true });
     const { showError } = useError();
+    
+    // Usar useFocusEffect para recargar cuando se vuelve a esta pantalla
+    // Esto asegura que si se cambió el estado desde otra pantalla, se actualice
+    useFocusEffect(
+        useCallback(() => {
+            if (id && token) {
+                fetchCoordinador();
+            }
+        }, [id, token, fetchCoordinador])
+    );
 
     const displayName = coordinador?.user?.name ?? coordinador?.name ?? 'Coordinador';
     const displayEmail = coordinador?.user?.email ?? coordinador?.email ?? '-';

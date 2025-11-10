@@ -76,14 +76,7 @@ export function useSmartListFetch<T>(
     ) => {
         const cacheKey = getCacheKey(pageToFetch, filters);
         
-        console.log('🔍 useSmartListFetch - fetchData called:', {
-            pageToFetch,
-            showLoading,
-            filters,
-            force,
-            cacheKey,
-            isDataFresh: isDataFresh(cacheKey)
-        });
+        // Log removed for production optimization
         
         // Si los datos están frescos y no es forzado, usar cache
         if (!force && isDataFresh(cacheKey)) {
@@ -107,7 +100,7 @@ export function useSmartListFetch<T>(
             return cached;
         }
 
-        console.log('🌐 useSmartListFetch - Making API call');
+        // API call log removed for production
         lastFetchRef.current = now;
 
         try {

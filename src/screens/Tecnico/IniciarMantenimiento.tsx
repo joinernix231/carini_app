@@ -21,6 +21,7 @@ import TecnicoMantenimientosService, {
   TecnicoMaintenance,
   Device,
 } from '../../services/TecnicoMantenimientosService';
+import { MantenimientoInformationService, MaintenanceInformation } from '../../services/MantenimientoInformationService';
 import BackButton from '../../components/BackButton';
 
 type RouteParams = {
@@ -42,9 +43,12 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
   const { maintenanceId } = route.params;
 
   const [maintenance, setMaintenance] = useState<TecnicoMaintenance | null>(null);
+  const [maintenanceInfo, setMaintenanceInfo] = useState<MaintenanceInformation | null>(null);
   const [loading, setLoading] = useState(true);
   const [devicePhotos, setDevicePhotos] = useState<DevicePhoto[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [canTakePhotos, setCanTakePhotos] = useState(false);
 
   // Hook para subir imágenes
   const imageUpload = useImageUpload({
@@ -56,6 +60,7 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
 
   useEffect(() => {
     loadMaintenanceDetail();
+    loadMaintenanceInformation();
   }, [maintenanceId]);
 
   const loadMaintenanceDetail = async () => {
@@ -63,6 +68,8 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
 
     try {
       setLoading(true);
+      setValidationError(null);
+      
       const response = await TecnicoMantenimientosService.getMaintenanceDetail(
         token,
         maintenanceId
@@ -70,6 +77,17 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
 
       if (response.success) {
         setMaintenance(response.data);
+        
+        // Validar si se pueden tomar fotos
+        const validation = validateCanStart(response.data);
+        
+        if (!validation.canStart) {
+          setValidationError(validation.errorMessage);
+          setCanTakePhotos(false);
+        } else {
+          setCanTakePhotos(true);
+        }
+        
         // Inicializar array de fotos por dispositivo
         const photos = response.data.device.map((device) => ({
           deviceId: device.client_device_id,
@@ -91,7 +109,85 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
     }
   };
 
+  // Función para validar si se pueden tomar fotos
+  const validateCanStart = useCallback((
+    maintenance: TecnicoMaintenance,
+    info?: MaintenanceInformation | null
+  ): { canStart: boolean; errorMessage: string | null } => {
+    // Validar que el último log de acción sea "on_the_way"
+    const lastAction = maintenance.last_action_log?.action;
+    if (!lastAction || lastAction !== 'on_the_way') {
+      return {
+        canStart: false,
+        errorMessage: 'Debes marcar "En Camino" antes de iniciar el mantenimiento.'
+      };
+    }
+
+    // Validar confirmación del cliente (si hay información disponible)
+    if (info?.confirmation_required && !info?.confirmed_at) {
+      return {
+        canStart: false,
+        errorMessage: 'El cliente aún no ha confirmado este mantenimiento. No puedes iniciarlo hasta que el cliente confirme.'
+      };
+    }
+
+    // Validar fecha del mantenimiento
+    if (maintenance.date_maintenance) {
+      const maintenanceDate = new Date(maintenance.date_maintenance);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      maintenanceDate.setHours(0, 0, 0, 0);
+      
+      if (maintenanceDate > today) {
+        return {
+          canStart: false,
+          errorMessage: `Este mantenimiento está programado para el ${TecnicoMantenimientosService.formatDate(maintenance.date_maintenance)}. No puedes iniciarlo antes de la fecha programada.`
+        };
+      }
+    }
+    
+    return { canStart: true, errorMessage: null };
+  }, []);
+
+  const loadMaintenanceInformation = async () => {
+    if (!token) return;
+
+    try {
+      const info = await MantenimientoInformationService.getMaintenanceInformation(
+        maintenanceId,
+        token
+      );
+      setMaintenanceInfo(info);
+    } catch (error) {
+      console.error('Error cargando información del mantenimiento:', error);
+      // No mostrar error al usuario, solo log
+    }
+  };
+
+  // Re-validar cuando ambos datos estén disponibles
+  useEffect(() => {
+    if (maintenance && maintenanceInfo !== null) {
+      const validation = validateCanStart(maintenance, maintenanceInfo);
+      if (!validation.canStart) {
+        setValidationError(validation.errorMessage);
+        setCanTakePhotos(false);
+      } else {
+        setValidationError(null);
+        setCanTakePhotos(true);
+      }
+    }
+  }, [maintenance, maintenanceInfo, validateCanStart]);
+
   const takePhoto = useCallback(async (deviceId: number) => {
+    // Validar que se puedan tomar fotos
+    if (!canTakePhotos) {
+      Alert.alert(
+        'No disponible',
+        validationError || 'No puedes tomar fotos en este momento. Verifica las condiciones del mantenimiento.'
+      );
+      return;
+    }
+
     if (!token) return;
 
     try {
@@ -163,7 +259,7 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
       Alert.alert('Error', errorMessage);
       showError(error);
     }
-  }, [token, imageUpload, maintenanceId, showError]);
+  }, [token, imageUpload, maintenanceId, showError, canTakePhotos, validationError]);
 
   const canConfirm = useMemo(() => {
     return devicePhotos.some((item) => item.captured);
@@ -306,16 +402,29 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Banner de Instrucciones */}
-        <View style={styles.instructionBanner}>
-          <Ionicons name="camera" size={24} color="#FF9500" />
-          <View style={styles.instructionText}>
-            <Text style={styles.instructionTitle}>Captura el estado inicial</Text>
-            <Text style={styles.instructionSubtitle}>
-              Toma una foto de cada máquina antes de iniciar el mantenimiento
-            </Text>
+        {/* Banner de Error de Validación */}
+        {validationError && (
+          <View style={styles.errorBanner}>
+            <Ionicons name="alert-circle" size={24} color="#FF3B30" />
+            <View style={styles.errorText}>
+              <Text style={styles.errorTitle}>No se puede iniciar el mantenimiento</Text>
+              <Text style={styles.errorMessage}>{validationError}</Text>
+            </View>
           </View>
-        </View>
+        )}
+
+        {/* Banner de Instrucciones - Solo mostrar si no hay error */}
+        {!validationError && (
+          <View style={styles.instructionBanner}>
+            <Ionicons name="camera" size={24} color="#FF9500" />
+            <View style={styles.instructionText}>
+              <Text style={styles.instructionTitle}>Captura el estado inicial</Text>
+              <Text style={styles.instructionSubtitle}>
+                Toma una foto de cada máquina antes de iniciar el mantenimiento
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* Lista de Dispositivos */}
         {maintenance.device.map((device, index) => {
@@ -365,23 +474,29 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
                     </View>
                   ) : null}
                   <TouchableOpacity
-                    style={styles.retakeButton}
+                    style={[styles.retakeButton, !canTakePhotos && styles.retakeButtonDisabled]}
                     onPress={() => takePhoto(device.client_device_id)}
-                    disabled={isUploading}
+                    disabled={isUploading || !canTakePhotos}
                   >
-                    <Ionicons name="camera" size={20} color="#007AFF" />
-                    <Text style={styles.retakeButtonText}>Tomar Nuevamente</Text>
+                    <Ionicons name="camera" size={20} color={canTakePhotos ? "#007AFF" : "#ccc"} />
+                    <Text style={[styles.retakeButtonText, !canTakePhotos && styles.retakeButtonTextDisabled]}>
+                      Tomar Nuevamente
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ) : (
                 <TouchableOpacity
-                  style={styles.takePhotoButton}
+                  style={[styles.takePhotoButton, !canTakePhotos && styles.takePhotoButtonDisabled]}
                   onPress={() => takePhoto(device.client_device_id)}
-                  disabled={isUploading}
+                  disabled={isUploading || !canTakePhotos}
                 >
-                  <Ionicons name="camera" size={32} color="#007AFF" />
-                  <Text style={styles.takePhotoText}>Tomar Foto Inicial</Text>
-                  <Text style={styles.takePhotoSubtext}>Estado antes del mantenimiento</Text>
+                  <Ionicons name="camera" size={32} color={canTakePhotos ? "#007AFF" : "#ccc"} />
+                  <Text style={[styles.takePhotoText, !canTakePhotos && styles.takePhotoTextDisabled]}>
+                    Tomar Foto Inicial
+                  </Text>
+                  <Text style={[styles.takePhotoSubtext, !canTakePhotos && styles.takePhotoSubtextDisabled]}>
+                    Estado antes del mantenimiento
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -404,9 +519,9 @@ export default function IniciarMantenimiento({ route }: { route: { params: Route
       {/* Botón de Confirmar */}
       <View style={styles.footer}>
         <TouchableOpacity
-          style={[styles.confirmButton, !canConfirm && styles.confirmButtonDisabled]}
+          style={[styles.confirmButton, (!canConfirm || submitting || !canTakePhotos) && styles.confirmButtonDisabled]}
           onPress={handleConfirm}
-          disabled={!canConfirm || submitting}
+          disabled={!canConfirm || submitting || !canTakePhotos}
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#fff" />
@@ -523,16 +638,26 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: '#F8F9FA',
   },
+  takePhotoButtonDisabled: {
+    backgroundColor: '#F5F5F5',
+    borderColor: '#E0E0E0',
+  },
   takePhotoText: {
     fontSize: 16,
     fontWeight: '700',
     color: '#007AFF',
     marginTop: 12,
   },
+  takePhotoTextDisabled: {
+    color: '#999',
+  },
   takePhotoSubtext: {
     fontSize: 13,
     color: '#666',
     marginTop: 4,
+  },
+  takePhotoSubtextDisabled: {
+    color: '#CCC',
   },
   uploadingContainer: {
     alignItems: 'center',
@@ -595,10 +720,43 @@ const styles = StyleSheet.create({
     borderColor: '#007AFF',
     gap: 8,
   },
+  retakeButtonDisabled: {
+    borderColor: '#E0E0E0',
+    backgroundColor: '#F5F5F5',
+  },
   retakeButtonText: {
     fontSize: 14,
     fontWeight: '600',
     color: '#007AFF',
+  },
+  retakeButtonTextDisabled: {
+    color: '#999',
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFE6E6',
+    padding: 16,
+    margin: 20,
+    marginBottom: 12,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FF3B30',
+    gap: 12,
+  },
+  errorText: {
+    flex: 1,
+  },
+  errorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#FF3B30',
+    marginBottom: 4,
+  },
+  errorMessage: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
   },
   progressInfo: {
     alignItems: 'center',

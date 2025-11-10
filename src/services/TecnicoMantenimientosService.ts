@@ -2,7 +2,7 @@ import { BaseService, BaseResponse, PaginationData } from './BaseService';
 import API from './api';
 
 // Tipos basados en la documentación de la API
-export type MaintenanceStatus = 'assigned' | 'in_progress' | 'completed';
+export type MaintenanceStatus = 'assigned' | 'en_camino' | 'in_progress' | 'completed';
 export type MaintenanceType = 'preventivo' | 'correctivo';
 
 export interface Client {
@@ -59,6 +59,20 @@ export interface Technician {
   updated_at: string;
 }
 
+export interface MaintenanceActionLog {
+  id: number;
+  maintenance_id: number;
+  technician_id: number;
+  action: 'assign' | 'on_the_way' | 'start' | 'pause' | 'resume' | 'end';
+  timestamp: string;
+  reason: string | null;
+  latitude: string | null;
+  longitude: string | null;
+  is_last: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface TecnicoMaintenance {
   id: number;
   type: string;
@@ -77,12 +91,23 @@ export interface TecnicoMaintenance {
   // Compatibilidad por si el backend devuelve segundos o string previo
   pause_duration?: string | null;
   pause_duration_ms?: number;
+  // Tiempo transcurrido de trabajo (calculado por el backend, resta las pausas)
+  elapsed_work_time_ms?: number;
+  elapsed_work_time?: {
+    total_ms: number;
+    formatted: string;
+    hours: number;
+    minutes: number;
+    seconds: number;
+  };
   description: string;
   photo: string;
   is_paid: boolean | null;
   payment_support: string | null;
   price_support: string | null;
   created_at: string;
+  // Último log de acción (para determinar subestado)
+  last_action_log?: MaintenanceActionLog | null;
 }
 
 export interface TecnicoMaintenancesResponse extends BaseResponse<TecnicoMaintenance[]> {
@@ -218,6 +243,53 @@ export class TecnicoMantenimientosService extends BaseService {
       return response.data;
     } catch (error: any) {
       console.error('TecnicoMantenimientosService: Error obteniendo progreso:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las fotos de un mantenimiento (para técnicos)
+   */
+  static async getMaintenancePhotos(
+    token: string,
+    maintenanceId: number,
+    options?: {
+      photo_type?: 'initial' | 'final' | 'part';
+      device_id?: number;
+      unpaginated?: boolean;
+    }
+  ): Promise<{
+    photos: Array<{
+      id: number;
+      maintenance_id: number;
+      client_device_id: number;
+      photo_url: string;
+      photo_type: 'initial' | 'final' | 'part';
+      uploaded_at?: string;
+    }>;
+    count?: {
+      initial: number;
+      final: number;
+      part: number;
+      total: number;
+    };
+  }> {
+    try {
+      let url = `/api/technicianMaintenances/${maintenanceId}/photos`;
+      const params = new URLSearchParams();
+      
+      if (options?.photo_type) params.append('photo_type', options.photo_type);
+      if (options?.device_id) params.append('device_id', options.device_id.toString());
+      if (options?.unpaginated) params.append('unpaginated', '1');
+      
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const response = await API.get(url, this.getAuthHeaders(token));
+      return response.data.data || response.data;
+    } catch (error: any) {
+      console.error('TecnicoMantenimientosService: Error obteniendo fotos:', error);
       throw error;
     }
   }
@@ -424,6 +496,7 @@ export class TecnicoMantenimientosService extends BaseService {
   static getStatusText(status: MaintenanceStatus): string {
     const statusMap: Record<MaintenanceStatus, string> = {
       assigned: 'Asignado',
+      en_camino: 'En Camino',
       in_progress: 'En Progreso',
       completed: 'Completado'
     };
@@ -436,6 +509,7 @@ export class TecnicoMantenimientosService extends BaseService {
   static getStatusColor(status: MaintenanceStatus): string {
     const colorMap: Record<MaintenanceStatus, string> = {
       assigned: '#FF9800',
+      en_camino: '#FFC107',
       in_progress: '#2196F3',
       completed: '#4CAF50'
     };
@@ -626,6 +700,41 @@ export class TecnicoMantenimientosService extends BaseService {
       return response.data;
     } catch (error: any) {
       console.error('❌ Error reanudando mantenimiento:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marca un mantenimiento como "En Camino"
+   */
+  static async markOnTheWay(
+    token: string,
+    maintenanceId: number,
+    location: {
+      latitude: number;
+      longitude: number;
+    }
+  ): Promise<BaseResponse<any>> {
+    try {
+      const url = `/api/technicianMaintenances/${maintenanceId}/onTheWay`;
+      
+      console.log('🚗 TecnicoMantenimientosService: Marcando en camino:', {
+        maintenanceId,
+        location
+      });
+
+      const requestBody = {
+        latitude: location.latitude,
+        longitude: location.longitude
+      };
+
+      const response = await API.post(url, requestBody, this.getAuthHeaders(token));
+      
+      console.log('✅ Mantenimiento marcado como "En Camino" exitosamente:', response.data);
+      
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error marcando en camino:', error);
       throw error;
     }
   }

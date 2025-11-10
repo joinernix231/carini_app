@@ -8,24 +8,24 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import AuthLoadingScreen from './src/components/AuthLoadingScreen';
 import NotificationBanner from './src/components/NotificationBanner';
 import { usePushNotifications } from './src/hooks/usePushNotifications';
+import { navigationRef } from './src/utils/navigationRef';
+import { pushNotificationService } from './src/services/PushNotificationService';
 
 function AppContent() {
   const { isLoading, isInitialized, user, token } = useAuth();
-  const { initialize, registerToken } = usePushNotifications();
+  const { initialize } = usePushNotifications();
 
-  // Inicializar notificaciones push
+  // Configurar callback para obtener usuario en el servicio de notificaciones
   React.useEffect(() => {
-    if (isInitialized) {
+    pushNotificationService.setUserCallback(() => user);
+  }, [user]);
+
+  // Inicializar notificaciones push (esto ya incluye el registro del token)
+  React.useEffect(() => {
+    if (isInitialized && user && token) {
       initialize();
     }
-  }, [isInitialized, initialize]);
-
-  // Registrar token cuando el usuario se autentica
-  React.useEffect(() => {
-    if (user && token && isInitialized) {
-      registerToken();
-    }
-  }, [user, token, isInitialized, registerToken]);
+  }, [isInitialized, user, token, initialize]);
 
   // Mostrar pantalla de carga mientras se inicializa la autenticación
   if (!isInitialized || isLoading) {
@@ -33,7 +33,7 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <AppNavigator />
       <NotificationBanner />
       <StatusBar style="dark" backgroundColor="#ffffff" />

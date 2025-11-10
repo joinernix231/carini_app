@@ -24,6 +24,14 @@ export interface Mantenimiento {
   is_paid: boolean | null;
   payment_support: string | null;
   created_at: string;
+  // Campos de confirmación
+  confirmation_required?: boolean;
+  confirmed_at?: string | null;
+  confirmation_deadline?: string | null;
+  coordinator_notified?: boolean;
+  coordinator_notified_at?: string | null;
+  coordinator_called?: boolean;
+  coordinator_called_at?: string | null;
 }
 
 export interface MantenimientoFormData {
@@ -46,6 +54,11 @@ export interface MantenimientoListItem {
   created_at: string;
   deviceCount: number;
   primaryDevice: Device;
+  clientName?: string | null;
+  // Campos de confirmación
+  confirmation_required?: boolean;
+  confirmed_at?: string | null;
+  confirmation_deadline?: string | null;
 }
 
 

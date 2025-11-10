@@ -13,6 +13,8 @@ import {
   Image,
   Modal,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons, MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -56,6 +58,10 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
   const [suggestingSparePart, setSuggestingSparePart] = useState(false);
   const [selectedDeviceForSparePart, setSelectedDeviceForSparePart] = useState<Device | null>(null);
   const [showDeviceSelectorModal, setShowDeviceSelectorModal] = useState(false);
+  
+  // Refs para manejar el scroll cuando se abre el teclado
+  const scrollViewRef = useRef<ScrollView>(null);
+  const textInputRef = useRef<TextInput>(null);
   
   const { pickImage, takePhoto, uploadImage, uploading } = useImageUpload({
     defaultName: 'spare-part',
@@ -289,17 +295,43 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
 
     try {
       setSuggestingSparePart(true);
+      console.log('🔧 Iniciando sugerencia de cambio de repuesto...');
 
       let photoName: string | null = null;
       
       // Si hay foto, subirla primero
       if (sparePartPhoto) {
-        const uploaded = await uploadImage(sparePartPhoto, 'spare-part');
-        if (uploaded) {
-          photoName = uploaded;
+        console.log('📤 Subiendo foto del repuesto...');
+        try {
+          const uploaded = await uploadImage(sparePartPhoto, 'spare-part');
+          if (uploaded) {
+            photoName = uploaded;
+            console.log('✅ Foto subida exitosamente:', photoName);
+          } else {
+            console.warn('⚠️ La foto no se subió correctamente, continuando sin foto');
+          }
+        } catch (uploadError: any) {
+          console.error('❌ Error al subir foto:', uploadError);
+          // Si falla la subida de foto, preguntar si quiere continuar sin foto
+          const shouldContinue = await new Promise<boolean>((resolve) => {
+            Alert.alert(
+              'Error al subir foto',
+              'Hubo un problema al subir la foto. ¿Deseas continuar sin la foto?',
+              [
+                { text: 'Cancelar', onPress: () => resolve(false), style: 'cancel' },
+                { text: 'Continuar sin foto', onPress: () => resolve(true) },
+              ]
+            );
+          });
+          
+          if (!shouldContinue) {
+            setSuggestingSparePart(false);
+            return;
+          }
         }
       }
 
+      console.log('📨 Enviando sugerencia de cambio de repuesto...');
       const response = await TecnicoMantenimientosService.suggestSparePart(
         token,
         maintenanceId,
@@ -313,6 +345,7 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
       );
 
       if (response.success) {
+        console.log('✅ Sugerencia enviada exitosamente');
         Alert.alert(
           '✅ Sugerencia enviada',
           'La sugerencia de cambio de repuesto ha sido enviada exitosamente.',
@@ -331,12 +364,24 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
       } else {
         throw new Error(response.message || 'Error al enviar sugerencia');
       }
-    } catch (error) {
-      showError(error, 'Error al sugerir cambio de repuesto');
+    } catch (error: any) {
+      console.error('❌ Error completo en sugerencia de cambio de repuesto:', error);
+      
+      // Mensaje más específico según el tipo de error
+      let errorMessage = 'Error al sugerir cambio de repuesto';
+      if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+        errorMessage = 'La solicitud tardó demasiado. Por favor, verifica tu conexión e intenta nuevamente.';
+      } else if (error?.response?.status === 408 || error?.response?.status === 504) {
+        errorMessage = 'El servidor tardó demasiado en responder. Por favor, intenta nuevamente.';
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      showError(error, errorMessage);
     } finally {
       setSuggestingSparePart(false);
     }
-  }, [sparePartDescription, sparePartPhoto, token, maintenanceId, uploadImage, showError]);
+  }, [sparePartDescription, sparePartPhoto, token, maintenanceId, uploadImage, showError, selectedDeviceForSparePart]);
 
   // Función para prevenir salida accidental
   const handleAttemptExit = useCallback(() => {
@@ -488,7 +533,18 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
         <View style={styles.headerRight} />
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingView}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={styles.scrollContent}
+        >
         {/* Banner de Estado */}
         <View style={styles.statusBanner}>
           <View style={styles.statusHeader}>
@@ -554,15 +610,21 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
               </View>
             </View>
             {maintenance.latitude && maintenance.longitude && (
-              <View style={styles.infoItem}>
-                <Ionicons name="location-outline" size={20} color="#FF3B30" />
+              <TouchableOpacity
+                style={styles.infoItem}
+                onPress={() => {
+                  const { openOpenStreetMap } = require('../../utils/mapUtils');
+                  openOpenStreetMap(maintenance.latitude, maintenance.longitude);
+                }}
+              >
+                <Ionicons name="location-outline" size={20} color="#0EA5E9" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Ubicación GPS</Text>
-                  <Text style={styles.infoValue} numberOfLines={1}>
-                    {parseFloat(maintenance.latitude).toFixed(4)}°, {parseFloat(maintenance.longitude).toFixed(4)}°
+                  <Text style={[styles.infoValue, { color: '#0EA5E9', textDecorationLine: 'underline' }]} numberOfLines={1}>
+                    Ver en mapa
                   </Text>
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
           </View>
         </View>
@@ -727,6 +789,7 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
           </View>
           
           <TextInput
+            ref={textInputRef}
             style={styles.sparePartTextInput}
             placeholder="Describe el repuesto que necesita ser cambiado y por qué..."
             placeholderTextColor="#999"
@@ -735,6 +798,12 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
             value={sparePartDescription}
             onChangeText={setSparePartDescription}
             textAlignVertical="top"
+            onFocus={() => {
+              // Scroll automático al campo cuando se enfoca
+              setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+              }, 300);
+            }}
           />
 
           {sparePartPhoto && (
@@ -784,7 +853,8 @@ export default function MantenimientoEnProgreso({ route }: { route: { params: Ro
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* Botones de Acción */}
       <View style={styles.footer}>
@@ -945,8 +1015,14 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
   },
+  keyboardAvoidingView: {
+    flex: 1,
+  },
   content: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   statusBanner: {
     backgroundColor: '#007AFF',

@@ -56,15 +56,14 @@ export const ClientDeviceService = {
      * Desasocia un dispositivo de un cliente
      */
     async disassociateDevice(
-        clientId: number, 
-        deviceId: number, 
+        clientDeviceId: number, 
         token: string
     ): Promise<{ success: boolean; message: string }> {
         try {
-            console.log('🔍 ClientDeviceService - Desasociando dispositivo:', deviceId);
+            console.log('🔍 ClientDeviceService - Desasociando clientDevice:', clientDeviceId);
             
             const response = await API.delete(
-                `/api/admin/clients/${clientId}/devices/${deviceId}`, 
+                `/api/admin/clients/devices/${clientDeviceId}`, 
                 authHeaders(token)
             );
             
@@ -99,6 +98,40 @@ export const ClientDeviceService = {
         } catch (error: any) {
             // Error log removed
             throw new Error(error.response?.data?.message || 'Error actualizando dispositivo del cliente');
+        }
+    },
+
+    /**
+     * Obtiene los mantenimientos de un equipo cliente
+     */
+    async getClientDeviceMaintenances(
+        clientDeviceId: number,
+        token: string,
+        options?: {
+            unpaginated?: boolean;
+            filters?: string;
+        }
+    ): Promise<any[]> {
+        try {
+            console.log('🔍 ClientDeviceService - Obteniendo mantenimientos del equipo:', clientDeviceId);
+            
+            let url = `/api/admin/clients/devices/${clientDeviceId}/maintenances`;
+            const params = new URLSearchParams();
+            
+            if (options?.unpaginated) params.append('unpaginated', '1');
+            if (options?.filters) params.append('filters', options.filters);
+            
+            if (params.toString()) {
+                url += `?${params.toString()}`;
+            }
+            
+            const response = await API.get(url, authHeaders(token));
+            
+            // El backend devuelve { success: true, data: [...], message: "..." }
+            return response.data.data || [];
+        } catch (error: any) {
+            // Error log removed
+            throw new Error(error.response?.data?.message || 'Error obteniendo mantenimientos del equipo');
         }
     }
 };

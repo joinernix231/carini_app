@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "469233806503",
+    "firebase_url": "https://fir-joiner-default-rtdb.firebaseio.com",
+    "project_id": "fir-joiner",
+    "storage_bucket": "fir-joiner.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:469233806503:android:fa46380e9947e67fab7f82",
+        "android_client_info": {
+          "package_name": "com.carini.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1lB_FUKpzDpiq5Kk4AzEJF9pFfSE-Qso"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -5,6 +5,13 @@ export interface UserProfile {
     id: number;
     name: string;
     role: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    identifier?: string;
+    legal_representative?: string;
+    client_type?: string;
     policy_accepted: boolean;
 }
 
@@ -40,17 +47,17 @@ export const UserService = {
     },
 
     /**
-     * Valida si el token es válido
+     * Valida si el token es válido y retorna el perfil del usuario
      * @param token - Token a validar
-     * @returns true si el token es válido
+     * @returns Perfil del usuario si el token es válido, null si no lo es
      */
-    async validateToken(token: string): Promise<boolean> {
+    async validateToken(token: string): Promise<UserProfile | null> {
         try {
-            await this.getProfile(token);
-            return true;
+            const profile = await this.getProfile(token);
+            return profile;
         } catch (error) {
             // Log removed
-            return false;
+            return null;
         }
     }
 };

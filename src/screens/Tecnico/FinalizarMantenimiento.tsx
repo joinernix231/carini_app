@@ -504,13 +504,16 @@ export default function FinalizarMantenimiento({ route }: { route: { params: Rou
       const location = await Location.getCurrentPositionAsync({});
       const { latitude, longitude } = location.coords;
 
-      // Preparar fotos finales
+      // Preparar fotos finales (agregar prefijo images/)
       const finalPhotos = deviceFinalPhotos
         .filter((p) => p.photoName)
         .map((p) => ({
           client_device_id: p.deviceId,
-          photo: p.photoName!,
+          photo: `images/${p.photoName!}`,
         }));
+
+      // Preparar firma (agregar prefijo images/)
+      const signaturePath = clientSignature ? `images/${clientSignature}` : undefined;
 
       // Completar mantenimiento
       const response = await TecnicoMantenimientosService.completeMaintenance(
@@ -520,7 +523,7 @@ export default function FinalizarMantenimiento({ route }: { route: { params: Rou
           latitude,
           longitude,
           final_observations: finalObservations.trim() || undefined,
-          client_signature: clientSignature,
+          client_signature: signaturePath,
           final_photos: finalPhotos,
         }
       );

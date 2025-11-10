@@ -8,6 +8,7 @@ import {
   TextInput,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -60,85 +61,93 @@ export function PauseReasonModal({ visible, onCancel, onConfirm, loading }: Paus
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={handleCancel}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.modalOverlay}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={handleCancel} />
         <View style={styles.modalContainer}>
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <View style={styles.modalIconContainer}>
-              <Ionicons name="pause-circle" size={32} color="#FF9500" />
+          <ScrollView
+            style={styles.scrollView}
+            contentContainerStyle={styles.scrollViewContent}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Header */}
+            <View style={styles.modalHeader}>
+              <View style={styles.modalIconContainer}>
+                <Ionicons name="pause-circle" size={32} color="#FF9500" />
+              </View>
+              <Text style={styles.modalTitle}>Pausar Mantenimiento</Text>
+              <Text style={styles.modalSubtitle}>
+                Indica el motivo de la pausa para continuar más tarde
+              </Text>
             </View>
-            <Text style={styles.modalTitle}>Pausar Mantenimiento</Text>
-            <Text style={styles.modalSubtitle}>
-              Indica el motivo de la pausa para continuar más tarde
-            </Text>
-          </View>
 
-          {/* Razones Rápidas */}
-          <View style={styles.quickReasonsContainer}>
-            <Text style={styles.quickReasonsTitle}>Razones Rápidas</Text>
-            <View style={styles.quickReasonsGrid}>
-              {QUICK_REASONS.map((reason) => (
-                <TouchableOpacity
-                  key={reason.id}
-                  style={[
-                    styles.quickReasonButton,
-                    selectedQuickReason === reason.id && styles.quickReasonButtonActive,
-                  ]}
-                  onPress={() => {
-                    setSelectedQuickReason(reason.id);
-                    setCustomReason('');
-                  }}
-                  disabled={loading}
-                >
-                  <Ionicons
-                    name={reason.icon as any}
-                    size={24}
-                    color={selectedQuickReason === reason.id ? '#fff' : '#FF9500'}
-                  />
-                  <Text
+            {/* Razones Rápidas */}
+            <View style={styles.quickReasonsContainer}>
+              <Text style={styles.quickReasonsTitle}>Razones Rápidas</Text>
+              <View style={styles.quickReasonsGrid}>
+                {QUICK_REASONS.map((reason) => (
+                  <TouchableOpacity
+                    key={reason.id}
                     style={[
-                      styles.quickReasonText,
-                      selectedQuickReason === reason.id && styles.quickReasonTextActive,
+                      styles.quickReasonButton,
+                      selectedQuickReason === reason.id && styles.quickReasonButtonActive,
                     ]}
+                    onPress={() => {
+                      setSelectedQuickReason(reason.id);
+                      setCustomReason('');
+                    }}
+                    disabled={loading}
                   >
-                    {reason.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+                    <Ionicons
+                      name={reason.icon as any}
+                      size={24}
+                      color={selectedQuickReason === reason.id ? '#fff' : '#FF9500'}
+                    />
+                    <Text
+                      style={[
+                        styles.quickReasonText,
+                        selectedQuickReason === reason.id && styles.quickReasonTextActive,
+                      ]}
+                    >
+                      {reason.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
             </View>
-          </View>
 
-          {/* Separador */}
-          <View style={styles.modalDivider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>o escribe tu motivo</Text>
-            <View style={styles.dividerLine} />
-          </View>
+            {/* Separador */}
+            <View style={styles.modalDivider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>o escribe tu motivo</Text>
+              <View style={styles.dividerLine} />
+            </View>
 
-          {/* Campo de Texto */}
-          <View style={styles.customReasonContainer}>
-            <TextInput
-              style={styles.customReasonInput}
-              placeholder="Escribe el motivo de la pausa..."
-              placeholderTextColor="#8E8E93"
-              value={customReason}
-              onChangeText={(text) => {
-                setCustomReason(text);
-                setSelectedQuickReason(null);
-              }}
-              multiline
-              numberOfLines={5}
-              textAlignVertical="top"
-              scrollEnabled
-              autoFocus
-              editable={!loading}
-            />
-          </View>
+            {/* Campo de Texto */}
+            <View style={styles.customReasonContainer}>
+              <TextInput
+                style={styles.customReasonInput}
+                placeholder="Escribe el motivo de la pausa..."
+                placeholderTextColor="#8E8E93"
+                value={customReason}
+                onChangeText={(text) => {
+                  setCustomReason(text);
+                  setSelectedQuickReason(null);
+                }}
+                multiline
+                numberOfLines={5}
+                textAlignVertical="top"
+                scrollEnabled
+                autoFocus
+                editable={!loading}
+              />
+            </View>
+          </ScrollView>
 
-          {/* Botones */}
+          {/* Botones - Fuera del ScrollView para que siempre sean visibles */}
           <View style={styles.modalActions}>
             <TouchableOpacity
               style={styles.modalCancelButton}
@@ -180,13 +189,20 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingBottom: 20,
-    maxHeight: '85%',
+    maxHeight: '90%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 10,
+    flexDirection: 'column',
+  },
+  scrollView: {
+    flexGrow: 0,
+    flexShrink: 1,
+  },
+  scrollViewContent: {
+    paddingBottom: 10,
   },
   modalHeader: {
     alignItems: 'center',
@@ -291,7 +307,12 @@ const styles = StyleSheet.create({
   modalActions: {
     flexDirection: 'row',
     paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 24,
     gap: 12,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F2F2F7',
   },
   modalCancelButton: {
     flex: 1,

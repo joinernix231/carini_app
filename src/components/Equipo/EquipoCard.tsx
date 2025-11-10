@@ -68,7 +68,7 @@ function EquipoCardComponent({ equipo, onPress, onEdit, onDelete }: Props) {
 
                 <View style={styles.nameSection}>
                     <Text style={styles.equipoName} numberOfLines={1}>
-                        {equipo.brand} {equipo.model}
+                        {equipo.model || equipo.brand}
                     </Text>
 
                     {/* Badge de tipo de equipo */}

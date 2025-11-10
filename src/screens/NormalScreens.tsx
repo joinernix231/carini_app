@@ -27,6 +27,10 @@ import DetalleCliente from './Administrador/Cliente/DetalleCliente';
 import DetalleTecnico from './Administrador/Tecnico/DetalleTecnico';
 import DetalleEquipo from './Administrador/Equipo/DetalleEquipo';
 import DetalleCoordinador from './Administrador/Coordinador/DetalleCoordinador';
+import MantenimientosTecnicoList from './Administrador/Tecnico/MantenimientosTecnicoList';
+import DetalleMantenimientoTecnico from './Administrador/Tecnico/DetalleMantenimientoTecnico';
+import MantenimientosListAdmin from './Administrador/Mantenimiento/MantenimientosList';
+import CrearMantenimientoAdmin from './Administrador/Mantenimiento/CrearMantenimiento';
 
 // Exportar con nombres consistentes
 export const LazyAdminDashboard = AdminDashboard;
@@ -54,3 +58,7 @@ export const LazyDetalleCliente = DetalleCliente;
 export const LazyDetalleTecnico = DetalleTecnico;
 export const LazyDetalleEquipo = DetalleEquipo;
 export const LazyDetalleCoordinador = DetalleCoordinador;
+export const LazyMantenimientosTecnicoList = MantenimientosTecnicoList;
+export const LazyDetalleMantenimientoTecnico = DetalleMantenimientoTecnico;
+export const LazyMantenimientosListAdmin = MantenimientosListAdmin;
+export const LazyCrearMantenimientoAdmin = CrearMantenimientoAdmin;

@@ -548,7 +548,7 @@ export default function DetalleMantenimientoScreen() {
         {mantenimiento?.value && (
           <View style={styles.quotationInfo}>
             <Text style={styles.quotationInfoLabel}>Valor de la cotización:</Text>
-            <Text style={styles.quotationInfoValue}>${mantenimiento.value.toLocaleString()}</Text>
+            <Text style={styles.quotationInfoValue}>${parseFloat(mantenimiento.value).toLocaleString()}</Text>
           </View>
         )}
       </View>
@@ -731,54 +731,51 @@ export default function DetalleMantenimientoScreen() {
         {/* Información de los Equipos */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
-            Equipos ({Array.isArray(mantenimiento.device) ? mantenimiento.device.length : 1})
+            Equipos ({mantenimiento.devices?.length || 0})
           </Text>
-          {(() => {
-            const devices = Array.isArray(mantenimiento.device) ? mantenimiento.device : (mantenimiento.device ? [mantenimiento.device] : []);
-            return devices.length > 0 ? (
-              devices.map((device, index) => (
-                <View key={device.id} style={[styles.infoCard, index > 0 && styles.deviceCardSpacing]}>
-                  <View style={styles.deviceHeader}>
-                    <MaterialIcons name="devices" size={20} color="#1976D2" />
-                    <Text style={styles.deviceTitle}>Equipo #{device.id}</Text>
-                  </View>
-                  
-                  <View style={styles.deviceGrid}>
-                    <View style={styles.deviceInfoItem}>
-                      <Text style={styles.deviceInfoLabel}>Marca</Text>
-                      <Text style={styles.deviceInfoValue}>{device.brand || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.deviceInfoItem}>
-                      <Text style={styles.deviceInfoLabel}>Modelo</Text>
-                      <Text style={styles.deviceInfoValue}>{device.model || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.deviceInfoItem}>
-                      <Text style={styles.deviceInfoLabel}>Tipo</Text>
-                      <Text style={styles.deviceInfoValue}>{device.type || 'N/A'}</Text>
-                    </View>
-                    <View style={styles.deviceInfoItem}>
-                      <Text style={styles.deviceInfoLabel}>Serial</Text>
-                      <Text style={styles.deviceInfoValue}>{device.serial || 'N/A'}</Text>
-                    </View>
-                    <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
-                      <Text style={styles.deviceInfoLabel}>Dirección</Text>
-                      <Text style={styles.deviceInfoValue}>{device.address || 'N/A'}</Text>
-                    </View>
-                    {device.pivot_description && (
-                      <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
-                        <Text style={styles.deviceInfoLabel}>Descripción del Mantenimiento</Text>
-                        <Text style={styles.deviceInfoValue}>{device.pivot_description}</Text>
-                      </View>
-                    )}
-                  </View>
+          {mantenimiento.devices && mantenimiento.devices.length > 0 ? (
+            mantenimiento.devices.map((deviceItem, index) => (
+              <View key={deviceItem.id} style={[styles.infoCard, index > 0 && styles.deviceCardSpacing]}>
+                <View style={styles.deviceHeader}>
+                  <MaterialIcons name="devices" size={20} color="#1976D2" />
+                  <Text style={styles.deviceTitle}>Equipo #{deviceItem.id}</Text>
                 </View>
-              ))
-            ) : (
-              <View style={styles.infoCard}>
-                <Text style={styles.emptyText}>No hay información de equipos disponible</Text>
+                
+                <View style={styles.deviceGrid}>
+                  <View style={styles.deviceInfoItem}>
+                    <Text style={styles.deviceInfoLabel}>Marca</Text>
+                    <Text style={styles.deviceInfoValue}>{deviceItem.device?.brand || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.deviceInfoItem}>
+                    <Text style={styles.deviceInfoLabel}>Modelo</Text>
+                    <Text style={styles.deviceInfoValue}>{deviceItem.device?.model || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.deviceInfoItem}>
+                    <Text style={styles.deviceInfoLabel}>Tipo</Text>
+                    <Text style={styles.deviceInfoValue}>{deviceItem.device?.type || 'N/A'}</Text>
+                  </View>
+                  <View style={styles.deviceInfoItem}>
+                    <Text style={styles.deviceInfoLabel}>Serial</Text>
+                    <Text style={styles.deviceInfoValue}>{deviceItem.serial || 'N/A'}</Text>
+                  </View>
+                  <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
+                    <Text style={styles.deviceInfoLabel}>Dirección</Text>
+                    <Text style={styles.deviceInfoValue}>{deviceItem.address || 'N/A'}</Text>
+                  </View>
+                  {deviceItem.pivot?.description && (
+                    <View style={[styles.deviceInfoItem, styles.deviceInfoItemFull]}>
+                      <Text style={styles.deviceInfoLabel}>Descripción del Mantenimiento</Text>
+                      <Text style={styles.deviceInfoValue}>{deviceItem.pivot.description}</Text>
+                    </View>
+                  )}
+                </View>
               </View>
-            );
-          })()}
+            ))
+          ) : (
+            <View style={styles.infoCard}>
+              <Text style={styles.emptyText}>No hay información de equipos disponible</Text>
+            </View>
+          )}
         </View>
 
         {/* Técnico Asignado */}
@@ -820,7 +817,7 @@ export default function DetalleMantenimientoScreen() {
               {mantenimiento.value && (
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>Valor:</Text>
-                  <Text style={styles.infoValue}>${mantenimiento.value.toLocaleString()}</Text>
+                  <Text style={styles.infoValue}>${parseFloat(mantenimiento.value).toLocaleString()}</Text>
                 </View>
               )}
               {mantenimiento.spare_parts && (

@@ -54,6 +54,7 @@ export default function MantenimientosAprobadosScreen() {
       created_at: item.created_at,
       deviceCount: devices.length,
       primaryDevice: devices[0] || { id: 0, model: 'N/A', brand: 'N/A', type: 'N/A', serial: '', address: '' },
+      clientName: item.client?.name || null,
     };
 
     return (

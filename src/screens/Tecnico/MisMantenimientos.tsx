@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,10 +18,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTecnicoMantenimientos } from '../../hooks/useTecnicoMantenimientos';
 import { MaintenanceCard } from '../../components/Tecnico/Maintenance';
-import { TecnicoMantenimientosService, 
-  TecnicoMaintenance,
-  MaintenanceProgressResponse,
-  DeviceProgress } from '../../services/TecnicoMantenimientosService';
+import TecnicoMantenimientosService, { 
+  TecnicoMaintenance, 
+  MaintenanceStatus,
+  Client
+} from '../../services/TecnicoMantenimientosService';
 import BackButton from '../../components/BackButton';
 
 type FilterType = 'all' | MaintenanceStatus;
@@ -30,7 +31,7 @@ type DateFilterType = 'all' | 'today' | 'week' | 'month' | 'custom';
 export default function MisMantenimientos() {
   const { navigate } = useSmartNavigation();
   const { 
-    maintenances, 
+    maintenances: allMaintenances, 
     loading, 
     refreshing, 
     refreshMaintenances, 
@@ -40,6 +41,23 @@ export default function MisMantenimientos() {
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [filterStatus, setFilterStatus] = useState<FilterType>('all');
   const [dateFilter, setDateFilter] = useState<DateFilterType>('all');
+  const [showActiveOnly, setShowActiveOnly] = useState(true); // Mostrar solo activos por defecto
+
+  // Filtrar mantenimientos según el filtro seleccionado
+  const maintenances = useMemo(() => {
+    let filtered = allMaintenances;
+
+    // Si showActiveOnly es true, mostrar solo assigned e in_progress
+    if (showActiveOnly && filterStatus === 'all') {
+      filtered = allMaintenances.filter(m => 
+        m.status === 'assigned' || m.status === 'in_progress'
+      );
+    } else if (filterStatus !== 'all') {
+      filtered = allMaintenances.filter(m => m.status === filterStatus);
+    }
+
+    return filtered;
+  }, [allMaintenances, filterStatus, showActiveOnly]);
 
   // Manejar el botón físico de "atrás" de Android
   useFocusEffect(
@@ -62,12 +80,22 @@ export default function MisMantenimientos() {
 
   const handleFilterChange = async (status: FilterType) => {
     setFilterStatus(status);
-    // Aplicar filtros al backend
-    const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
-    await applyFilters(
-      status === 'all' ? 'all' : status as MaintenanceStatus,
-      dateFilterValue
-    );
+    // Si se selecciona un filtro específico, desactivar showActiveOnly
+    if (status !== 'all') {
+      setShowActiveOnly(false);
+      // Aplicar filtros al backend
+      const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
+      await applyFilters(
+        status as MaintenanceStatus,
+        dateFilterValue
+      );
+    } else {
+      // Si se selecciona "Todos", activar showActiveOnly para mostrar solo activos
+      setShowActiveOnly(true);
+      // Cargar todos sin filtro de estado
+      const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
+      await applyFilters('all', dateFilterValue);
+    }
   };
 
   const handleDateFilterChange = (filter: DateFilterType) => {
@@ -76,6 +104,12 @@ export default function MisMantenimientos() {
 
   const applyAdvancedFilters = async () => {
     setFilterModalVisible(false);
+    // Si se selecciona un filtro específico, desactivar showActiveOnly
+    if (filterStatus !== 'all') {
+      setShowActiveOnly(false);
+    } else {
+      setShowActiveOnly(true);
+    }
     // Aplicar filtros al backend
     const dateFilterValue = dateFilter !== 'all' ? dateFilter as 'today' | 'week' | 'month' : undefined;
     await applyFilters(
@@ -87,6 +121,7 @@ export default function MisMantenimientos() {
   const resetFilters = async () => {
     setDateFilter('all');
     setFilterStatus('all');
+    setShowActiveOnly(true); // Volver a mostrar solo activos
     await applyFilters('all', undefined);
   };
 
@@ -128,13 +163,16 @@ export default function MisMantenimientos() {
   };
 
   const renderMaintenanceItem = ({ item }: { item: TecnicoMaintenance }) => {
-    // Navegación inteligente según el estado del mantenimiento
+    // Navegación inteligente según el estado del mantenimiento (usando last_action_log)
     const handleMaintenancePress = () => {
-      if (item.status === 'in_progress') {
-        // Si está en progreso, ir directamente a la pantalla de trabajo
+      const lastAction = item.last_action_log?.action;
+      
+      // Si está en progreso (start o resume), ir directamente a la pantalla de trabajo
+      if (lastAction === 'start' || lastAction === 'resume') {
         navigate('MantenimientoEnProgreso', { maintenanceId: item.id });
       } else {
-        // Si está asignado o completado, ir al detalle
+        // Si está pausado, asignado, completado o sin action logs, ir al detalle
+        // Desde el detalle se puede reanudar si está pausado
         navigate('DetalleMantenimiento', { maintenanceId: item.id });
       }
     };
@@ -151,7 +189,8 @@ export default function MisMantenimientos() {
     label: string; 
     count?: number;
   }) => {
-    const isActive = filterStatus === status;
+    // Si es "Todos" y showActiveOnly está activo, considerarlo activo
+    const isActive = filterStatus === status || (status === 'all' && showActiveOnly && filterStatus === 'all');
     return (
       <TouchableOpacity
         style={[
@@ -184,8 +223,16 @@ export default function MisMantenimientos() {
   };
 
   const getFilteredCount = (status: FilterType) => {
-    if (status === 'all') return maintenances.length;
-    return maintenances.filter(m => m.status === status).length;
+    if (status === 'all') {
+      // Si showActiveOnly está activo, contar solo assigned e in_progress
+      if (showActiveOnly) {
+        return allMaintenances.filter(m => 
+          m.status === 'assigned' || m.status === 'in_progress'
+        ).length;
+      }
+      return allMaintenances.length;
+    }
+    return allMaintenances.filter(m => m.status === status).length;
   };
 
   return (
@@ -198,7 +245,10 @@ export default function MisMantenimientos() {
         <View style={styles.headerContent}>
           <Text style={styles.title}>Mis Mantenimientos</Text>
           <Text style={styles.subtitle}>
-            {maintenances.length} {maintenances.length === 1 ? 'servicio' : 'servicios'}
+            {showActiveOnly && filterStatus === 'all' 
+              ? `${maintenances.length} activo${maintenances.length !== 1 ? 's' : ''} (Asignados y En Progreso)`
+              : `${maintenances.length} ${maintenances.length === 1 ? 'servicio' : 'servicios'}`
+            }
           </Text>
         </View>
         <TouchableOpacity 
@@ -251,9 +301,11 @@ export default function MisMantenimientos() {
                 <Text style={styles.emptySubtext}>
                   {dateFilter !== 'all' 
                     ? `No hay mantenimientos para el filtro de fecha seleccionado`
-                    : filterStatus === 'all' 
-                      ? 'No tienes mantenimientos asignados'
-                      : `No hay mantenimientos ${getStatusConfig(filterStatus as MaintenanceStatus).label.toLowerCase()}`
+                    : showActiveOnly && filterStatus === 'all'
+                      ? 'No tienes mantenimientos asignados o en progreso'
+                      : filterStatus === 'all' 
+                        ? 'No tienes mantenimientos asignados'
+                        : `No hay mantenimientos ${getStatusConfig(filterStatus as MaintenanceStatus).label.toLowerCase()}`
                   }
                 </Text>
               </View>

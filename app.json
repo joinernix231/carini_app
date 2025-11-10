@@ -1,20 +1,34 @@
 {
   "expo": {
-    "name": "carini-app",
+    "name": "Carini",
     "slug": "carini",
     "version": "1.0.0",
     "newArchEnabled": false,
-    "icon": "./assets/icon.png",
+    "icon": "./assets/carini_logo.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
     "android": {
       "package": "com.carini.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
+      "icon": "./assets/carini_logo.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/carini_logo.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "userInterfaceStyle": "light"
     },
     "ios": {
       "bundleIdentifier": "com.carini.app",
+      "userInterfaceStyle": "light",
       "infoPlist": {
         "NSCameraUsageDescription": "Esta aplicación necesita acceso a la cámara para tomar fotos de los equipos durante el mantenimiento.",
         "NSPhotoLibraryUsageDescription": "Esta aplicación necesita acceso a la galería para seleccionar fotos de los equipos."
@@ -34,6 +48,14 @@
         {
           "photosPermission": "La aplicación necesita acceso a la galería para seleccionar fotos de los equipos.",
           "cameraPermission": "La aplicación necesita acceso a la cámara para tomar fotos de los equipos durante el mantenimiento."
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/noctification_icon.png",
+          "color": "#007AFF",
+          "sounds": ["./assets/notification_sound.wav"]
         }
       ]
     ]

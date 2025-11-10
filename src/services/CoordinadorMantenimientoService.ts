@@ -195,10 +195,21 @@ export const getMantenimientosSinCotizacion = async (token: string): Promise<Coo
 };
 
 // Nuevo servicio para mantenimientos aprobados (paso 4)
+// Usa el endpoint /api/maintenancesCoordinator con filtros
+// Mantenimientos aprobados = cotizados sin técnico asignado Y (ya pagó O no requiere pago)
 export const getMantenimientosAprobados = async (token: string): Promise<CoordinadorMantenimiento[]> => {
   try {
-    const response = await API.get('/api/maintenancesApproved', authHeaders(token));
-    return response.data.data;
+    // Obtener mantenimientos cotizados sin técnico asignado
+    // Formato: field|comparator|value (3 partes siempre)
+    // Para null: date_maintenance|null|null (valor como string 'null')
+    const filters = 'status|is|quoted;date_maintenance|null|null';
+    const response = await API.get(`/api/maintenancesCoordinator?filters=${encodeURIComponent(filters)}&unpaginated=true`, authHeaders(token));
+    
+    // Filtrar en el frontend: is_paid = true (ya pagó y verificado) o is_paid = null (no requiere pago)
+    const mantenimientos = response.data.data || [];
+    return mantenimientos.filter((m: any) => 
+      m.is_paid === true || m.is_paid === null
+    );
   } catch (error: any) {
     // Error log removed
     throw error;
@@ -208,7 +219,8 @@ export const getMantenimientosAprobados = async (token: string): Promise<Coordin
 // Servicio para mantenimientos por estado de pago
 export interface MantenimientosByPaymentStatus {
   paid_pending_review: CoordinadorMantenimiento[]; // is_paid = false
-  pending_payment: CoordinadorMantenimiento[];     // is_paid = null
+  pending_payment: CoordinadorMantenimiento[];     // is_paid = null (pero no quoted)
+  no_payment_required: CoordinadorMantenimiento[]; // status = quoted y is_paid = null
 }
 
 export const getMantenimientosByPaymentStatus = async (token: string): Promise<MantenimientosByPaymentStatus> => {
@@ -217,13 +229,23 @@ export const getMantenimientosByPaymentStatus = async (token: string): Promise<M
     
     const allMantenimientos = response.data.data || [];
     
-    // Separar según is_paid
+    // Separar según is_paid y status
     const paidPendingReview = allMantenimientos.filter((m: any) => m.is_paid === false);
-    const pendingPayment = allMantenimientos.filter((m: any) => m.is_paid === null);
+    
+    // Mantenimientos que no requieren pago: status = "quoted" y is_paid = null
+    const noPaymentRequired = allMantenimientos.filter((m: any) => 
+      m.status === 'quoted' && m.is_paid === null
+    );
+    
+    // Mantenimientos esperando pago: is_paid = null pero NO son quoted (o no tienen status quoted)
+    const pendingPayment = allMantenimientos.filter((m: any) => 
+      m.is_paid === null && m.status !== 'quoted'
+    );
     
     return {
       paid_pending_review: paidPendingReview,
-      pending_payment: pendingPayment
+      pending_payment: pendingPayment,
+      no_payment_required: noPaymentRequired
     };
   } catch (error: any) {
     // Error log removed

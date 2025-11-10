@@ -6,13 +6,16 @@ import {
     StyleSheet,
     TouchableOpacity,
     TextInput,
-    SafeAreaView,
     ActivityIndicator,
     Alert,
     Modal,
     ScrollView,
+    FlatList,
     Dimensions,
+    Platform,
+    KeyboardAvoidingView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { Equipo } from '../../types/equipo/equipo';
 import { useDeviceAssociationWithToken } from '../../hooks/useDeviceAssociationWithToken';
@@ -51,24 +54,37 @@ export default function DeviceAssociationModal({
     useEffect(() => {
         if (visible) {
             loadDevices();
+            // Resetear búsqueda y dispositivos filtrados cuando se abre el modal
+            setSearchQuery('');
+            setFilteredDevices([]);
         }
     }, [visible, loadDevices]);
 
-    // Filtrar dispositivos cuando se escribe
+    // Actualizar filteredDevices cuando se cargan los dispositivos o cambia la búsqueda
     useEffect(() => {
         const q = searchQuery.trim().toLowerCase();
         if (!q) {
-            setFilteredDevices(devices);
+            // Asegurar que filteredDevices se actualice cuando devices cambia
+            if (devices && devices.length > 0) {
+                setFilteredDevices(devices);
+            } else {
+                setFilteredDevices([]);
+            }
             return;
         }
-        setFilteredDevices(
-            devices.filter(d =>
-                (d.model || '').toLowerCase().includes(q) ||
-                (d.brand || '').toLowerCase().includes(q) ||
-                (d.serial || '').toLowerCase().includes(q) ||
-                (d.type || '').toLowerCase().includes(q)
-            )
-        );
+        // Filtrar dispositivos según la búsqueda
+        if (devices && devices.length > 0) {
+            setFilteredDevices(
+                devices.filter(d =>
+                    (d.model || '').toLowerCase().includes(q) ||
+                    (d.brand || '').toLowerCase().includes(q) ||
+                    (d.serial || '').toLowerCase().includes(q) ||
+                    (d.type || '').toLowerCase().includes(q)
+                )
+            );
+        } else {
+            setFilteredDevices([]);
+        }
     }, [searchQuery, devices]);
 
 
@@ -141,113 +157,132 @@ export default function DeviceAssociationModal({
         }
     };
 
-    const renderDeviceModal = () => (
-        <Modal
-            visible={showDeviceModal}
-            animationType="slide"
-            presentationStyle="pageSheet"
-        >
-            <SafeAreaView style={styles.modalContainer}>
-                <View style={styles.modalHeader}>
-                    <View style={styles.modalHeaderContent}>
+    // Vista de selección de dispositivos (sin modal anidado)
+    const renderDeviceSelector = () => {
+        if (!showDeviceModal) return null;
+
+        return (
+            <KeyboardAvoidingView 
+                style={styles.deviceSelectorOverlay}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            >
+                <View style={styles.deviceSelectorContainer}>
+                    {/* Header del selector */}
+                    <View style={styles.deviceSelectorHeader}>
                         <TouchableOpacity
-                            onPress={() => setShowDeviceModal(false)}
-                            style={styles.closeButton}
+                            onPress={() => {
+                                setShowDeviceModal(false);
+                                setSearchQuery('');
+                            }}
+                            style={styles.deviceSelectorBackButton}
                         >
-                            <Ionicons name="close" size={24} color="#666" />
+                            <Ionicons name="arrow-back" size={24} color="#666" />
                         </TouchableOpacity>
-                        <Text style={styles.modalTitle}>Seleccionar Dispositivo</Text>
-                        <View style={styles.closeButton} />
-                    </View>
-                </View>
-
-                <View style={styles.modalContent}>
-                    {/* Barra de búsqueda del modal */}
-                    <View style={styles.searchContainer}>
-                        <MaterialIcons name="search" size={20} color="#999" />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Buscar dispositivos..."
-                            placeholderTextColor="#999"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            autoFocus
-                        />
-                        {searchQuery.length > 0 && (
-                            <TouchableOpacity onPress={() => setSearchQuery('')}>
-                                <MaterialIcons name="clear" size={20} color="#999" />
-                            </TouchableOpacity>
-                        )}
+                        <Text style={styles.deviceSelectorTitle}>Seleccionar Dispositivo</Text>
+                        <View style={styles.deviceSelectorBackButton} />
                     </View>
 
-                    {/* Lista de dispositivos en el modal */}
-                    {loadingDevices ? (
+                    {/* Contenedor con padding para búsqueda y lista */}
+                    <View style={styles.modalContent}>
+                        {/* Barra de búsqueda */}
+                        <View style={styles.searchContainer}>
+                            <MaterialIcons name="search" size={20} color="#999" />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Buscar dispositivos..."
+                                placeholderTextColor="#999"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                                autoFocus
+                            />
+                            {searchQuery.length > 0 && (
+                                <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                    <MaterialIcons name="clear" size={20} color="#999" />
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {/* Lista de dispositivos */}
+                        {loadingDevices ? (
                         <View style={styles.modalLoadingContainer}>
                             <ActivityIndicator size="large" color="#007AFF" />
                             <Text style={styles.modalLoadingText}>Cargando dispositivos...</Text>
                         </View>
-                    ) : filteredDevices.length === 0 ? (
-                        <View style={styles.modalEmptyContainer}>
-                            <MaterialIcons name="devices" size={48} color="#CCC" />
-                            <Text style={styles.modalEmptyTitle}>
-                                {searchQuery ? 'Sin resultados' : 'Sin dispositivos'}
-                            </Text>
-                            <Text style={styles.modalEmptyText}>
-                                {searchQuery
-                                    ? 'No hay dispositivos que coincidan con tu búsqueda'
-                                    : 'No hay dispositivos disponibles'
-                                }
-                            </Text>
-                        </View>
                     ) : (
-                        <ScrollView
-                            style={styles.deviceScrollContainer}
+                        <FlatList
+                            data={filteredDevices}
+                            keyExtractor={(item) => `device-${item.id}`}
+                            numColumns={2}
+                            contentContainerStyle={[
+                                styles.deviceScrollContent,
+                                filteredDevices.length === 0 && styles.emptyListContainer
+                            ]}
                             showsVerticalScrollIndicator={true}
-                            contentContainerStyle={styles.deviceScrollContent}
-                            nestedScrollEnabled={true}
-                        >
-                            <View style={styles.deviceGrid}>
-                                {filteredDevices.map((device) => (
-                                    <TouchableOpacity
-                                        key={device.id}
-                                        style={styles.deviceCard}
-                                        onPress={() => selectDevice(device)}
-                                        activeOpacity={0.7}
-                                    >
-                                        <View style={[styles.deviceCardIcon, { backgroundColor: getDeviceColor(device.type || '') }]}>
-                                            <MaterialIcons
-                                                name={getDeviceIcon(device.type || '') as any}
-                                                size={24}
-                                                color="#fff"
-                                            />
-                                        </View>
-                                        <Text style={styles.deviceCardTitle} numberOfLines={1}>
-                                            {device.model}
-                                        </Text>
-                                        <Text style={styles.deviceCardSubtitle} numberOfLines={1}>
-                                            {device.brand}
-                                        </Text>
-                                        <Text style={styles.deviceCardType}>
-                                            {device.type}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        </ScrollView>
-                    )}
+                            removeClippedSubviews={Platform.OS === 'ios' ? false : true}
+                            renderItem={({ item: device }) => (
+                                <TouchableOpacity
+                                    style={styles.deviceCard}
+                                    onPress={() => selectDevice(device)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={[styles.deviceCardIcon, { backgroundColor: getDeviceColor(device.type || '') }]}>
+                                        <MaterialIcons
+                                            name={getDeviceIcon(device.type || '') as any}
+                                            size={24}
+                                            color="#fff"
+                                        />
+                                    </View>
+                                    <Text style={styles.deviceCardTitle} numberOfLines={1}>
+                                        {device.model}
+                                    </Text>
+                                    <Text style={styles.deviceCardSubtitle} numberOfLines={1}>
+                                        {device.brand}
+                                    </Text>
+                                    <Text style={styles.deviceCardType}>
+                                        {device.type}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                            ListEmptyComponent={
+                                <View style={styles.modalEmptyContainer}>
+                                    <MaterialIcons name="devices" size={48} color="#CCC" />
+                                    <Text style={styles.modalEmptyTitle}>
+                                        {searchQuery ? 'Sin resultados' : 'Sin dispositivos'}
+                                    </Text>
+                                    <Text style={styles.modalEmptyText}>
+                                        {searchQuery
+                                            ? 'No hay dispositivos que coincidan con tu búsqueda'
+                                            : 'No hay dispositivos disponibles'
+                                        }
+                                    </Text>
+                                </View>
+                            }
+                        />
+                        )}
+                    </View>
                 </View>
-            </SafeAreaView>
-        </Modal>
-    );
+            </KeyboardAvoidingView>
+        );
+    };
 
     return (
-        <>
-            <Modal
-                visible={visible}
-                animationType="slide"
-                presentationStyle="pageSheet"
-            >
-                <SafeAreaView style={styles.container}>
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+        >
+            <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
+                {/* Vista de selección de dispositivos (sobrepuesta) */}
+                {renderDeviceSelector()}
+
+                {/* Contenido principal del modal - solo se muestra cuando no hay selector activo */}
+                {!showDeviceModal && (
+                <KeyboardAvoidingView 
+                    style={styles.mainContent}
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                >
                     {/* Header */}
                     <View style={styles.header}>
                         <TouchableOpacity
@@ -268,6 +303,7 @@ export default function DeviceAssociationModal({
                         style={styles.scrollContainer}
                         contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
                     >
                         <View style={styles.content}>
                             {/* Card de selección de dispositivo */}
@@ -363,15 +399,21 @@ export default function DeviceAssociationModal({
                             {loading ? (
                                 <ActivityIndicator size="small" color="#fff" />
                             ) : (
-                                <Text style={styles.submitButtonText}>{submitButtonText}</Text>
+                                <Text 
+                                    style={styles.submitButtonText}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit={true}
+                                    minimumFontScale={0.7}
+                                >
+                                    {submitButtonText}
+                                </Text>
                             )}
                         </TouchableOpacity>
                     </View>
-                </SafeAreaView>
-            </Modal>
-
-            {renderDeviceModal()}
-        </>
+                </KeyboardAvoidingView>
+                )}
+            </SafeAreaView>
+        </Modal>
     );
 }
 
@@ -379,6 +421,50 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F8F9FA',
+    },
+    mainContent: {
+        flex: 1,
+    },
+    deviceSelectorOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: '#F8F9FA',
+        zIndex: 1000,
+        flex: 1,
+    },
+    deviceSelectorContainer: {
+        flex: 1,
+        backgroundColor: '#F8F9FA',
+    },
+    deviceSelectorHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+        minHeight: 60,
+    },
+    deviceSelectorBackButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#F3F4F6',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deviceSelectorTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#1F2937',
+        flex: 1,
+        textAlign: 'center',
+        marginHorizontal: 16,
     },
     header: {
         flexDirection: 'row',
@@ -388,6 +474,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB',
+        minHeight: 60,
     },
     closeButton: {
         width: 32,
@@ -517,10 +604,13 @@ const styles = StyleSheet.create({
     cancelButton: {
         flex: 1,
         paddingVertical: 12,
+        paddingHorizontal: 8,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#D1D5DB',
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
     },
     cancelButtonText: {
         fontSize: 16,
@@ -530,9 +620,12 @@ const styles = StyleSheet.create({
     submitButton: {
         flex: 1,
         paddingVertical: 12,
+        paddingHorizontal: 8,
         borderRadius: 8,
         backgroundColor: '#007AFF',
         alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 44,
     },
     submitButtonDisabled: {
         backgroundColor: '#9CA3AF',
@@ -541,6 +634,8 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '600',
         color: '#fff',
+        textAlign: 'center',
+        flexShrink: 1,
     },
     // Modal styles
     modalContainer: {
@@ -558,6 +653,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 16,
+        minHeight: 60,
     },
     modalTitle: {
         fontSize: 18,
@@ -619,6 +715,11 @@ const styles = StyleSheet.create({
     },
     deviceScrollContent: {
         paddingBottom: 20,
+        paddingHorizontal: Platform.OS === 'ios' ? 4 : 0,
+    },
+    emptyListContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
     },
     deviceGrid: {
         flexDirection: 'row',
@@ -626,7 +727,9 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     deviceCard: {
-        width: '48%',
+        flex: 1,
+        minWidth: '48%',
+        maxWidth: '48%',
         backgroundColor: '#fff',
         borderRadius: 12,
         padding: 16,
@@ -638,6 +741,8 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.05,
         shadowRadius: 2,
         elevation: 1,
+        marginHorizontal: Platform.OS === 'ios' ? 4 : 6,
+        marginBottom: 12,
     },
     deviceCardIcon: {
         width: 48,

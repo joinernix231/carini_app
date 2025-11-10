@@ -64,12 +64,6 @@ export function MaintenanceCard({ maintenance, onPress }: MaintenanceCardProps) 
           <Ionicons name="time-outline" size={16} color="#8E8E93" />
           <Text style={styles.infoText}>{maintenance.shift}</Text>
         </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="location-outline" size={16} color="#8E8E93" />
-          <Text style={styles.infoText} numberOfLines={1}>
-            {firstDevice ? firstDevice.address : maintenance.client.address}
-          </Text>
-        </View>
       </View>
 
       {/* Acción */}

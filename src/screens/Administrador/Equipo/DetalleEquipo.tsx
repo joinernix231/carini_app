@@ -152,17 +152,9 @@ export default function DetalleEquipo() {
                             <Ionicons name="hardware-chip-outline" size={44} color="#3B82F6" />
                         </View>
 
-                        <Text style={[styles.title, { color: '#1F2937' }]}>{displayName}</Text>
-                        <Text style={[styles.subtitle, { color: '#6B7280' }]}>{displayInfo}</Text>
+                        <Text style={styles.title}>{displayName}</Text>
+                        <Text style={styles.subtitle}>{displayInfo}</Text>
 
-                    </View>
-
-                    <View style={styles.headerActions}>
-                        <TouchableOpacity onPress={() => {
-                            Alert.alert('Compartir', `Equipo: ${displayName}\nMarca: ${equipo?.brand}\nModelo: ${equipo?.model}`);
-                        }} accessibilityLabel="Compartir equipo">
-                            <MaterialIcons name="share" size={22} color="#6B7280" />
-                        </TouchableOpacity>
                     </View>
                 </View>
             </LinearGradient>
@@ -353,13 +345,12 @@ const styles = StyleSheet.create({
     header: { paddingTop: 12, paddingBottom: 24, paddingHorizontal: 16 },
     headerRow: { flexDirection: 'row', alignItems: 'center' },
     headerCenter: { flex: 1, alignItems: 'center' },
-    headerActions: { width: 44, alignItems: 'flex-end' },
     avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#E0F2FE', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#BFDBFE', overflow: 'hidden' },
     avatarImage: { width: '100%', height: '100%', borderRadius: 44 },
-    title: { color: '#fff', fontSize: 20, fontWeight: '700' },
-    subtitle: { color: 'rgba(255,255,255,0.95)', marginTop: 4, fontSize: 14 },
+    title: { color: '#1F2937', fontSize: 20, fontWeight: '700' },
+    subtitle: { color: '#6B7280', marginTop: 4, fontSize: 14 },
     statusBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
-    statusText: { fontWeight: '700' },
+    statusText: { fontWeight: '700', color: '#1F2937' },
 
     scrollContainer: { flex: 1 },
 
@@ -434,13 +425,13 @@ const styles = StyleSheet.create({
     actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, flexWrap: 'wrap' },
     actionBtn: { width: (width - 56) / 3, paddingVertical: 12, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
     actionIcon: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', color: '#1F2937' },
 
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 8, color: '#6B7280' },
 
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700' },
+    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700', color: '#1F2937' },
     errorText: { color: '#6B7280', marginTop: 8, textAlign: 'center' },
     retryButton: { marginTop: 16, backgroundColor: '#0EA5E9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
     retryButtonText: { color: '#fff', fontWeight: '700' },

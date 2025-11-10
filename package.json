@@ -8,7 +8,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:apk": "build-apk.bat",
+    "build:apk": "eas build -p android --profile preview",
+    "build:apk:local": "build-apk.bat",
+    "build:production": "eas build -p android --profile production",
     "clean": "rm -rf android/app/build android/build android/.gradle node_modules/.cache .expo",
     "prebuild": "expo prebuild --platform android --clean"
   },

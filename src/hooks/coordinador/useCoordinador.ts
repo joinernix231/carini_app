@@ -89,10 +89,16 @@ export function useCoordinador(
         const prev = coordinador?.status ?? null;
         try {
             setBusy(true);
+            // Actualización optimista
             setCoordinador((t) => (t ? { ...t, status: newStatus } : t));
-            const updated = await service.changeStatus(id, newStatus, token);
-            if (mountedRef.current) setCoordinador(updated);
-            return updated;
+            // Cambiar el estado en el servidor
+            await service.changeStatus(id, newStatus, token);
+            // Recargar todos los datos completos para asegurar que no se pierdan datos
+            if (mountedRef.current) {
+                const refreshed = await fetchCoordinador();
+                return refreshed || coordinador;
+            }
+            return coordinador;
         } catch (err: any) {
             // revertir
             if (mountedRef.current) setCoordinador((t) => (t ? { ...t, status: prev ?? t.status } : t));
@@ -103,7 +109,7 @@ export function useCoordinador(
         } finally {
             if (mountedRef.current) setBusy(false);
         }
-    }, [id, token, service, coordinador?.status]);
+    }, [id, token, service, coordinador, fetchCoordinador]);
 
     const updateCoordinador = useCallback(async (payload: {
         name: string;

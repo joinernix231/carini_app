@@ -26,6 +26,7 @@ const { width } = Dimensions.get('window');
 type RootStackParamList = {
     DetalleTecnico: { id: number };
     EditarTecnico: { id: number } | undefined;
+    MantenimientosTecnicoList: { technicianId: number };
 };
 
 type RouteParams = {
@@ -161,7 +162,7 @@ export default function DetalleTecnicoScreen() {
                             <Ionicons name="construct-outline" size={44} color="#F59E0B" />
                         </View>
 
-                        <Text style={[styles.title, { color: '#1F2937' }]}>{displayName}</Text>
+                        <Text style={styles.title}>{displayName}</Text>
 
                         <View style={[styles.statusBadge, { backgroundColor: tecnico?.status === 'active' ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.15)' }]}>
                             <Text style={[styles.statusText, { color: tecnico?.status === 'active' ? '#9ef01a' : '#EF4444' }]}>
@@ -248,6 +249,28 @@ export default function DetalleTecnicoScreen() {
                 </View>
 
                 <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Mantenimientos</Text>
+                    <View style={styles.card}>
+                        <TouchableOpacity
+                            style={styles.maintenanceButton}
+                            onPress={() => navigation.navigate('MantenimientosTecnicoList', { technicianId: id })}
+                            disabled={!tecnico}
+                        >
+                            <View style={styles.maintenanceButtonContent}>
+                                <View style={[styles.maintenanceIconContainer, { backgroundColor: '#3B82F6' }]}>
+                                    <Ionicons name="construct" size={24} color="#fff" />
+                                </View>
+                                <View style={styles.maintenanceButtonText}>
+                                    <Text style={styles.maintenanceButtonTitle}>Mantenimientos Técnico</Text>
+                                    <Text style={styles.maintenanceButtonSubtitle}>Ver todos los mantenimientos</Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={20} color="#9CA3AF" />
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Acciones</Text>
                     <View style={styles.actionRow}>
                         <ActionButton label="Editar" icon="edit" color="#F59E0B" onPress={handleEdit} disabled={!tecnico} />
@@ -295,10 +318,10 @@ const styles = StyleSheet.create({
     headerCenter: { flex: 1, alignItems: 'center' },
     headerActions: { width: 44, alignItems: 'flex-end' },
     avatar: { width: 88, height: 88, borderRadius: 44, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center', marginBottom: 12, borderWidth: 3, borderColor: '#FDE68A' },
-    title: { color: '#fff', fontSize: 20, fontWeight: '700' },
-    subtitle: { color: 'rgba(255,255,255,0.95)', marginTop: 4 },
+    title: { color: '#1F2937', fontSize: 20, fontWeight: '700' },
+    subtitle: { color: '#6B7280', marginTop: 4 },
     statusBadge: { marginTop: 10, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
-    statusText: { fontWeight: '700' },
+    statusText: { fontWeight: '700', color: '#1F2937' },
 
     scrollContainer: { flex: 1 },
 
@@ -315,14 +338,47 @@ const styles = StyleSheet.create({
     actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8, flexWrap: 'wrap' },
     actionBtn: { width: (width - 56) / 3, paddingVertical: 12, alignItems: 'center', backgroundColor: '#fff', borderRadius: 12, marginBottom: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 },
     actionIcon: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center' },
+    actionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', color: '#1F2937' },
 
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     loadingText: { marginTop: 8, color: '#6B7280' },
 
     errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 20 },
-    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700' },
+    errorTitle: { marginTop: 12, fontSize: 18, fontWeight: '700', color: '#1F2937' },
     errorText: { color: '#6B7280', marginTop: 8, textAlign: 'center' },
     retryButton: { marginTop: 16, backgroundColor: '#0EA5E9', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
     retryButtonText: { color: '#fff', fontWeight: '700' },
+    
+    maintenanceButton: {
+        backgroundColor: '#F9FAFB',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    maintenanceButtonContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    maintenanceIconContainer: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    maintenanceButtonText: {
+        flex: 1,
+    },
+    maintenanceButtonTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1F2937',
+        marginBottom: 4,
+    },
+    maintenanceButtonSubtitle: {
+        fontSize: 13,
+        color: '#6B7280',
+    },
 });

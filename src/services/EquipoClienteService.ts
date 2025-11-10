@@ -89,3 +89,56 @@ export const asignarEquipo = async (payload: {
   });
   return response.data;
 };
+
+/**
+ * Obtiene los mantenimientos de un equipo vinculado del cliente
+ */
+export const getMantenimientosEquipoVinculado = async (
+  token: string,
+  deviceId: number,
+  options?: { per_page?: number }
+): Promise<any[]> => {
+  try {
+    let url = `/api/linkDevices/${deviceId}/maintenances`;
+    const params = new URLSearchParams();
+    
+    if (options?.per_page) {
+      params.append('per_page', options.per_page.toString());
+    }
+    
+    if (params.toString()) {
+      url += `?${params.toString()}`;
+    }
+    
+    const response = await API.get(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    
+    return response.data.data || [];
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      console.log('🔁 Token expirado. Reintentando login automático...');
+
+      const email = await AsyncStorage.getItem('email');
+      const password = await AsyncStorage.getItem('password');
+
+      if (email && password) {
+        const loginResponse = await loginAPI(email, password);
+        const newToken = loginResponse.token;
+
+        await AsyncStorage.setItem('token', newToken);
+        API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+
+        const retry = await API.get(url, {
+          headers: { Authorization: `Bearer ${newToken}` },
+        });
+
+        return retry.data.data || [];
+      } else {
+        throw new Error('No se pudo reautenticar. Credenciales no disponibles.');
+      }
+    }
+
+    throw error;
+  }
+};

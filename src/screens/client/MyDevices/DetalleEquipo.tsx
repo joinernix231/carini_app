@@ -114,12 +114,6 @@ export default function DetalleEquipo() {
     );
   };
 
-  const compartirInformacion = () => {
-    const info = `Equipo: ${equipo.device.model}\nMarca: ${equipo.device.brand}\nSerial: ${equipo.device.serial}\nUbicación: ${equipo.address}`;
-    // Implementar función de compartir
-    Alert.alert('Información copiada', 'La información del equipo ha sido preparada para compartir.');
-  };
-
   if (loading) {
     return (
         <SafeAreaView style={styles.container}>
@@ -172,10 +166,6 @@ export default function DetalleEquipo() {
             <Text style={styles.title}>{equipo.device.model}</Text>
             <Text style={styles.brandText}>{equipo.device.brand}</Text>
           </View>
-
-          <TouchableOpacity style={styles.shareButton} onPress={compartirInformacion}>
-            <MaterialIcons name="share" size={24} color="#fff" />
-          </TouchableOpacity>
         </LinearGradient>
 
         <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
@@ -263,6 +253,18 @@ export default function DetalleEquipo() {
                   subtitle="Programa una revisión"
                   color="#FF6B35"
                   onPress={solicitarMantenimiento}
+              />
+
+              <ActionButton
+                  icon="history"
+                  label="Historial de Mantenimientos"
+                  subtitle="Ver mantenimientos"
+                  color="#0EA5E9"
+                  onPress={() => navigate('EquipmentMaintenanceHistory' as never, {
+                    deviceId: equipo.id,
+                    deviceBrand: equipo.device.brand,
+                    deviceModel: equipo.device.model,
+                  })}
               />
 
               <ActionButton
@@ -425,9 +427,6 @@ const styles = StyleSheet.create({
   backButton: {
     padding: 8,
   },
-  shareButton: {
-    padding: 8,
-  },
   headerContent: {
     flex: 1,
     alignItems: 'center',
@@ -568,9 +567,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: 15,
   },
   actionButton: {
     width: (width - 50) / 2,
+    minWidth: (width - 50) / 2,
     backgroundColor: '#fff',
     borderRadius: 16,
     padding: 20,

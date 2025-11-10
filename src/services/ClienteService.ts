@@ -56,7 +56,7 @@ async function remove(id: number, token: string): Promise<void> {
 }
 
 async function changeStatus(id: number, status: 'active' | 'inactive', token: string): Promise<Cliente> {
-    const res = await API.patch(`/api/clients/${id}/status`, { status }, authHeaders(token));
+    const res = await API.put(`/api/clients/${id}/status`, { status }, authHeaders(token));
     return res.data.data;
 }
 
