@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,12 +7,15 @@ import {
   TouchableOpacity,
   StatusBar,
   ActivityIndicator,
+  BackHandler,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { useSmartNavigation } from '../../hooks/useSmartNavigation';
 import { useAuth } from '../../context/AuthContext';
 import { TecnicoMantenimientosService } from '../../services/TecnicoMantenimientosService';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { TecnicoMaintenance } from '../../types/mantenimiento/mantenimiento';
 import type { MaintenanceProgressResponse, DeviceProgress } from '../../services/TecnicoMantenimientosService';
 
@@ -21,7 +24,7 @@ type RouteParams = {
 };
 
 export default function MantenimientoCompletado({ route }: { route: { params: RouteParams } }) {
-  const { navigate, goBack } = useSmartNavigation();
+  const { navigateReset } = useSmartNavigation();
   const { token } = useAuth();
   const { maintenanceId } = route.params;
 
@@ -33,6 +36,20 @@ export default function MantenimientoCompletado({ route }: { route: { params: Ro
     loadMaintenanceDetail();
     loadProgress();
   }, [maintenanceId]);
+
+  // Bloquear navegación hacia atrás
+  useFocusEffect(
+    useCallback(() => {
+      const onBackPress = () => {
+        // Prevenir que el usuario regrese con el botón de atrás
+        return true;
+      };
+
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => backHandler.remove();
+    }, [])
+  );
 
   const loadMaintenanceDetail = async () => {
     if (!token) return;
@@ -72,7 +89,8 @@ export default function MantenimientoCompletado({ route }: { route: { params: Ro
   };
 
   const handleBackToMaintenances = () => {
-    navigate('MisMantenimientos');
+    // Resetear la navegación para que no pueda volver atrás
+    navigateReset('MisMantenimientos');
   };
 
   // Calcular duración
@@ -160,30 +178,28 @@ export default function MantenimientoCompletado({ route }: { route: { params: Ro
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#8B5CF6" />
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
+      <StatusBar barStyle="dark-content" backgroundColor="#F8F9FA" />
+      <LinearGradient
+        colors={['#F8F9FA', '#FFFFFF']}
+        style={styles.gradient}
       >
-        {/* Banner de Completado */}
-        <View style={styles.banner}>
-          <View style={styles.bannerContent}>
-            <Ionicons name="construct" size={24} color="#fff" />
-            <Text style={styles.bannerText}>Mantenimiento Completado</Text>
+        <ScrollView 
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Checkmark de Éxito */}
+          <View style={styles.successContainer}>
+            <View style={styles.checkmarkContainer}>
+              <View style={styles.checkmarkInner}>
+                <Ionicons name="checkmark" size={64} color="#fff" />
+              </View>
+            </View>
+            <Text style={styles.successTitle}>¡Excelente Trabajo!</Text>
+            <Text style={styles.successSubtitle}>
+              El mantenimiento se ha completado exitosamente
+            </Text>
           </View>
-        </View>
-
-        {/* Checkmark de Éxito */}
-        <View style={styles.successContainer}>
-          <View style={styles.checkmarkContainer}>
-            <Ionicons name="checkmark" size={60} color="#fff" />
-          </View>
-          <Text style={styles.successTitle}>¡Excelente Trabajo!</Text>
-          <Text style={styles.successSubtitle}>
-            El mantenimiento se ha completado exitosamente
-          </Text>
-        </View>
 
         {/* Resumen del Servicio */}
         <View style={styles.summaryCard}>
@@ -321,15 +337,21 @@ export default function MantenimientoCompletado({ route }: { route: { params: Ro
             El reporte del mantenimiento ha sido enviado al cliente y guardado en el sistema
           </Text>
           
+        </View>
+
+        {/* Botón Principal para Volver */}
+        <View style={styles.buttonContainer}>
           <TouchableOpacity 
-            style={styles.backButton}
+            style={styles.primaryButton}
             onPress={handleBackToMaintenances}
+            activeOpacity={0.8}
           >
-            <Ionicons name="document-text-outline" size={18} color="#6B7280" />
-            <Text style={styles.backButtonText}>Volver a Mis Mantenimientos</Text>
+            <Ionicons name="list" size={22} color="#fff" />
+            <Text style={styles.primaryButtonText}>Volver a Mis Mantenimientos</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </LinearGradient>
     </SafeAreaView>
   );
 }
@@ -337,14 +359,18 @@ export default function MantenimientoCompletado({ route }: { route: { params: Ro
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#8B5CF6',
+    backgroundColor: '#F8F9FA',
+  },
+  gradient: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     padding: 20,
-    paddingTop: 40,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   loadingContainer: {
     flex: 1,
@@ -358,46 +384,46 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     fontWeight: '600',
   },
-  banner: {
-    backgroundColor: '#10B981',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-  },
-  bannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  bannerText: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#fff',
-  },
   successContainer: {
     alignItems: 'center',
-    marginBottom: 32,
+    marginBottom: 40,
+    paddingTop: 20,
   },
   checkmarkContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    backgroundColor: '#E8F5E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 24,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  checkmarkInner: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     backgroundColor: '#10B981',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
   },
   successTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#10B981',
-    marginBottom: 8,
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#1F2937',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   successSubtitle: {
-    fontSize: 16,
+    fontSize: 17,
     color: '#6B7280',
     textAlign: 'center',
+    lineHeight: 24,
+    paddingHorizontal: 20,
   },
   summaryCard: {
     backgroundColor: '#fff',
@@ -471,20 +497,29 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 20,
   },
-  backButton: {
+  buttonContainer: {
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  primaryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    gap: 8,
+    backgroundColor: '#007AFF',
+    paddingVertical: 18,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    gap: 12,
+    shadowColor: '#007AFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
-  backButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6B7280',
+  primaryButtonText: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#fff',
   },
   timeCard: {
     backgroundColor: '#fff',

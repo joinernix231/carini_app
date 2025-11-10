@@ -17,6 +17,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useMe } from '../../hooks/useMe';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NotificationIcon from '../../components/NotificationIcon';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -68,6 +70,16 @@ export default function TecnicoDashboard() {
   const { user, logout } = useAuth();
   const { meData, loading } = useMe();
   const tecnico = meData?.technician_data || null;
+  const { getUserNotifications } = usePushNotifications();
+
+  // Cargar notificaciones cuando la pantalla reciba foco
+  useFocusEffect(
+    React.useCallback(() => {
+      getUserNotifications().catch(() => {
+        // Silently fail if notifications can't be loaded
+      });
+    }, [getUserNotifications])
+  );
 
   const renderItem = ({ item }: { item: MenuOption }) => (
       <TouchableOpacity

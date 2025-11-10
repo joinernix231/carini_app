@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import NotificationIcon from '../../components/NotificationIcon';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useFocusEffect } from '@react-navigation/native';
 
 type RootStackParamList = {
   ClienteList: undefined;
@@ -89,6 +91,16 @@ export default function AdminDashboard() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuth();
   const { colors } = useTheme();
+  const { getUserNotifications } = usePushNotifications();
+
+  // Cargar notificaciones cuando la pantalla reciba foco
+  useFocusEffect(
+    React.useCallback(() => {
+      getUserNotifications().catch(() => {
+        // Silently fail if notifications can't be loaded
+      });
+    }, [getUserNotifications])
+  );
 
   const renderItem = ({ item }: { item: MenuOption }) => (
     <TouchableOpacity

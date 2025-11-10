@@ -21,6 +21,7 @@ import { MantenimientosService } from '../../services/MantenimientosService';
 import { CoordinadorMantenimientoService } from '../../services/CoordinadorMantenimientoService';
 import MantenimientoConfirmationService from '../../services/MantenimientoConfirmationService';
 import NotificationIcon from '../../components/NotificationIcon';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 const { width } = Dimensions.get('window');
 
@@ -70,6 +71,7 @@ export default function CoordinadorDashboard() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout, token } = useAuth();
   const { showError } = useError();
+  const { getUserNotifications } = usePushNotifications();
   
   const [stats, setStats] = useState<DashboardStats>({
     sinCotizacion: 0,
@@ -139,7 +141,11 @@ export default function CoordinadorDashboard() {
   useFocusEffect(
     useCallback(() => {
       loadStats();
-    }, [loadStats])
+      // Cargar notificaciones para actualizar el contador
+      getUserNotifications().catch(() => {
+        // Silently fail if notifications can't be loaded
+      });
+    }, [loadStats, getUserNotifications])
   );
 
   const handleRefresh = useCallback(() => {

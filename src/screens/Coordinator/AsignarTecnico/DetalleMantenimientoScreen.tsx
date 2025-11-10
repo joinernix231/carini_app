@@ -18,6 +18,7 @@ import {
   AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,6 +28,7 @@ import EditQuotationModal from '../../../components/EditQuotationModal';
 import ReagendarModal from '../../../components/Mantenimiento/ReagendarModal';
 import { useSmartNavigation } from '../../../hooks/useSmartNavigation';
 import { useMantenimientoDetalle } from '../../../hooks/mantenimiento/useMantenimientoDetalle';
+import { getImageUrl } from '../../../utils/imageUtils';
 import { 
   MaintenanceType, 
   MaintenanceStatus, 
@@ -92,6 +94,8 @@ export default function DetalleMantenimientoScreen() {
   const [maintenanceValue, setMaintenanceValue] = useState<string>('');
   const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
   const [reagendarModalVisible, setReagendarModalVisible] = useState<boolean>(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [imageModalVisible, setImageModalVisible] = useState<boolean>(false);
   const route = useRoute<DetalleMantenimientoRouteProp>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { goBack } = useSmartNavigation();
@@ -271,6 +275,81 @@ export default function DetalleMantenimientoScreen() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Funciones auxiliares para los action logs
+  const getLogActionText = (action: string) => {
+    switch (action) {
+      case 'assign':
+        return 'Asignado';
+      case 'on_the_way':
+        return 'En Camino';
+      case 'start':
+        return 'Inicio';
+      case 'pause':
+        return 'Pausa';
+      case 'resume':
+        return 'Reanudación';
+      case 'end':
+        return 'Finalización';
+      default:
+        return action;
+    }
+  };
+
+  const getLogActionColor = (action: string) => {
+    switch (action) {
+      case 'assign':
+        return '#007AFF';
+      case 'on_the_way':
+        return '#FFC107';
+      case 'start':
+        return '#10B981';
+      case 'pause':
+        return '#F59E0B';
+      case 'resume':
+        return '#3B82F6';
+      case 'end':
+        return '#34C759';
+      default:
+        return '#6B7280';
+    }
+  };
+
+  const getLogActionIcon = (action: string) => {
+    switch (action) {
+      case 'assign':
+        return 'document-text';
+      case 'on_the_way':
+        return 'car';
+      case 'start':
+        return 'play-circle';
+      case 'pause':
+        return 'pause-circle';
+      case 'resume':
+        return 'play-forward-circle';
+      case 'end':
+        return 'checkmark-circle';
+      default:
+        return 'ellipse';
+    }
+  };
+
+  const formatLogDateTime = (dateString: string | null) => {
+    if (!dateString) return 'No disponible';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      });
+    } catch {
+      return dateString;
+    }
   };
 
   if (loading) {
@@ -1090,6 +1169,69 @@ export default function DetalleMantenimientoScreen() {
           </View>
         )}
 
+        {/* Historial de Actividad (Action Logs) */}
+        {mantenimiento.action_logs && mantenimiento.action_logs.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              Historial de Actividad ({mantenimiento.action_logs.length})
+            </Text>
+            <View style={styles.infoCard}>
+              {mantenimiento.action_logs.map((log: any, index: number) => {
+                const isLast = index === mantenimiento.action_logs.length - 1;
+                const actionColor = getLogActionColor(log.action);
+                const actionText = getLogActionText(log.action);
+                const actionIcon = getLogActionIcon(log.action);
+
+                return (
+                  <View key={log.id || index} style={styles.logItem}>
+                    <View style={styles.logTimeline}>
+                      <View style={[styles.logDot, { backgroundColor: actionColor }]} />
+                      {!isLast && <View style={styles.logLine} />}
+                    </View>
+                    <View style={styles.logContent}>
+                      <View style={styles.logHeader}>
+                        <View style={styles.logActionHeader}>
+                          <Ionicons name={actionIcon as any} size={18} color={actionColor} />
+                          <Text style={[styles.logAction, { color: actionColor }]}>{actionText}</Text>
+                          {log.is_last && (
+                            <View style={[styles.lastBadge, { backgroundColor: actionColor }]}>
+                              <Text style={styles.lastBadgeText}>Última</Text>
+                            </View>
+                          )}
+                        </View>
+                        <Text style={styles.logDate}>
+                          {formatLogDateTime(log.timestamp || log.created_at)}
+                        </Text>
+                      </View>
+                      {log.reason && (
+                        <View style={[styles.logReason, { backgroundColor: `${actionColor}15` }]}>
+                          <Text style={[styles.logReasonText, { color: actionColor }]}>
+                            {log.reason}
+                          </Text>
+                        </View>
+                      )}
+                      {log.latitude && log.longitude && (
+                        <TouchableOpacity
+                          style={styles.logLocation}
+                          onPress={() => {
+                            const { openOpenStreetMap } = require('../../../utils/mapUtils');
+                            openOpenStreetMap(log.latitude, log.longitude);
+                          }}
+                        >
+                          <Ionicons name="location" size={14} color="#0EA5E9" />
+                          <Text style={[styles.logLocationText, { color: '#0EA5E9', textDecorationLine: 'underline' }]}>
+                            Ver ubicación en mapa
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </View>
+        )}
+
         {/* Descripción */}
         {mantenimiento.description && (
           <View style={styles.section}>
@@ -1134,6 +1276,37 @@ export default function DetalleMantenimientoScreen() {
             </View>
           </View>
         )}
+
+        {/* Firma del Cliente - Solo cuando está completado */}
+        {mantenimiento.status === 'completed' && mantenimiento.signature_photo && (() => {
+          const signatureUrl = getImageUrl(mantenimiento.signature_photo);
+          if (!signatureUrl) return null;
+          return (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Firma del Cliente</Text>
+              <View style={styles.infoCard}>
+                <TouchableOpacity
+                  style={styles.signatureContainer}
+                  onPress={() => {
+                    setSelectedImageUrl(signatureUrl);
+                    setImageModalVisible(true);
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Image
+                    source={{ uri: signatureUrl }}
+                    style={styles.signatureImage}
+                    resizeMode="contain"
+                  />
+                  <View style={styles.signatureOverlay}>
+                    <Ionicons name="expand" size={20} color="#fff" />
+                    <Text style={styles.signatureOverlayText}>Ver firma completa</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            </View>
+          );
+        })()}
 
         {/* Sección de Acciones según el Estado */}
         {renderActionSection()}
@@ -1234,6 +1407,26 @@ export default function DetalleMantenimientoScreen() {
         currentShift={mantenimiento?.shift || null}
         currentTechnicianId={mantenimiento?.technician?.id || null}
       />
+
+      {/* Modal para ver imagen en tamaño completo */}
+      {imageModalVisible && selectedImageUrl && (
+        <View style={styles.imageModal}>
+          <TouchableOpacity
+            style={styles.imageModalClose}
+            onPress={() => {
+              setImageModalVisible(false);
+              setSelectedImageUrl(null);
+            }}
+          >
+            <Ionicons name="close" size={30} color="#fff" />
+          </TouchableOpacity>
+          <Image
+            source={{ uri: selectedImageUrl }}
+            style={styles.imageModalImage}
+            resizeMode="contain"
+          />
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -1529,21 +1722,6 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     gap: 12,
-  },
-  verifyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#1976D2',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderRadius: 12,
-    gap: 8,
-    shadowColor: '#1976D2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
   },
   verifyButtonDisabled: {
     backgroundColor: '#9CA3AF',
@@ -1935,5 +2113,153 @@ const styles = StyleSheet.create({
   warningText: {
     color: '#F44336',
     fontWeight: '700',
+  },
+  // Estilos para action logs
+  logItem: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  logTimeline: {
+    width: 30,
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  logDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: '#fff',
+    zIndex: 1,
+  },
+  logLine: {
+    width: 2,
+    flex: 1,
+    backgroundColor: '#E5E7EB',
+    marginTop: 4,
+    minHeight: 20,
+  },
+  logContent: {
+    flex: 1,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  logActionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flex: 1,
+  },
+  logAction: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  logDate: {
+    fontSize: 12,
+    color: '#6B7280',
+    textAlign: 'right',
+    flexShrink: 0,
+    marginLeft: 8,
+  },
+  logReason: {
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 8,
+  },
+  logReasonText: {
+    fontSize: 13,
+    fontWeight: '500',
+    lineHeight: 18,
+  },
+  logLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 4,
+  },
+  logLocationText: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  lastBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginLeft: 8,
+  },
+  lastBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  // Estilos para firma del cliente
+  signatureContainer: {
+    position: 'relative',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+    minHeight: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  signatureImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+  },
+  signatureOverlay: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    gap: 6,
+  },
+  signatureOverlayText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  // Estilos para modal de imagen
+  imageModal: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  imageModalClose: {
+    position: 'absolute',
+    top: StatusBar.currentHeight ? StatusBar.currentHeight + 20 : 40,
+    right: 20,
+    zIndex: 1001,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 20,
+    padding: 8,
+  },
+  imageModalImage: {
+    width: width - 40,
+    height: '80%',
+    borderRadius: 12,
   },
 });

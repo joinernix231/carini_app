@@ -35,7 +35,7 @@ export default function MantenimientosList() {
   const [allMantenimientos, setAllMantenimientos] = useState<MantenimientoListItem[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<FilterType>('completed'); // Iniciar con "Asignados"
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all'); // Iniciar con "Asignados"
 
   const traducirEstado = (estadoIngles: string): string => {
     const traducciones: Record<string, string> = {
@@ -206,6 +206,53 @@ export default function MantenimientosList() {
     }
   };
 
+  // Obtener mensaje de estado vacío según el filtro activo
+  const getEmptyStateMessage = (filter: FilterType) => {
+    const hasAnyMantenimientos = allMantenimientos.length > 0;
+    
+    if (!hasAnyMantenimientos) {
+      return {
+        title: 'No hay mantenimientos',
+        subtitle: 'Crea tu primer mantenimiento para comenzar a gestionar tus equipos',
+        showButton: true,
+      };
+    }
+
+    switch (filter) {
+      case 'pending':
+        return {
+          title: 'No hay mantenimientos pendientes',
+          subtitle: 'No tienes mantenimientos en estado pendiente en este momento',
+          showButton: false,
+        };
+      case 'assigned':
+        return {
+          title: 'No hay mantenimientos asignados',
+          subtitle: 'No tienes mantenimientos asignados en este momento',
+          showButton: false,
+        };
+      case 'in_progress':
+        return {
+          title: 'No hay mantenimientos en progreso',
+          subtitle: 'No tienes mantenimientos en progreso en este momento',
+          showButton: false,
+        };
+      case 'completed':
+        return {
+          title: 'No hay mantenimientos completados',
+          subtitle: 'Aún no has completado ningún mantenimiento',
+          showButton: false,
+        };
+      case 'all':
+      default:
+        return {
+          title: 'No hay mantenimientos',
+          subtitle: 'Crea tu primer mantenimiento para comenzar a gestionar tus equipos',
+          showButton: true,
+        };
+    }
+  };
+
   const eliminarMantenimiento = (id: number) => {
     Alert.alert(
         'Confirmar eliminación',
@@ -364,14 +411,17 @@ export default function MantenimientosList() {
       </View>
   );
 
-  const renderEmptyState = () => (
+  const renderEmptyState = () => {
+    const emptyMessage = getEmptyStateMessage(activeFilter);
+    
+    return (
       <View style={styles.emptyContainer}>
         <View style={styles.emptyIconContainer}>
           <Ionicons name="construct-outline" size={64} color="#C0C0C0" />
         </View>
-        <Text style={styles.emptyTitle}>No hay mantenimientos</Text>
+        <Text style={styles.emptyTitle}>{emptyMessage.title}</Text>
         <Text style={styles.emptySubtitle}>
-          Crea tu primer mantenimiento para comenzar a gestionar tus equipos
+          {emptyMessage.subtitle}
         </Text>
         <TouchableOpacity
             style={styles.emptyButton}
@@ -381,7 +431,8 @@ export default function MantenimientosList() {
           <Text style={styles.emptyButtonText}>Crear mantenimiento</Text>
         </TouchableOpacity>
       </View>
-  );
+    );
+  };
 
   const renderLoadingState = () => (
       <View style={styles.loadingContainer}>

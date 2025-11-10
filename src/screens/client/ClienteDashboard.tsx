@@ -18,6 +18,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useClienteDashboard } from '../../hooks/cliente/useClienteDashboard';
 import { useFocusEffect } from '@react-navigation/native';
 import NotificationIcon from '../../components/NotificationIcon';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 
 
 const { width } = Dimensions.get('window');
@@ -78,12 +79,17 @@ export default function ClienteDashboard() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { user, logout } = useAuth();
   const { data: dashboardData, loading, refresh } = useClienteDashboard();
+  const { getUserNotifications } = usePushNotifications();
 
   // Recargar datos cuando la pantalla reciba foco (por ejemplo, al regresar del perfil)
   useFocusEffect(
     React.useCallback(() => {
       refresh();
-    }, [refresh])
+      // Cargar notificaciones para actualizar el contador
+      getUserNotifications().catch(() => {
+        // Silently fail if notifications can't be loaded
+      });
+    }, [refresh, getUserNotifications])
   );
 
   const renderItem = ({ item }: { item: MenuOption }) => (
